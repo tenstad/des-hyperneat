@@ -31,26 +31,29 @@ pub struct LinkLookup {
 }
 
 impl Network {
+    /// Convert genome to network phenotype, optimized for fast evaluation
     pub fn build(genome: &genome::Genome) -> Network {
+        // Convert list of nodes to range
         let genome = condence_genome_node_values(&genome);
+        // Create link lookup arrays, to easily search for connections
         let mut link_lookup = create_link_lookup(&genome);
+        // Remove all dangeling nodes, as they are not required for output
         prune_network(&genome, &mut link_lookup);
+        // Find order to calculate feed forward connections
         let order = sort_topological(&genome, &mut link_lookup);
 
+        // Organize links in accordance with the topologial order
         let mut links: Vec<Link> = Vec::new();
         for node in order.iter() {
-            let node = *node as usize;
-            let forward_start_index = link_lookup.forward_start_index[node] as usize;
-            let forward_count = link_lookup.forward_count[node];
+            let forward_start_index = link_lookup.forward_start_index[*node as usize] as usize;
+            let forward_count = link_lookup.forward_count[*node as usize];
 
-            for j in 0..forward_count {
-                let link_index =
-                    link_lookup.forward_link_index[forward_start_index + j as usize] as usize;
-                let to: i64 = genome.links[link_index].to;
+            for f in 0..forward_count {
+                let i = link_lookup.forward_link_index[forward_start_index + f as usize] as usize;
                 links.push(Link {
-                    from: node as i64,
-                    to: to,
-                    weight: genome.links[link_index].weight,
+                    from: *node,
+                    to: genome.links[i].to,
+                    weight: genome.links[i].weight,
                 });
             }
         }
@@ -63,50 +66,52 @@ impl Network {
         };
     }
 
+    /// Evaluate network, takes input node values, returns output node values
     pub fn evaluate(&self, inputs: Vec<f64>) -> Vec<f64> {
+        // Init all nodes with 0
         let mut values: Vec<f64> = vec![0.0; self.nodes as usize];
-        for i in 0..self.inputs {
-            values[i as usize] = inputs[i as usize];
-        }
 
+        // Init input nodes with input values
+        values.splice(0..(self.inputs as usize), inputs.iter().cloned());
+
+        // Do forward pass
         for link in self.links.iter() {
             values[link.to as usize] += link.weight * values[link.from as usize];
         }
 
-        let mut result: Vec<f64> = vec![0.0; self.outputs as usize];
-        for i in 0..self.outputs {
-            result[i as usize] = values[(self.inputs + i) as usize];
-        }
-
-        return result;
+        // Return values of output nodes
+        return values
+            .iter()
+            .skip(self.inputs as usize)
+            .take(self.outputs as usize)
+            .cloned()
+            .collect();
     }
 }
 
-/// Convert genome to condenced version, containing stricly increasing node numbers and only enabled linksS
+/// Convert genome to condenced version, containing range of nodes and only enabled links
 pub fn condence_genome_node_values(genome: &genome::Genome) -> DenseGenome {
-    let mut new_id = HashMap::<i64, i64>::new();
-
-    for (i, node) in genome.nodes.iter().enumerate() {
-        new_id.insert(*node, (i as i64) + genome.inputs + genome.outputs);
-    }
-
-    let mut links: Vec<Link> = Vec::new();
-
-    for link in genome.links.iter() {
-        if link.enabled {
-            links.push(Link {
-                from: *new_id.get(&link.from).unwrap_or(&link.from),
-                to: *new_id.get(&link.to).unwrap_or(&link.to),
-                weight: link.weight,
-            });
-        }
-    }
+    let new_id: HashMap<i64, i64> = genome
+        .nodes
+        .iter()
+        .enumerate()
+        .map(|(i, node)| (*node, (i as i64) + genome.inputs + genome.outputs))
+        .collect();
 
     return DenseGenome {
         inputs: genome.inputs,
         outputs: genome.outputs,
         nodes: genome.inputs + genome.outputs + genome.nodes.len() as i64,
-        links: links,
+        links: genome
+            .links
+            .iter()
+            .filter(|link| link.enabled)
+            .map(|link| Link {
+                from: *new_id.get(&link.from).unwrap_or(&link.from),
+                to: *new_id.get(&link.to).unwrap_or(&link.to),
+                weight: link.weight,
+            })
+            .collect(),
     };
 }
 
@@ -148,6 +153,32 @@ pub fn create_link_lookup(genome: &DenseGenome) -> LinkLookup {
         backward_count,
         backward_link_index,
     };
+}
+
+/// Determine order of nodes to actiave in forward pass
+fn sort_topological(genome: &DenseGenome, link_lookup: &mut LinkLookup) -> Vec<i64> {
+    let mut order = Vec::<i64>::new();
+    let mut stack: Vec<i64> = (0..genome.inputs).collect();
+
+    let mut backward_count = link_lookup.backward_count.clone();
+
+    while let Some(node) = stack.pop() {
+        order.push(node);
+        let forward_start_index = link_lookup.forward_start_index[node as usize] as usize;
+        let forward_count = link_lookup.forward_count[node as usize];
+        for i in 0..forward_count {
+            let i = i as usize;
+            let link_index = link_lookup.forward_link_index[forward_start_index + i] as usize;
+            let other: i64 = genome.links[link_index].to;
+
+            backward_count[other as usize] -= 1;
+            if backward_count[other as usize] == 0 {
+                stack.push(other);
+            }
+        }
+    }
+
+    return order;
 }
 
 /// Prune network of dangeling nodes
@@ -230,29 +261,4 @@ pub fn prune_network(genome: &DenseGenome, link_lookup: &mut LinkLookup) {
             }
         }
     }
-}
-
-fn sort_topological(genome: &DenseGenome, link_lookup: &mut LinkLookup) -> Vec<i64> {
-    let mut order = Vec::<i64>::new();
-    let mut stack: Vec<i64> = (0..genome.inputs).collect();
-
-    let mut backward_count = link_lookup.backward_count.clone();
-
-    while let Some(node) = stack.pop() {
-        order.push(node);
-        let forward_start_index = link_lookup.forward_start_index[node as usize] as usize;
-        let forward_count = link_lookup.forward_count[node as usize];
-        for i in 0..forward_count {
-            let i = i as usize;
-            let link_index = link_lookup.forward_link_index[forward_start_index + i] as usize;
-            let other: i64 = genome.links[link_index].to;
-
-            backward_count[other as usize] -= 1;
-            if backward_count[other as usize] == 0 {
-                stack.push(other);
-            }
-        }
-    }
-
-    return order;
 }

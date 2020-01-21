@@ -40,10 +40,15 @@ pub fn neat() {
     let mut g = Genome::generate(4, 2);
     let mut g2 = Genome::generate(4, 2);
 
-    for _ in 0..10 {
+    for _ in 0..30 {
         g.mutate(&mut innovation_log, &mut global_innovation);
         g2.mutate(&mut innovation_log, &mut global_innovation);
     }
+
+    for link in g.links.iter() {
+        println!("{} {}", link.from, link.to);
+    }
+    println!("{:?}", g.nodes);
 
     let n = Network::build(&g);
     let o = n.evaluate(vec![1.0, 2.0, 3.0, 4.0]);

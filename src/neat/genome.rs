@@ -1,5 +1,5 @@
-use crate::neat::InnovationTime;
 use crate::neat::InnovationLog;
+use crate::neat::InnovationTime;
 use rand::Rng;
 
 #[derive(Copy, Clone)]
@@ -81,12 +81,16 @@ impl Genome {
             if i1 == self.links.len() && i2 == other.links.len() {
                 break;
             } else if i1 == self.links.len() {
-                if links.len() == 0 || links[links.len() - 1].innovation != other.links[i2].innovation {
+                if links.len() == 0
+                    || links[links.len() - 1].innovation != other.links[i2].innovation
+                {
                     links.push(other.links[i2]);
                 }
                 i2 += 1;
             } else if i2 == other.links.len() {
-                if links.len() == 0 ||  links[links.len() - 1].innovation != self.links[i1].innovation {
+                if links.len() == 0
+                    || links[links.len() - 1].innovation != self.links[i1].innovation
+                {
                     links.push(self.links[i1]);
                 }
                 i1 += 1;
@@ -100,12 +104,16 @@ impl Genome {
                     i1 += 1;
                     i2 += 1;
                 } else if self.links[i1].innovation < other.links[i2].innovation {
-                    if links.len() == 0 ||  links[links.len() - 1].innovation != self.links[i1].innovation {
+                    if links.len() == 0
+                        || links[links.len() - 1].innovation != self.links[i1].innovation
+                    {
                         links.push(self.links[i1]);
                     }
                     i1 += 1;
                 } else {
-                    if links.len() == 0 ||  links[links.len() - 1].innovation != other.links[i2].innovation {
+                    if links.len() == 0
+                        || links[links.len() - 1].innovation != other.links[i2].innovation
+                    {
                         links.push(other.links[i2]);
                     }
                     i2 += 1;
@@ -126,9 +134,24 @@ impl Genome {
             return;
         }
 
-        let mut rng = rand::thread_rng();
-        let link_index = rng.gen_range(0, self.links.len());
+        // Find indexes of all enabled links
+        let link_indexes: Vec<usize> = self
+            .links
+            .iter()
+            .enumerate()
+            .filter(|(_, link)| link.enabled)
+            .map(|(i, _)| i)
+            .collect();
 
+        // Select random enabled link to split
+        let mut rng = rand::thread_rng();
+        let r = rng.gen_range(0, link_indexes.len());
+        let link_index = link_indexes[r];
+
+        // Disable the link beeing split
+        self.links[link_index].enabled = false;
+
+        // Check if this link has been split by another individual
         match log.node_additions.get(&self.links[link_index].innovation) {
             Some(addition) => {
                 self.links.push(Link {
@@ -147,8 +170,9 @@ impl Genome {
                 });
                 let mut pushed = false;
                 for (i, node) in self.nodes.iter().enumerate() {
-                    if addition.node_number < *node {
-                        self.nodes.insert(i, addition.node_number);
+                    if addition.node_number + self.inputs + self.outputs < *node {
+                        self.nodes
+                            .insert(i, addition.node_number + self.inputs + self.outputs);
                         pushed = true;
                         break;
                     }
