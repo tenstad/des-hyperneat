@@ -1,4 +1,12 @@
 use crate::neat::genome;
+use std::collections::HashMap;
+
+pub struct DenseGenome {
+    pub inputs: i64,
+    pub outputs: i64,
+    pub nodes: i64,
+    pub links: Vec<Link>,
+}
 
 pub struct Network {
     pub inputs: i64,
@@ -24,6 +32,7 @@ pub struct LinkLookup {
 
 impl Network {
     pub fn build(genome: &genome::Genome) -> Network {
+        let genome = condence_genome_node_values(&genome);
         let mut link_lookup = create_link_lookup(&genome);
         prune_network(&genome, &mut link_lookup);
         let order = sort_topological(&genome, &mut link_lookup);
@@ -73,17 +82,43 @@ impl Network {
     }
 }
 
+/// Convert genome to condenced version, containing stricly increasing node numbers and only enabled linksS
+pub fn condence_genome_node_values(genome: &genome::Genome) -> DenseGenome {
+    let mut new_id = HashMap::<i64, i64>::new();
+
+    for (i, node) in genome.nodes.iter().enumerate() {
+        new_id.insert(*node, (i as i64) + genome.inputs + genome.outputs);
+    }
+
+    let mut links: Vec<Link> = Vec::new();
+
+    for link in genome.links.iter() {
+        if link.enabled {
+            links.push(Link {
+                from: *new_id.get(&link.from).unwrap_or(&link.from),
+                to: *new_id.get(&link.to).unwrap_or(&link.to),
+                weight: link.weight,
+            });
+        }
+    }
+
+    return DenseGenome {
+        inputs: genome.inputs,
+        outputs: genome.outputs,
+        nodes: genome.inputs + genome.outputs + genome.nodes.len() as i64,
+        links: links,
+    };
+}
+
 /// Creat node centered link lookup
-pub fn create_link_lookup(genome: &genome::Genome) -> LinkLookup {
+pub fn create_link_lookup(genome: &DenseGenome) -> LinkLookup {
     let node_count = genome.nodes as usize;
 
     let mut forward_count: Vec<i64> = vec![0; node_count];
     let mut backward_count: Vec<i64> = vec![0; node_count];
     for link in genome.links.iter() {
-        if link.enabled {
-            forward_count[(link.from) as usize] += 1;
-            backward_count[(link.to) as usize] += 1;
-        }
+        forward_count[(link.from) as usize] += 1;
+        backward_count[(link.to) as usize] += 1;
     }
 
     let mut forward_start_index: Vec<i64> = vec![0; node_count];
@@ -99,12 +134,10 @@ pub fn create_link_lookup(genome: &genome::Genome) -> LinkLookup {
     let mut forward_link_index: Vec<i64> = vec![0; genome.links.len()];
     let mut backward_link_index: Vec<i64> = vec![0; genome.links.len()];
     for (i, link) in genome.links.iter().enumerate() {
-        if link.enabled {
-            forward_link_index[forward_insert_index[link.from as usize] as usize] = i as i64;
-            backward_link_index[backward_insert_index[link.to as usize] as usize] = i as i64;
-            forward_insert_index[link.from as usize] += 1;
-            backward_insert_index[link.from as usize] += 1;
-        }
+        forward_link_index[forward_insert_index[link.from as usize] as usize] = i as i64;
+        backward_link_index[backward_insert_index[link.to as usize] as usize] = i as i64;
+        forward_insert_index[link.from as usize] += 1;
+        backward_insert_index[link.from as usize] += 1;
     }
 
     return LinkLookup {
@@ -118,7 +151,7 @@ pub fn create_link_lookup(genome: &genome::Genome) -> LinkLookup {
 }
 
 /// Prune network of dangeling nodes
-pub fn prune_network(genome: &genome::Genome, link_lookup: &mut LinkLookup) {
+pub fn prune_network(genome: &DenseGenome, link_lookup: &mut LinkLookup) {
     let mut forward_prune_nodes: Vec<i64> =
         ((genome.inputs + genome.outputs)..genome.nodes).collect();
     let mut backward_prune_nodes = forward_prune_nodes.clone();
@@ -199,7 +232,7 @@ pub fn prune_network(genome: &genome::Genome, link_lookup: &mut LinkLookup) {
     }
 }
 
-fn sort_topological(genome: &genome::Genome, link_lookup: &mut LinkLookup) -> Vec<i64> {
+fn sort_topological(genome: &DenseGenome, link_lookup: &mut LinkLookup) -> Vec<i64> {
     let mut order = Vec::<i64>::new();
     let mut stack: Vec<i64> = (0..genome.inputs).collect();
 
