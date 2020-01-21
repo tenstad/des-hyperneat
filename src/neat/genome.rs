@@ -38,88 +38,61 @@ impl Genome {
         }
     }
 
-    pub fn crossover(&self, other: Genome) -> Genome {
+    pub fn crossover(&self, other: &Genome) -> Genome {
         let mut nodes: Vec<i64> = Vec::new();
-        let mut links: Vec<Link> = Vec::new();
+        let mut i = 0;
+        let mut j = 0;
+        let l1 = self.nodes.len();
+        let l2 = other.nodes.len();
 
-        let mut i1 = 0;
-        let mut i2 = 0;
-
-        loop {
-            if i1 == self.nodes.len() && i2 == other.nodes.len() {
-                break;
-            } else if i1 == self.nodes.len() {
-                if nodes.len() == 0 || nodes[nodes.len() - 1] != other.nodes[i2] {
-                    nodes.push(other.nodes[i2]);
-                }
-                i2 += 1;
-            } else if i2 == other.nodes.len() {
-                if nodes.len() == 0 || nodes[nodes.len() - 1] != self.nodes[i1] {
-                    nodes.push(self.nodes[i1]);
-                }
-                i1 += 1;
+        // Select the smallest nodes and pick one when the are equal, to avoid duplicates
+        while i < l1 && j < l2 {
+            if self.nodes[i] == other.nodes[j] {
+                nodes.push(self.nodes[i]);
+                i += 1;
+                j += 1;
+            } else if self.nodes[i] < other.nodes[j] {
+                nodes.push(self.nodes[i]);
+                i += 1;
             } else {
-                if self.nodes[i1] < other.nodes[i2] {
-                    if nodes.len() == 0 || nodes[nodes.len() - 1] != self.nodes[i1] {
-                        nodes.push(self.nodes[i1]);
-                    }
-                    i1 += 1;
-                } else {
-                    if nodes.len() == 0 || nodes[nodes.len() - 1] != other.nodes[i2] {
-                        nodes.push(other.nodes[i2]);
-                    }
-                    i2 += 1;
-                }
+                nodes.push(other.nodes[j]);
+                j += 1;
             }
         }
 
-        let mut i1 = 0;
-        let mut i2 = 0;
+        // Add remaining elements from the other list when the first reached the end
+        nodes.extend(self.nodes.iter().skip(i));
+        nodes.extend(other.nodes.iter().skip(j));
+
+        let mut links: Vec<Link> = Vec::new();
+        let mut i = 0;
+        let mut j = 0;
+        let l1 = self.links.len();
+        let l2 = other.links.len();
         let mut rng = rand::thread_rng();
 
-        loop {
-            if i1 == self.links.len() && i2 == other.links.len() {
-                break;
-            } else if i1 == self.links.len() {
-                if links.len() == 0
-                    || links[links.len() - 1].innovation != other.links[i2].innovation
-                {
-                    links.push(other.links[i2]);
-                }
-                i2 += 1;
-            } else if i2 == other.links.len() {
-                if links.len() == 0
-                    || links[links.len() - 1].innovation != self.links[i1].innovation
-                {
-                    links.push(self.links[i1]);
-                }
-                i1 += 1;
-            } else {
-                if self.links[i1].innovation == other.links[i2].innovation {
-                    if rng.gen_range(0, 2) == 0 {
-                        links.push(self.links[i1]);
-                    } else {
-                        links.push(other.links[i2]);
-                    }
-                    i1 += 1;
-                    i2 += 1;
-                } else if self.links[i1].innovation < other.links[i2].innovation {
-                    if links.len() == 0
-                        || links[links.len() - 1].innovation != self.links[i1].innovation
-                    {
-                        links.push(self.links[i1]);
-                    }
-                    i1 += 1;
+        // Select the smallest nodes and pick one when the are equal, to avoid duplicates
+        while i < l1 && j < l2 {
+            if self.links[i].innovation == other.links[j].innovation {
+                if rng.gen_range(0, 2) == 0 {
+                    links.push(self.links[i]);
                 } else {
-                    if links.len() == 0
-                        || links[links.len() - 1].innovation != other.links[i2].innovation
-                    {
-                        links.push(other.links[i2]);
-                    }
-                    i2 += 1;
+                    links.push(other.links[j]);
                 }
+                i += 1;
+                j += 1;
+            } else if self.links[i].innovation < other.links[j].innovation {
+                links.push(self.links[i]);
+                i += 1;
+            } else {
+                links.push(other.links[j]);
+                j += 1;
             }
         }
+
+        // Add remaining elements from the other list when the first reached the end
+        links.extend(self.links.iter().skip(i));
+        links.extend(other.links.iter().skip(j));
 
         return Genome {
             inputs: self.inputs,
