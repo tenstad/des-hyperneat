@@ -127,35 +127,32 @@ impl Genome {
         // Check if this link has been split by another individual
         match log.node_additions.get(&self.links[link_index].innovation) {
             Some(addition) => {
+                let new_node = addition.node_number + self.inputs + self.outputs;
+
+                // Add links from/to new node
                 self.links.push(Link {
                     from: self.links[link_index].from,
-                    to: addition.node_number + self.inputs + self.outputs,
+                    to: new_node,
                     weight: 1.0,
                     enabled: true,
                     innovation: addition.innovation_number,
                 });
                 self.links.push(Link {
-                    from: addition.node_number + self.inputs + self.outputs,
+                    from: new_node,
                     to: self.links[link_index].to,
                     weight: self.links[link_index].weight,
                     enabled: true,
                     innovation: addition.innovation_number + 1,
                 });
-                let mut pushed = false;
-                for (i, node) in self.nodes.iter().enumerate() {
-                    if addition.node_number + self.inputs + self.outputs < *node {
-                        self.nodes
-                            .insert(i, addition.node_number + self.inputs + self.outputs);
-                        pushed = true;
-                        break;
-                    }
-                }
-                if !pushed {
-                    self.nodes
-                        .push(addition.node_number + self.inputs + self.outputs);
+
+                // Insert new node into node list
+                match self.nodes.binary_search(&new_node) {
+                    Ok(_) => {}
+                    Err(pos) => self.nodes.insert(pos, new_node),
                 }
             }
             None => {
+                // Add this mutation to log
                 log.node_additions.insert(
                     self.links[link_index].innovation,
                     InnovationTime {
@@ -163,22 +160,29 @@ impl Genome {
                         innovation_number: global_innovation.innovation_number,
                     },
                 );
+
+                let new_node = global_innovation.node_number + self.inputs + self.outputs;
+
+                // Add links from/to new node
                 self.links.push(Link {
                     from: self.links[link_index].from,
-                    to: global_innovation.node_number + self.inputs + self.outputs,
+                    to: new_node,
                     weight: 1.0,
                     enabled: true,
                     innovation: global_innovation.innovation_number,
                 });
                 self.links.push(Link {
-                    from: global_innovation.node_number + self.inputs + self.outputs,
+                    from: new_node,
                     to: self.links[link_index].to,
                     weight: self.links[link_index].weight,
                     enabled: true,
                     innovation: global_innovation.innovation_number + 1,
                 });
-                self.nodes
-                    .push(global_innovation.node_number + self.inputs + self.outputs);
+
+                // Push new node into node list
+                self.nodes.push(new_node);
+
+                // Increase global node count and innovation number
                 global_innovation.node_number += 1;
                 global_innovation.innovation_number += 2;
             }
