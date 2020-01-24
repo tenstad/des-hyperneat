@@ -1,28 +1,28 @@
+mod dot;
 mod genome;
-mod network;
+mod nodes;
 
+use dot::genome_to_dot;
 use genome::Genome;
-use network::Network;
-
 use std::collections::HashMap;
 
 pub struct InnovationLog {
-    pub node_additions: HashMap<i64, InnovationTime>,
-    pub edge_additions: HashMap<(i64, i64), i64>,
+    pub node_additions: HashMap<u64, InnovationTime>,
+    pub edge_additions: HashMap<(nodes::NodeRef, nodes::NodeRef), u64>,
 }
 
 impl InnovationLog {
     pub fn new() -> InnovationLog {
         InnovationLog {
-            node_additions: HashMap::<i64, InnovationTime>::new(),
-            edge_additions: HashMap::<(i64, i64), i64>::new(),
+            node_additions: HashMap::<u64, InnovationTime>::new(),
+            edge_additions: HashMap::<(nodes::NodeRef, nodes::NodeRef), u64>::new(),
         }
     }
 }
 
 pub struct InnovationTime {
-    node_number: i64,
-    innovation_number: i64,
+    node_number: u64,
+    innovation_number: u64,
 }
 
 impl InnovationTime {
@@ -45,12 +45,12 @@ pub fn neat() {
         g2.mutate(&mut innovation_log, &mut global_innovation);
     }
 
-    for link in g.links.iter() {
-        println!("{} {}", link.from, link.to);
-    }
-    println!("{:?}", g.nodes);
+    let g3 = g.crossover(&g2, true);
 
-    let n = Network::build(&g);
-    let o = n.evaluate(vec![1.0, 2.0, 3.0, 4.0]);
+    genome_to_dot(String::from("g.dot"), &g);
+    genome_to_dot(String::from("g2.dot"), &g2);
+    genome_to_dot(String::from("g3.dot"), &g3);
+
+    let o = g3.evaluate(vec![1.0, 2.0, 3.0, 4.0]);
     println!("{:?}", o);
 }
