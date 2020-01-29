@@ -1,6 +1,7 @@
 use crate::neat::individual::Individual;
-use crate::neat::species::Species;
 use crate::neat::nodes;
+use crate::neat::species::Species;
+use std::cmp;
 use std::collections::HashMap;
 
 pub struct Population {
@@ -69,5 +70,20 @@ impl Population {
             species.add(individual);
             self.species.push(species);
         }
+    }
+
+    pub fn evolve(&mut self) {}
+
+    pub fn best(&self) -> Option<&Individual> {
+        self.species
+            .iter()
+            .map(|species| species.best())
+            .max_by(|a, b| match (a, b) {
+                (Some(a), Some(b)) => a.cmp(b),
+                (Some(_), None) => cmp::Ordering::Greater,
+                (None, Some(_)) => cmp::Ordering::Less,
+                (None, None) => cmp::Ordering::Equal,
+            })
+            .unwrap_or(None)
     }
 }

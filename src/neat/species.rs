@@ -18,4 +18,8 @@ impl Species {
     pub fn add(&mut self, individual: Individual) {
         self.individuals.push(individual);
     }
+
+    pub fn best(&self) -> Option<&Individual> {
+        self.individuals.iter().max_by(|a, b| a.cmp(&b))
+    }
 }

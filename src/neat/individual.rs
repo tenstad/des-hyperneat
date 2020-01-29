@@ -1,9 +1,10 @@
 use crate::neat::genome::Genome;
+use std::cmp;
 
 pub struct Individual {
-    genome: Genome,
-    fitness: f64,
-    generation: u64,
+    pub genome: Genome,
+    pub fitness: f64,
+    pub generation: u64,
 }
 
 impl Individual {
@@ -17,5 +18,9 @@ impl Individual {
 
     pub fn distance(&self, other: &Self) -> f64 {
         self.genome.distance(&other.genome)
+    }
+
+    pub fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.fitness.partial_cmp(&other.fitness).unwrap()
     }
 }
