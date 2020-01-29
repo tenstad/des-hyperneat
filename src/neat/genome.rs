@@ -1,6 +1,6 @@
 use crate::neat::nodes::*;
-use crate::neat::InnovationLog;
-use crate::neat::InnovationTime;
+use crate::neat::population::InnovationLog;
+use crate::neat::population::InnovationTime;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use std::collections::HashMap;
@@ -39,6 +39,10 @@ impl Link {
             innovation: self.innovation,
         }
     }
+
+    fn distance(&self, other: &Link) -> f64 {
+        (self.weight - other.weight).tanh().abs()
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -58,7 +62,7 @@ impl fmt::Display for Action {
 
 impl Genome {
     /// Generate genome with default activation and no connections
-    pub fn generate(inputs: u64, outputs: u64) -> Genome {
+    pub fn new(inputs: u64, outputs: u64) -> Genome {
         let mut actions: Vec<Action> = (0..inputs)
             .map(|i| Action::Activation(NodeRef::Input(i)))
             .collect();
@@ -373,6 +377,29 @@ impl Genome {
                 break;
             }
         }
+    }
+
+    // Genetic distance between two genomes
+    pub fn distance(&self, other: &Self) -> f64 {
+        let mut link_differences: u64 = 0;
+        let mut link_distance: f64 = 0.0;
+        let mut link_count: usize = self.links.len();
+
+        for link_ref in other.links.keys() {
+            if !self.links.contains_key(link_ref) {
+                link_count += 1;
+            }
+        }
+
+        for (link_ref, link) in self.links.iter() {
+            if let Some(link2) = other.links.get(link_ref) {
+                link_distance += link.distance(link2);
+            } else {
+                link_differences += 1;
+            }
+        }
+
+        return ((link_differences as f64) + link_distance) / (link_count as f64);
     }
 
     /// DFS search to check for cycles.
