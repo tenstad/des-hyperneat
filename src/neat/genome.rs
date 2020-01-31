@@ -381,19 +381,20 @@ impl Genome {
 
     // Genetic distance between two genomes
     pub fn distance(&self, other: &Self) -> f64 {
-        let mut link_differences: u64 = 0;
-        let mut link_distance: f64 = 0.0;
-        let mut link_count: usize = self.links.len();
+        let mut link_differences: u64 = 0; // Number of links present in only one of the genomes
+        let mut link_distance: f64 = 0.0; // Total distance between links present in both genomes
+        let mut link_count = self.links.len() as u64; // Number of unique links between the two genomes
 
         for link_ref in other.links.keys() {
             if !self.links.contains_key(link_ref) {
-                link_count += 1;
+                link_differences += 1;
             }
         }
+        link_count += link_differences; // Count is number of links in A + links in B that are not in A
 
         for (link_ref, link) in self.links.iter() {
             if let Some(link2) = other.links.get(link_ref) {
-                link_distance += link.distance(link2);
+                link_distance += link.distance(link2); // Distance normalized between 0 and 1
             } else {
                 link_differences += 1;
             }
