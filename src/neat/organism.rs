@@ -1,15 +1,15 @@
 use crate::neat::genome::Genome;
 use std::cmp;
 
-pub struct Individual {
+pub struct Organism {
     pub genome: Genome,
     pub fitness: f64,
     pub generation: u64,
 }
 
-impl Individual {
-    pub fn new(generation: u64, inputs: u64, outputs: u64) -> Individual {
-        Individual {
+impl Organism {
+    pub fn new(generation: u64, inputs: u64, outputs: u64) -> Organism {
+        Organism {
             genome: Genome::new(inputs, outputs),
             fitness: 0.0,
             generation: generation,

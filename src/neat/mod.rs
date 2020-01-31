@@ -1,6 +1,6 @@
 mod dot;
 mod genome;
-mod individual;
+mod organism;
 mod nodes;
 mod population;
 mod species;

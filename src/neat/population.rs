@@ -1,4 +1,4 @@
-use crate::neat::individual::Individual;
+use crate::neat::organism::Organism;
 use crate::neat::nodes;
 use crate::neat::species::Species;
 use std::cmp;
@@ -49,13 +49,13 @@ impl Population {
         };
 
         for _ in 0..size {
-            population.add(Individual::new(0, inputs, outputs));
+            population.add(Organism::new(0, inputs, outputs));
         }
 
         return population;
     }
 
-    pub fn add(&mut self, individual: Individual) {
+    pub fn add(&mut self, individual: Organism) {
         let mut added = false;
 
         for species in self.species.iter_mut() {
@@ -74,7 +74,7 @@ impl Population {
 
     pub fn evolve(&mut self) {}
 
-    pub fn best(&self) -> Option<&Individual> {
+    pub fn best(&self) -> Option<&Organism> {
         self.species
             .iter()
             .map(|species| species.best())
