@@ -1,3 +1,4 @@
+use crate::neat::environment::Environment;
 use crate::neat::genome::Genome;
 use std::cmp;
 
@@ -26,16 +27,8 @@ impl Organism {
         self.fitness.partial_cmp(&other.fitness).unwrap()
     }
 
-    pub fn evaluate(&mut self, inputs: &Vec<f64>, targets: &Vec<f64>, sharing: u64) {
-        let outputs = self.genome.evaluate(inputs);
-
-        self.fitness = targets
-            .iter()
-            .enumerate()
-            .map(|(i, target)| f64::powf(outputs.get(&(i as u64)).unwrap_or(&0.0) - target, 2.0))
-            .sum::<f64>()
-            / targets.len() as f64;
-        
+    pub fn evaluate(&mut self, environment: &dyn Environment, sharing: u64) {
+        self.fitness = environment.evaluate(&self.genome);
         self.shared_fitness = self.fitness / sharing as f64;
     }
 }

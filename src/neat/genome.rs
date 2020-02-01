@@ -10,7 +10,7 @@ use std::fmt;
 pub struct Genome {
     pub inputs: HashMap<NodeRef, InputNode>,
     pub outputs: HashMap<NodeRef, OutputNode>,
-    hidden_nodes: HashMap<NodeRef, HiddenNode>,
+    pub hidden_nodes: HashMap<NodeRef, HiddenNode>,
     pub links: HashMap<(NodeRef, NodeRef), Link>, // Links between nodes
 
     actions: Vec<Action>, // Actions to perform when evaluating
@@ -400,7 +400,11 @@ impl Genome {
             }
         }
 
-        return ((link_differences as f64) + link_distance) / (link_count as f64);
+        return if link_count == 0 {
+            0.0
+        } else {
+            ((link_differences as f64) + link_distance) / (link_count as f64)
+        };
     }
 
     /// DFS search to check for cycles.
@@ -463,6 +467,13 @@ impl Genome {
             .keys()
             .map(|node_ref| (node_ref.get_id(), *values.get(node_ref).unwrap_or(&0.0)))
             .collect();
+    }
+
+    pub fn evaluate_n(&self, inputs: &Vec<f64>, target_len: u64) -> Vec<f64> {
+        let output = self.evaluate(inputs);
+        (0..target_len)
+            .map(|i| *output.get(&(i as u64)).unwrap_or(&0.0))
+            .collect()
     }
 
     fn get_activation(&self, node_ref: &NodeRef) -> Option<Activation> {
