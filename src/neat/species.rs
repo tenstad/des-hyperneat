@@ -1,25 +1,30 @@
 use crate::neat::organism::Organism;
+use crate::conf;
 
 pub struct Species {
-    individuals: Vec<Organism>,
+    pub organisms: Vec<Organism>,
 }
 
 impl Species {
     pub fn new() -> Species {
         Species {
-            individuals: Vec::new(),
+            organisms: Vec::new(),
         }
     }
 
-    pub fn individual_compatible(&mut self, individual: &Organism, threshold: f64) -> bool {
-        self.individuals.len() == 0 || self.individuals[0].distance(individual) < threshold
+    pub fn individual_compatible(&mut self, organism: &Organism) -> bool {
+        if let Some(first_organism) = self.organisms.get(0) {
+            first_organism.distance(organism) < conf::NEAT.speciation_threshold
+        } else {
+            true
+        }
     }
 
     pub fn add(&mut self, individual: Organism) {
-        self.individuals.push(individual);
+        self.organisms.push(individual);
     }
 
     pub fn best(&self) -> Option<&Organism> {
-        self.individuals.iter().max_by(|a, b| a.cmp(&b))
+        self.organisms.iter().max_by(|a, b| a.cmp(&b))
     }
 }

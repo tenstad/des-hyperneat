@@ -1,12 +1,12 @@
-use crate::neat::organism::Organism;
+use crate::conf;
 use crate::neat::nodes;
+use crate::neat::organism::Organism;
 use crate::neat::species::Species;
 use std::cmp;
 use std::collections::HashMap;
 
 pub struct Population {
     species: Vec<Species>,
-    speciation_threshold: f64,
     innovation_log: InnovationLog,
     global_innovation: InnovationTime,
 }
@@ -40,15 +40,14 @@ impl InnovationTime {
 }
 
 impl Population {
-    pub fn new(size: usize, speciation_threshold: f64, inputs: u64, outputs: u64) -> Population {
+    pub fn new(inputs: u64, outputs: u64) -> Population {
         let mut population = Population {
             species: Vec::new(),
-            speciation_threshold,
             innovation_log: InnovationLog::new(),
             global_innovation: InnovationTime::new(),
         };
 
-        for _ in 0..size {
+        for _ in 0..conf::NEAT.population_size {
             population.add(Organism::new(0, inputs, outputs));
         }
 
@@ -59,7 +58,7 @@ impl Population {
         let mut added = false;
 
         for species in self.species.iter_mut() {
-            if species.individual_compatible(&individual, self.speciation_threshold) {
+            if species.individual_compatible(&individual) {
                 added = true;
                 break;
             }
@@ -74,16 +73,37 @@ impl Population {
 
     pub fn evolve(&mut self) {}
 
-    pub fn best(&self) -> Option<&Organism> {
+    pub fn evaluate(&mut self, inputs: Vec<f64>, targets: Vec<f64>) {
+        let sharing: Vec<u64> = self
+            .iter()
+            .map(|o1| {
+                self.iter()
+                    .filter(|o2| o1.distance(o2) < conf::NEAT.sharing_threshold)
+                    .count() as u64
+                    - 1
+            })
+            .collect();
+
+        for (organism, sharing) in self.iter_mut().zip(sharing) {
+            organism.evaluate(&inputs, &targets, sharing);
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Organism> {
         self.species
             .iter()
-            .map(|species| species.best())
-            .max_by(|a, b| match (a, b) {
-                (Some(a), Some(b)) => a.cmp(b),
-                (Some(_), None) => cmp::Ordering::Greater,
-                (None, Some(_)) => cmp::Ordering::Less,
-                (None, None) => cmp::Ordering::Equal,
-            })
-            .unwrap_or(None)
+            .map(|species| species.organisms.iter())
+            .flatten()
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
+        self.species
+            .iter_mut()
+            .map(|species| species.organisms.iter_mut())
+            .flatten()
+    }
+
+    pub fn best(&self) -> Option<&Organism> {
+        self.iter().max_by(|a, b| a.cmp(&b))
     }
 }

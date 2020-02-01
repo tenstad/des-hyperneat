@@ -424,7 +424,7 @@ impl Genome {
     }
 
     /// Evaluate network, takes input node values, returns output node values
-    pub fn evaluate(&self, inputs: Vec<f64>) -> HashMap<u64, f64> {
+    pub fn evaluate(&self, inputs: &Vec<f64>) -> HashMap<u64, f64> {
         // Init value storage with input values
         let mut values: HashMap<NodeRef, f64> = inputs
             .iter()
