@@ -9,13 +9,13 @@ pub fn genome_to_dot(fname: String, genome: &genome::Genome) -> std::io::Result<
     for link in genome.links.values() {
         let s = if link.enabled {
             format!(
-                "    {} -> {} [ label = \"{}\" ];\n",
+                "    {} -> {} [ label = \"{:.2}\" ];\n",
                 link.from, link.to, link.weight
             )
         } else {
             //format!("")
             format!(
-                "    {} -> {} [ label = \"{}\" style=dotted ];\n",
+                "    {} -> {} [ label = \"{:.2}\" style=dotted ];\n",
                 link.from, link.to, link.weight
             )
         };
@@ -23,12 +23,17 @@ pub fn genome_to_dot(fname: String, genome: &genome::Genome) -> std::io::Result<
     }
 
     for node in genome.inputs.values() {
-        let s = format!("    i{} [shape=box, style=filled, color=\".0 .0 .7\"]\n", node.id);
+        let s = format!("    i{} [ label = \"i{}\", shape=box, style=filled, color=\".0 .0 .7\"]\n", node.id, node.id);
+        file.write_all(s.as_bytes())?;
+    }
+
+    for node in genome.hidden_nodes.values() {
+        let s = format!("    h{} [ label = \"h{} {:.2} {}\"]\n", node.id, node.id, node.bias, node.activation);
         file.write_all(s.as_bytes())?;
     }
 
     for node in genome.outputs.values() {
-        let s = format!("    o{} [shape=box, style=filled, color=\".0 .0 .85\"]\n", node.id);
+        let s = format!("    o{} [ label = \"o{} {:.2} {}\", shape=box, style=filled, color=\".0 .0 .85\"]\n", node.id, node.id, node.bias, node.activation);
         file.write_all(s.as_bytes())?;
     }
 

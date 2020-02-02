@@ -280,7 +280,6 @@ impl Genome {
         if rng.gen::<f64>() < conf::NEAT.mutate_hidden_bias_probability {
             self.mutate_hidden_bias();
         }
-        
         if rng.gen::<f64>() < conf::NEAT.mutate_output_bias_probability {
             self.mutate_output_bias();
         }
@@ -292,7 +291,7 @@ impl Genome {
         if !self.links.is_empty() {
             let link_index = rng.gen_range(0, self.links.len());
             if let Some(link) = self.links.values_mut().skip(link_index).next() {
-                link.weight += rng.gen::<f64>() - 0.5;
+                link.weight += (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.mutate_link_weight_size;
             }
         }
     }
@@ -303,7 +302,7 @@ impl Genome {
         if !self.hidden_nodes.is_empty() {
             let link_index = rng.gen_range(0, self.hidden_nodes.len());
             if let Some(node) = self.hidden_nodes.values_mut().skip(link_index).next() {
-                node.bias += rng.gen::<f64>() - 0.5;
+                node.bias += (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.mutate_hidden_bias_size;
             }
         }
     }
@@ -314,7 +313,7 @@ impl Genome {
         if !self.outputs.is_empty() {
             let link_index = rng.gen_range(0, self.outputs.len());
             if let Some(node) = self.outputs.values_mut().skip(link_index).next() {
-                node.bias += rng.gen::<f64>() - 0.5;
+                node.bias += (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.mutate_output_bias_size;
             }
         }
     }

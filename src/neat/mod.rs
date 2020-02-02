@@ -20,10 +20,16 @@ pub fn neat(environment: &dyn Environment) {
         let individual = population.best().unwrap();
         println!("Best fitness: {}", individual.fitness);
 
-        if environment.evaluate_binary(&individual.genome) == 0.0 {
+        let acc = environment.evaluate_accuracy(&individual.genome);
+
+        println!("Acc: {}", acc);
+
+        if acc == 1.0 {
             println!("Success!");
             break;
         }
+
+        dot::genome_to_dot(String::from("g.dot"), &individual.genome).ok();
     }
 
     let individual = population.best().unwrap();

@@ -42,7 +42,7 @@ impl OutputNode {
         OutputNode {
             id: id,
             bias: 0.0,
-            activation: Activation::ReLU,
+            activation: Activation::Sigmoid,
         }
     }
 }
@@ -158,7 +158,7 @@ impl NodeRef {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Activation {
     None,
     ReLU,
@@ -177,6 +177,16 @@ impl Activation {
                 }
             }
             Activation::Sigmoid => 1.0 / (1.0 + (-x).exp()),
+        }
+    }
+}
+
+impl fmt::Display for Activation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Activation::None => write!(f, "None"),
+            Activation::ReLU => write!(f, "ReLU"),
+            Activation::Sigmoid => write!(f, "Sigmoid"),
         }
     }
 }

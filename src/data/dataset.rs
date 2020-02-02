@@ -62,6 +62,7 @@ impl Dataset {
             targets: outputs,
         })
     }
+
     pub fn mse(&self, outputs: &Vec<Vec<f64>>) -> f64 {
         self.targets
             .iter()
@@ -70,4 +71,27 @@ impl Dataset {
             .sum::<f64>()
             / self.targets.len() as f64
     }
+
+    pub fn acc(&self, outputs: &Vec<Vec<f64>>) -> f64 {
+        self.targets
+            .iter()
+            .zip(outputs.iter())
+            .map(|(t, o)| if argmax(t) == argmax(o) { 1.0 } else { 0.0 })
+            .sum::<f64>()
+            / self.targets.len() as f64
+    }
+}
+
+pub fn argmax(vec: &Vec<f64>) -> usize {
+    let mut max_i: usize = 0;
+    let mut max_v: f64 = -100000.0;
+
+    for (i, &v) in vec.iter().enumerate() {
+        if v > max_v {
+            max_i = i;
+            max_v = v;
+        }
+    }
+
+    return max_i;
 }

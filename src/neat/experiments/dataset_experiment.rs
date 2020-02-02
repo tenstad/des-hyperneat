@@ -39,7 +39,7 @@ impl Environment for DatasetExperiment {
         self.dataset.mse(&outputs)
     }
 
-    fn evaluate_binary(&self, genome: &Genome) -> f64 {
+    fn evaluate_accuracy(&self, genome: &Genome) -> f64 {
         let outputs: Vec<Vec<f64>> = self
             .dataset
             .inputs
@@ -47,15 +47,6 @@ impl Environment for DatasetExperiment {
             .map(|input| genome.evaluate_n(input, self.dataset.dimensions.outputs))
             .collect();
 
-        let outputs: Vec<Vec<f64>> = outputs
-            .iter()
-            .map(|vec| {
-                vec.iter()
-                    .map(|v| if *v > 0.5 { 1.0 } else { 0.0 })
-                    .collect()
-            })
-            .collect();
-
-        self.dataset.mse(&outputs)
+        self.dataset.acc(&outputs)
     }
 }
