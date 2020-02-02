@@ -1,27 +1,56 @@
-use std::fmt;
 use rand::Rng;
+use std::fmt;
 
 #[derive(Copy, Clone)]
 pub struct InputNode {
     pub id: u64, // ID of node. Global for all input nodes
 }
 
+impl InputNode {
+    pub fn new(id: u64) -> InputNode {
+        InputNode { id: id }
+    }
+}
+
 /// Hidden node
 #[derive(Copy, Clone)]
 pub struct HiddenNode {
-    pub id: u64,                // ID of node. Global for all hidden nodes
+    pub id: u64, // ID of node. Global for all hidden nodes
+    pub bias: f64,
     pub activation: Activation, // Activation function of node
+}
+
+impl HiddenNode {
+    pub fn new(id: u64) -> HiddenNode {
+        HiddenNode {
+            id: id,
+            bias: 0.0,
+            activation: Activation::ReLU,
+        }
+    }
 }
 
 #[derive(Copy, Clone)]
 pub struct OutputNode {
-    pub id: u64,                // ID of node. Global for all output nodes
+    pub id: u64, // ID of node. Global for all output nodes
+    pub bias: f64,
     pub activation: Activation, // Activation function of node
+}
+
+impl OutputNode {
+    pub fn new(id: u64) -> OutputNode {
+        OutputNode {
+            id: id,
+            bias: 0.0,
+            activation: Activation::ReLU,
+        }
+    }
 }
 
 pub trait Node {
     fn get_ref(&self) -> NodeRef;
     fn get_activation(&self) -> Option<Activation>;
+    fn get_bias(&self) -> Option<f64>;
     fn crossover(&self, other: &Self) -> Self;
 }
 
@@ -34,12 +63,14 @@ impl Node for InputNode {
         None
     }
 
+    fn get_bias(&self) -> Option<f64> {
+        None
+    }
+
     fn crossover(&self, other: &Self) -> Self {
         assert_eq!(self.id, other.id);
 
-        InputNode {
-            id: self.id,
-        }
+        InputNode { id: self.id }
     }
 }
 
@@ -52,13 +83,21 @@ impl Node for HiddenNode {
         Some(self.activation)
     }
 
-    
+    fn get_bias(&self) -> Option<f64> {
+        Some(self.bias)
+    }
+
     fn crossover(&self, other: &Self) -> Self {
         assert_eq!(self.id, other.id);
 
         HiddenNode {
             id: self.id,
-            activation: if rand::thread_rng().gen::<bool>() {self.activation} else {other.activation},
+            bias: (self.bias + other.bias) / 2.0,
+            activation: if rand::thread_rng().gen::<bool>() {
+                self.activation
+            } else {
+                other.activation
+            },
         }
     }
 }
@@ -71,22 +110,28 @@ impl Node for OutputNode {
     fn get_activation(&self) -> Option<Activation> {
         Some(self.activation)
     }
-    
+
+    fn get_bias(&self) -> Option<f64> {
+        Some(self.bias)
+    }
+
     fn crossover(&self, other: &Self) -> Self {
         assert_eq!(self.id, other.id);
-        
         OutputNode {
             id: self.id,
-            activation: if rand::thread_rng().gen::<bool>() {self.activation} else {other.activation},
+            bias: (self.bias + other.bias) / 2.0,
+            activation: if rand::thread_rng().gen::<bool>() {
+                self.activation
+            } else {
+                other.activation
+            },
         }
     }
 }
 
-
-
 /// NodeRef refers to node type (Input, Hidden, Output) and ID
 /// The ID is separate for the three types, to allow for increase of both input and output nodes
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum NodeRef {
     Input(u64),
     Hidden(u64),

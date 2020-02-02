@@ -13,11 +13,11 @@ pub fn genome_to_dot(fname: String, genome: &genome::Genome) -> std::io::Result<
                 link.from, link.to, link.weight
             )
         } else {
-            format!("")
-            /*format!(
+            //format!("")
+            format!(
                 "    {} -> {} [ label = \"{}\" style=dotted ];\n",
                 link.from, link.to, link.weight
-            )*/
+            )
         };
         file.write_all(s.as_bytes())?;
     }

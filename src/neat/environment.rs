@@ -4,5 +4,6 @@ use crate::data::dataset::Dimensions;
 pub trait Environment {
     fn get_name(&self) -> &String;
     fn evaluate(&self, genome: &Genome) -> f64;
+    fn evaluate_binary(&self, genome: &Genome) -> f64;
     fn get_dimensions(&self) -> &Dimensions;
 }

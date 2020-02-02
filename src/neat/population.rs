@@ -4,40 +4,13 @@ use crate::neat::environment::Environment;
 use crate::neat::nodes;
 use crate::neat::organism::Organism;
 use crate::neat::species::Species;
+use rand::Rng;
 use std::collections::HashMap;
 
 pub struct Population {
     species: Vec<Species>,
     innovation_log: InnovationLog,
     global_innovation: InnovationTime,
-}
-
-pub struct InnovationLog {
-    pub node_additions: HashMap<u64, InnovationTime>,
-    pub edge_additions: HashMap<(nodes::NodeRef, nodes::NodeRef), u64>,
-}
-
-impl InnovationLog {
-    pub fn new() -> InnovationLog {
-        InnovationLog {
-            node_additions: HashMap::<u64, InnovationTime>::new(),
-            edge_additions: HashMap::<(nodes::NodeRef, nodes::NodeRef), u64>::new(),
-        }
-    }
-}
-
-pub struct InnovationTime {
-    pub node_number: u64,
-    pub innovation_number: u64,
-}
-
-impl InnovationTime {
-    pub fn new() -> InnovationTime {
-        InnovationTime {
-            node_number: 0,
-            innovation_number: 0,
-        }
-    }
 }
 
 impl Population {
@@ -75,9 +48,48 @@ impl Population {
         None
     }
 
-    // TODO
     pub fn evolve(&mut self, environment: &dyn Environment) {
+        let mut new_population = Population {
+            species: Vec::new(),
+            innovation_log: InnovationLog::new(),
+            global_innovation: InnovationTime::new(),
+        };
+
+        for _ in 0..conf::NEAT.population_size {
+            if let (Some(a), Some(b)) = (self.best_of(2), self.best_of(2)) {
+                let mut child = a.crossover(b);
+                child.mutate(&mut self.innovation_log, &mut self.global_innovation);
+                new_population.push(child);
+            }
+        }
+
+        self.species = new_population.species;
+
         self.evaluate(environment);
+    }
+
+    pub fn random_organism(&self) -> Option<&Organism> {
+        let mut rng = rand::thread_rng();
+
+        self.iter()
+            .skip(rng.gen_range(0, conf::NEAT.population_size) as usize)
+            .next()
+    }
+
+    pub fn best_of(&self, k: u64) -> Option<&Organism> {
+        let mut best: Option<&Organism> = None;
+        let mut best_fitness = 1000000.0;
+
+        for _ in 0..k {
+            if let Some(organism) = self.random_organism() {
+                if organism.fitness < best_fitness {
+                    best = Some(organism);
+                    best_fitness = organism.fitness;
+                }
+            }
+        }
+
+        return best;
     }
 
     pub fn evaluate(&mut self, environment: &dyn Environment) {
@@ -110,6 +122,34 @@ impl Population {
     }
 
     pub fn best(&self) -> Option<&Organism> {
-        self.iter().max_by(|a, b| a.cmp(&b))
+        self.iter().min_by(|a, b| a.cmp(&b))
+    }
+}
+
+pub struct InnovationLog {
+    pub node_additions: HashMap<u64, InnovationTime>,
+    pub edge_additions: HashMap<(nodes::NodeRef, nodes::NodeRef), u64>,
+}
+
+impl InnovationLog {
+    pub fn new() -> InnovationLog {
+        InnovationLog {
+            node_additions: HashMap::<u64, InnovationTime>::new(),
+            edge_additions: HashMap::<(nodes::NodeRef, nodes::NodeRef), u64>::new(),
+        }
+    }
+}
+
+pub struct InnovationTime {
+    pub node_number: u64,
+    pub innovation_number: u64,
+}
+
+impl InnovationTime {
+    pub fn new() -> InnovationTime {
+        InnovationTime {
+            node_number: 0,
+            innovation_number: 0,
+        }
     }
 }

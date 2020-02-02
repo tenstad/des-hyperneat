@@ -16,6 +16,14 @@ pub fn neat(environment: &dyn Environment) {
 
     for _ in 0..conf::NEAT.iterations {
         population.evolve(environment);
+
+        let individual = population.best().unwrap();
+        println!("Best fitness: {}", individual.fitness);
+
+        if environment.evaluate_binary(&individual.genome) == 0.0 {
+            println!("Success!");
+            break;
+        }
     }
 
     let individual = population.best().unwrap();

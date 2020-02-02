@@ -1,3 +1,4 @@
+use crate::conf;
 use crate::neat::nodes::*;
 use crate::neat::population::InnovationLog;
 use crate::neat::population::InnovationTime;
@@ -18,7 +19,7 @@ pub struct Genome {
 }
 
 /// Link between two nodes
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Link {
     pub from: NodeRef,
     pub to: NodeRef,
@@ -29,13 +30,15 @@ pub struct Link {
 
 impl Link {
     fn crossover(&self, other: &Link) -> Link {
+        assert_eq!(self.from, other.from);
+        assert_eq!(self.to, other.to);
         assert_eq!(self.innovation, other.innovation);
 
         Link {
             from: self.from,
             to: self.to,
             weight: (self.weight + other.weight) / 2.0,
-            enabled: self.enabled && other.enabled,
+            enabled: self.enabled || other.enabled,
             innovation: self.innovation,
         }
     }
@@ -61,6 +64,17 @@ impl fmt::Display for Action {
 }
 
 impl Genome {
+    pub fn empty() -> Genome {
+        Genome {
+            inputs: HashMap::new(),
+            outputs: HashMap::new(),
+            hidden_nodes: HashMap::new(),
+            links: HashMap::new(),
+            actions: Vec::new(),
+            connections: HashMap::new(),
+        }
+    }
+
     /// Generate genome with default activation and no connections
     pub fn new(inputs: u64, outputs: u64) -> Genome {
         let mut actions: Vec<Action> = (0..inputs)
@@ -73,18 +87,10 @@ impl Genome {
 
         return Genome {
             inputs: (0..inputs)
-                .map(|i| (NodeRef::Input(i), InputNode { id: i }))
+                .map(|i| (NodeRef::Input(i), InputNode::new(i)))
                 .collect(),
             outputs: (0..outputs)
-                .map(|i| {
-                    (
-                        NodeRef::Output(i),
-                        OutputNode {
-                            id: i,
-                            activation: Activation::None,
-                        },
-                    )
-                })
+                .map(|i| (NodeRef::Output(i), OutputNode::new(i)))
                 .collect(),
             hidden_nodes: HashMap::new(), // No hidden nodes
             links: HashMap::new(),        // No links between nodes
@@ -100,11 +106,9 @@ impl Genome {
         }
 
         // Remove connection
-        if let Some(vec) = self.connections.get_mut(&link.from) {
-            if let Some(index) = vec.iter().position(|x| *x == link.to) {
-                vec.swap_remove(index);
-            }
-        }
+        let vec = self.connections.get_mut(&link.from).unwrap();
+        let index = vec.iter().position(|x| *x == link.to).unwrap();
+        vec.swap_remove(index);
 
         // Remove action
         if let Some(index) = self
@@ -117,13 +121,11 @@ impl Genome {
 
         let new_node_ref = NodeRef::Hidden(new_node_id);
 
-        self.hidden_nodes.insert(
-            new_node_ref,
-            HiddenNode {
-                id: new_node_id,
-                activation: Activation::None,
-            },
-        );
+        // Might already be inherited from parent
+        if !self.hidden_nodes.contains_key(&new_node_ref) {
+            self.hidden_nodes
+                .insert(new_node_ref, HiddenNode::new(new_node_id));
+        }
 
         let link1 = Link {
             from: link.from,
@@ -141,8 +143,13 @@ impl Genome {
             innovation: innovation_number + 1,
         };
 
-        self.insert_link(link1, false);
-        self.insert_link(link2, false);
+        // Might already be inherited from parent
+        if !self.links.contains_key(&(link1.from, link1.to)) {
+            self.insert_link(link1, false);
+        }
+        if !self.links.contains_key(&(link2.from, link2.to)) {
+            self.insert_link(link2, false);
+        }
 
         let mut skip = 0;
 
@@ -178,6 +185,7 @@ impl Genome {
         if link.enabled {
             // Add connection
             if let Some(vec) = self.connections.get_mut(&link.from) {
+                assert!(!vec.contains(&link.to));
                 vec.push(link.to);
             } else {
                 self.connections.insert(link.from, vec![link.to]);
@@ -210,21 +218,16 @@ impl Genome {
             (other, self)
         };
 
-        let mut genome = Genome {
-            inputs: HashMap::new(),
-            outputs: HashMap::new(),
-            hidden_nodes: HashMap::new(),
-            links: HashMap::new(),
-            actions: Vec::new(),
-            connections: HashMap::new(),
-        };
+        let mut genome = Genome::empty();
 
         // Copy links only in fitter parent, perform crossover if in both parents
         for (link_ref, link) in parent1.links.iter() {
-            if let Some(link2) = parent2.links.get(link_ref) {
-                genome.insert_link(link.crossover(link2), false);
-            } else {
-                genome.insert_link(*link, false);
+            if !genome.creates_cycle(link.from, link.to) {
+                if let Some(link2) = parent2.links.get(link_ref) {
+                    genome.insert_link(link.crossover(link2), false);
+                } else {
+                    genome.insert_link(*link, false);
+                }
             }
         }
 
@@ -262,12 +265,57 @@ impl Genome {
     pub fn mutate(&mut self, log: &mut InnovationLog, global_innovation: &mut InnovationTime) {
         let mut rng = rand::thread_rng();
 
-        if rng.gen::<f64>() < 0.2 {
+        if rng.gen::<f64>() < conf::NEAT.add_node_probability {
             self.mutation_add_node(log, global_innovation);
         }
 
-        if rng.gen::<f64>() < 0.2 {
+        if rng.gen::<f64>() < conf::NEAT.add_connection_probability {
             self.mutation_add_connection(log, global_innovation);
+        }
+
+        if rng.gen::<f64>() < conf::NEAT.mutate_link_weight_probability {
+            self.mutate_link_weight();
+        }
+
+        if rng.gen::<f64>() < conf::NEAT.mutate_hidden_bias_probability {
+            self.mutate_hidden_bias();
+        }
+        
+        if rng.gen::<f64>() < conf::NEAT.mutate_output_bias_probability {
+            self.mutate_output_bias();
+        }
+    }
+
+    fn mutate_link_weight(&mut self) {
+        let mut rng = rand::thread_rng();
+
+        if !self.links.is_empty() {
+            let link_index = rng.gen_range(0, self.links.len());
+            if let Some(link) = self.links.values_mut().skip(link_index).next() {
+                link.weight += rng.gen::<f64>() - 0.5;
+            }
+        }
+    }
+
+    fn mutate_hidden_bias(&mut self) {
+        let mut rng = rand::thread_rng();
+
+        if !self.hidden_nodes.is_empty() {
+            let link_index = rng.gen_range(0, self.hidden_nodes.len());
+            if let Some(node) = self.hidden_nodes.values_mut().skip(link_index).next() {
+                node.bias += rng.gen::<f64>() - 0.5;
+            }
+        }
+    }
+
+    fn mutate_output_bias(&mut self) {
+        let mut rng = rand::thread_rng();
+
+        if !self.outputs.is_empty() {
+            let link_index = rng.gen_range(0, self.outputs.len());
+            if let Some(node) = self.outputs.values_mut().skip(link_index).next() {
+                node.bias += rng.gen::<f64>() - 0.5;
+            }
         }
     }
 
@@ -282,7 +330,7 @@ impl Genome {
             .iter()
             .filter(|(_, link)| link.enabled)
             .map(|(i, _)| *i)
-            .collect::<Vec<_>>()
+            .collect::<Vec<(NodeRef, NodeRef)>>()
             .choose(&mut rand::thread_rng())
         {
             if let Some(&link) = self.links.get(index) {
@@ -365,7 +413,7 @@ impl Genome {
                         Link {
                             from,
                             to,
-                            weight: 1.0,
+                            weight: rng.gen::<f64>() - 0.5,
                             enabled: true,
                             innovation,
                         },
@@ -454,7 +502,10 @@ impl Genome {
                     if let Some(activation) = self.get_activation(node_ref) {
                         values.insert(
                             *node_ref,
-                            activation.activate(*values.get(node_ref).unwrap_or(&0.0)),
+                            activation.activate(
+                                *values.get(node_ref).unwrap_or(&0.0)
+                                    + self.get_bias(node_ref).unwrap_or(0.0),
+                            ),
                         );
                     }
                 }
@@ -484,6 +535,14 @@ impl Genome {
         }
     }
 
+    fn get_bias(&self, node_ref: &NodeRef) -> Option<f64> {
+        match node_ref {
+            NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref)?.get_bias(),
+            NodeRef::Output(_) => self.outputs.get(node_ref)?.get_bias(),
+            _ => None,
+        }
+    }
+
     /// Determine order of nodes and links to actiave in forward pass
     fn sort_actions_topologically(&mut self) {
         let mut actions: Vec<Action> = Vec::new();
@@ -502,6 +561,14 @@ impl Genome {
             }
         }
 
+        for hidden_node_ref in self.hidden_nodes.keys() {
+            if let Some(&count) = backward_count.get(hidden_node_ref) {
+                if count == 0 {
+                    stack.push(*hidden_node_ref);
+                }
+            }
+        }
+
         while let Some(node) = stack.pop() {
             actions.push(Action::Activation(node));
 
@@ -512,7 +579,7 @@ impl Genome {
                 _ => None,
             };
 
-            // Process all outgoin connections from the current node
+            // Process all outgoing connections from the current node
             if let Some(vec) = self.connections.get(&node) {
                 for to in vec.iter() {
                     actions.push(Action::Link(node, *to));

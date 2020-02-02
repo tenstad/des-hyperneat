@@ -1,5 +1,7 @@
 use crate::neat::environment::Environment;
 use crate::neat::genome::Genome;
+use crate::neat::population::InnovationLog;
+use crate::neat::population::InnovationTime;
 use std::cmp;
 
 pub struct Organism {
@@ -17,6 +19,21 @@ impl Organism {
             shared_fitness: 0.0,
             generation: generation,
         }
+    }
+
+    pub fn crossover(&self, other: &Self) -> Self {
+        Organism {
+            genome: self
+                .genome
+                .crossover(&other.genome, self.fitness < other.fitness),
+            fitness: 0.0,
+            shared_fitness: 0.0,
+            generation: self.generation + 1,
+        }
+    }
+
+    pub fn mutate(&mut self, log: &mut InnovationLog, global_innovation: &mut InnovationTime) {
+        self.genome.mutate(log, global_innovation);
     }
 
     pub fn distance(&self, other: &Self) -> f64 {
