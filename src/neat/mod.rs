@@ -1,5 +1,5 @@
 mod dot;
-mod environment;
+pub mod environment;
 pub mod experiments;
 mod genome;
 mod nodes;

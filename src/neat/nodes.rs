@@ -1,4 +1,5 @@
 use rand::Rng;
+use std::fmt::Display;
 use std::fmt;
 
 #[derive(Copy, Clone)]
@@ -12,7 +13,6 @@ impl InputNode {
     }
 }
 
-/// Hidden node
 #[derive(Copy, Clone)]
 pub struct HiddenNode {
     pub id: u64, // ID of node. Global for all hidden nodes
@@ -117,6 +117,7 @@ impl Node for OutputNode {
 
     fn crossover(&self, other: &Self) -> Self {
         assert_eq!(self.id, other.id);
+
         OutputNode {
             id: self.id,
             bias: (self.bias + other.bias) / 2.0,
@@ -130,7 +131,7 @@ impl Node for OutputNode {
 }
 
 /// NodeRef refers to node type (Input, Hidden, Output) and ID
-/// The ID is separate for the three types, to allow for increase of both input and output nodes
+/// The ID is separate for the three types, to allow for increase of both input and output nodes during evolution
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum NodeRef {
     Input(u64),
@@ -158,7 +159,7 @@ impl NodeRef {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Display)]
 pub enum Activation {
     None,
     ReLU,
@@ -177,16 +178,6 @@ impl Activation {
                 }
             }
             Activation::Sigmoid => 1.0 / (1.0 + (-x).exp()),
-        }
-    }
-}
-
-impl fmt::Display for Activation {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Activation::None => write!(f, "None"),
-            Activation::ReLU => write!(f, "ReLU"),
-            Activation::Sigmoid => write!(f, "Sigmoid"),
         }
     }
 }

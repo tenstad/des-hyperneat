@@ -32,14 +32,6 @@ impl Organism {
         }
     }
 
-    pub fn mutate(&mut self, log: &mut InnovationLog, global_innovation: &mut InnovationTime) {
-        self.genome.mutate(log, global_innovation);
-    }
-
-    pub fn distance(&self, other: &Self) -> f64 {
-        self.genome.distance(&other.genome)
-    }
-
     pub fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.fitness.partial_cmp(&other.fitness).unwrap()
     }
@@ -47,5 +39,13 @@ impl Organism {
     pub fn evaluate(&mut self, environment: &dyn Environment, sharing: u64) {
         self.fitness = environment.evaluate(&self.genome);
         self.shared_fitness = self.fitness / sharing as f64;
+    }
+
+    pub fn mutate(&mut self, log: &mut InnovationLog, global_innovation: &mut InnovationTime) {
+        self.genome.mutate(log, global_innovation);
+    }
+
+    pub fn distance(&self, other: &Self) -> f64 {
+        self.genome.distance(&other.genome)
     }
 }

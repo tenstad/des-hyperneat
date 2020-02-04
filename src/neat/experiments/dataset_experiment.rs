@@ -2,9 +2,9 @@ use crate::data::dataset::Dataset;
 use crate::data::dataset::Dimensions;
 use crate::neat::environment::Environment;
 use crate::neat::genome::Genome;
+use std::fmt;
 use std::io::Error;
 
-#[derive(Debug)]
 pub struct DatasetExperiment {
     name: String,
     dataset: Dataset,
@@ -48,5 +48,11 @@ impl Environment for DatasetExperiment {
             .collect();
 
         self.dataset.acc(&outputs)
+    }
+}
+
+impl fmt::Display for DatasetExperiment {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        return write!(f, "{}", self.name)
     }
 }
