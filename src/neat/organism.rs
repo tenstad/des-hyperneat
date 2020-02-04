@@ -25,7 +25,7 @@ impl Organism {
         Organism {
             genome: self
                 .genome
-                .crossover(&other.genome, self.fitness < other.fitness),
+                .crossover(&other.genome, self.fitness > other.fitness),
             fitness: 0.0,
             shared_fitness: 0.0,
             generation: self.generation + 1,

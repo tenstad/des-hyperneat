@@ -78,11 +78,11 @@ impl Population {
 
     pub fn best_of(&self, k: u64) -> Option<&Organism> {
         let mut best: Option<&Organism> = None;
-        let mut best_fitness = 1000000.0;
+        let mut best_fitness = -1.0;
 
         for _ in 0..k {
             if let Some(organism) = self.random_organism() {
-                if organism.fitness < best_fitness {
+                if organism.fitness > best_fitness {
                     best = Some(organism);
                     best_fitness = organism.fitness;
                 }
@@ -122,7 +122,7 @@ impl Population {
     }
 
     pub fn best(&self) -> Option<&Organism> {
-        self.iter().min_by(|a, b| a.cmp(&b))
+        self.iter().max_by(|a, b| a.cmp(&b))
     }
 }
 

@@ -36,7 +36,7 @@ impl Environment for DatasetExperiment {
             .map(|input| genome.evaluate_n(input, self.dataset.dimensions.outputs))
             .collect();
 
-        self.dataset.mse(&outputs)
+        1.0 - self.dataset.mse(&outputs)
     }
 
     fn evaluate_accuracy(&self, genome: &Genome) -> f64 {
