@@ -7,7 +7,7 @@ use std::cmp;
 pub struct Organism {
     pub genome: Genome,
     pub fitness: f64,
-    pub shared_fitness: f64,
+    pub sharing: f64,
     pub generation: u64,
 }
 
@@ -16,7 +16,7 @@ impl Organism {
         Organism {
             genome: Genome::new(inputs, outputs),
             fitness: 0.0,
-            shared_fitness: 0.0,
+            sharing: 0.0,
             generation: generation,
         }
     }
@@ -27,7 +27,7 @@ impl Organism {
                 .genome
                 .crossover(&other.genome, self.fitness > other.fitness),
             fitness: 0.0,
-            shared_fitness: 0.0,
+            sharing: 0.0,
             generation: self.generation + 1,
         }
     }
@@ -38,7 +38,7 @@ impl Organism {
 
     pub fn evaluate(&mut self, environment: &dyn Environment, sharing: u64) {
         self.fitness = environment.evaluate(&self.genome);
-        self.shared_fitness = self.fitness / sharing as f64;
+        self.sharing = sharing as f64;
     }
 
     pub fn mutate(&mut self, log: &mut InnovationLog, global_innovation: &mut InnovationTime) {

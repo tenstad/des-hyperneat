@@ -56,7 +56,7 @@ impl Population {
         };
 
         for _ in 0..conf::NEAT.population_size {
-            if let (Some(a), Some(b)) = (self.best_of(2), self.best_of(2)) {
+            if let (Some(a), Some(b)) = (self.tournament_select(2), self.tournament_select(2)) {
                 let mut child = a.crossover(b);
                 child.mutate(&mut self.innovation_log, &mut self.global_innovation);
                 new_population.push(child);
@@ -76,7 +76,7 @@ impl Population {
             .next()
     }
 
-    pub fn best_of(&self, k: u64) -> Option<&Organism> {
+    pub fn tournament_select(&self, k: u64) -> Option<&Organism> {
         let mut best: Option<&Organism> = None;
         let mut best_fitness = -1.0;
 
