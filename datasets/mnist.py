@@ -5,12 +5,12 @@ import tensorflow as tf
 
 print(x_train.shape, y_train.shape)
 
-n = 200
+n = 100
 
 with open('mnist', 'w') as f:
 	for i in range(n):
 		x = x_train[i]
-		x = cv2.resize(x, dsize=(8,8), interpolation=cv2.INTER_CUBIC)
+		x = cv2.resize(x, dsize=(4,4), interpolation=cv2.INTER_CUBIC)
 		x = x.reshape(-1) / 255
 		x = list(map(str, x))
 		f.write(', '.join(x) + '\n')

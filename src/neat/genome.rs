@@ -63,6 +63,19 @@ impl fmt::Display for Action {
     }
 }
 
+impl Clone for Genome {
+    fn clone(&self) -> Genome {
+        Genome {
+            inputs: self.inputs.clone(),
+            outputs: self.outputs.clone(),
+            hidden_nodes: self.hidden_nodes.clone(),
+            links: self.links.clone(),
+            actions: self.actions.clone(),
+            connections: self.connections.clone(),
+        }
+    }
+}
+
 impl Genome {
     pub fn empty() -> Genome {
         Genome {

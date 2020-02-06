@@ -24,10 +24,10 @@ pub fn neat(environment: &dyn Environment) {
 
         println!("Acc: {}", acc);
 
-        if acc == 1.0 {
+        /*if acc == 1.0 {
             println!("Success!");
             break;
-        }
+        }*/
 
         dot::genome_to_dot(String::from("g.dot"), &individual.genome).ok();
     }

@@ -9,8 +9,8 @@ use std::collections::HashMap;
 
 pub struct Population {
     species: Vec<Species>,
-    innovation_log: InnovationLog,
-    global_innovation: InnovationTime,
+    pub innovation_log: InnovationLog,
+    pub global_innovation: InnovationTime,
 }
 
 impl Population {
@@ -22,17 +22,23 @@ impl Population {
         };
 
         for _ in 0..conf::NEAT.population_size {
-            population.push(Organism::new(0, dimensions.inputs, dimensions.outputs));
+            population.push(
+                Organism::new(0, dimensions.inputs, dimensions.outputs),
+                false,
+            );
         }
 
         return population;
     }
 
-    pub fn push(&mut self, organism: Organism) {
+    pub fn push(&mut self, organism: Organism, lock_new: bool) {
         if let Some(species) = self.compatible_species(&organism) {
             species.push(organism);
         } else {
             let mut species = Species::new();
+            if lock_new {
+                species.lock();
+            }
             species.push(organism);
             self.species.push(species);
         }
@@ -49,31 +55,124 @@ impl Population {
     }
 
     pub fn evolve(&mut self, environment: &dyn Environment) {
-        let mut new_population = Population {
-            species: Vec::new(),
-            innovation_log: InnovationLog::new(),
-            global_innovation: InnovationTime::new(),
-        };
+        // Adjust fitnesses based on age, stagnation and apply fitness sharing
+        for species in self.species.iter_mut() {
+            species.adjust_fitness();
+        }
 
-        for _ in 0..conf::NEAT.population_size {
-            if let (Some(a), Some(b)) = (self.tournament_select(2), self.tournament_select(2)) {
-                let mut child = a.crossover(b);
-                child.mutate(&mut self.innovation_log, &mut self.global_innovation);
-                new_population.push(child);
+        // Average fitness of all organisms
+        let avg_fitness: f64 = self
+            .iter()
+            .map(|organism| organism.adjusted_fitness)
+            .sum::<f64>()
+            / conf::NEAT.population_size as f64;
+
+        // Calculate number of new offsprings to produce within each new species
+        for species in self.species.iter_mut() {
+            species.calculate_offsprings(avg_fitness);
+        }
+
+        // The total size of the next population before making up for floting point precicsion
+        let mut new_population_size: u64 = self
+            .species
+            .iter()
+            .map(|species| species.offsprings.floor() as u64)
+            .sum();
+
+        // Sort species based on closeness to additional offspring
+        let mut sorted_species: Vec<(f64, &mut Species)> = self
+            .species
+            .iter_mut()
+            .map(|species| (species.offsprings % 1.0, species))
+            .collect();
+        // Reversed sort (highest first)
+        sorted_species.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+
+        // Distribute missing offsprings amongs species
+        // in order of floating distance from additional offspring
+        while new_population_size < conf::NEAT.population_size {
+            for (_, species) in sorted_species.iter_mut() {
+                species.offsprings += 1.0;
+                new_population_size += 1;
+
+                if new_population_size == conf::NEAT.population_size {
+                    break;
+                }
             }
         }
 
-        self.species = new_population.species;
+        // Verify correct amount of offsprings
+        assert_eq!(
+            self.species
+                .iter()
+                .map(|species| species.offsprings.floor() as u64)
+                .sum::<u64>(),
+            conf::NEAT.population_size
+        );
+
+        // Kill individuals of low performance, not allowed to reproduce
+        for species in self.species.iter_mut() {
+            species.truncate();
+        }
+
+        // Increase the age of the species, making current organisms old
+        for species in self.species.iter_mut() {
+            species.age();
+        }
+
+        // Evolve spiecies
+        let mut rng = rand::thread_rng();
+        for i in 0..self.species.len() {
+            let elites = std::cmp::min(conf::NEAT.elitism as usize, self.species[i].len());
+            let reproductions = self.species[i].offsprings.floor() as usize - elites;
+
+            for j in 0..elites {
+                self.push(self.species[i].organisms[j].clone(), true);
+            }
+
+            for _ in 0..reproductions {
+                let organism = if rng.gen::<f64>() < conf::NEAT.interspecies_reproduction_chance {
+                    self.tournament_select(2)
+                } else {
+                    self.species[i].random_organism()
+                };
+                if let (Some(a), Some(b)) = (self.species[i].random_organism(), organism) {
+                    let mut child = a.crossover(b);
+                    child.mutate(&mut self.innovation_log, &mut self.global_innovation);
+                    self.push(child, true);
+                }
+            }
+        }
+
+        // Kill old population
+        for species in self.species.iter_mut() {
+            species.remove_old();
+        }
+
+        // Remove empty species
+        for i in (0..self.species.len()).rev() {
+            if self.species[i].len() == 0 {
+                self.species.swap_remove(i);
+            }
+        }
+
+        print!("{}: ", self.species.len());
+        for species in self.species.iter_mut() {
+            print!("{} ", species.organisms.len());
+        }
+        println!("");
+
+        // Verify correct number of individuals
+        assert_eq!(self.iter().count(), conf::NEAT.population_size as usize);
 
         self.evaluate(environment);
     }
 
     pub fn random_organism(&self) -> Option<&Organism> {
         let mut rng = rand::thread_rng();
+        let len = self.iter().count();
 
-        self.iter()
-            .skip(rng.gen_range(0, conf::NEAT.population_size) as usize)
-            .next()
+        self.iter().skip(rng.gen_range(0, len) as usize).next()
     }
 
     pub fn tournament_select(&self, k: u64) -> Option<&Organism> {
@@ -93,31 +192,19 @@ impl Population {
     }
 
     pub fn evaluate(&mut self, environment: &dyn Environment) {
-        let sharing: Vec<u64> = self
-            .iter()
-            .map(|o1| {
-                self.iter()
-                    .filter(|o2| o1.distance(o2) < conf::NEAT.sharing_threshold)
-                    .count() as u64
-            })
-            .collect();
-
-        for (organism, sharing) in self.iter_mut().zip(sharing) {
-            organism.evaluate(environment, sharing);
+        for organism in self.iter_mut() {
+            organism.evaluate(environment);
         }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Organism> {
-        self.species
-            .iter()
-            .map(|species| species.organisms.iter())
-            .flatten()
+        self.species.iter().map(|species| species.iter()).flatten()
     }
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
         self.species
             .iter_mut()
-            .map(|species| species.organisms.iter_mut())
+            .map(|species| species.iter_mut())
             .flatten()
     }
 

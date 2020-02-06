@@ -4,10 +4,11 @@ use crate::neat::population::InnovationLog;
 use crate::neat::population::InnovationTime;
 use std::cmp;
 
+#[derive(Clone)]
 pub struct Organism {
     pub genome: Genome,
     pub fitness: f64,
-    pub sharing: f64,
+    pub adjusted_fitness: f64,
     pub generation: u64,
 }
 
@@ -16,7 +17,7 @@ impl Organism {
         Organism {
             genome: Genome::new(inputs, outputs),
             fitness: 0.0,
-            sharing: 0.0,
+            adjusted_fitness: 0.0,
             generation: generation,
         }
     }
@@ -27,7 +28,7 @@ impl Organism {
                 .genome
                 .crossover(&other.genome, self.fitness > other.fitness),
             fitness: 0.0,
-            sharing: 0.0,
+            adjusted_fitness: 0.0,
             generation: self.generation + 1,
         }
     }
@@ -36,9 +37,8 @@ impl Organism {
         self.fitness.partial_cmp(&other.fitness).unwrap()
     }
 
-    pub fn evaluate(&mut self, environment: &dyn Environment, sharing: u64) {
+    pub fn evaluate(&mut self, environment: &dyn Environment) {
         self.fitness = environment.evaluate(&self.genome);
-        self.sharing = sharing as f64;
     }
 
     pub fn mutate(&mut self, log: &mut InnovationLog, global_innovation: &mut InnovationTime) {
