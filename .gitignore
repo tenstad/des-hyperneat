@@ -1,4 +1,5 @@
 .vscode/
+flamegraph*svg
 
 /target
 **/*.rs.bk
