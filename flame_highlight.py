@@ -18,5 +18,5 @@ while 1:
 		content = content[:k] + 'rgba(0, 0, 0, 0.2)' + content[l:]
 	i = j
 
-with open('flamegraph_highlight.svg', 'w') as f:
+with open('flamegraph.svg', 'w') as f:
 	f.write(content)
