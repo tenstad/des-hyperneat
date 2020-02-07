@@ -123,7 +123,13 @@ impl Population {
         // Evolve spiecies
         let mut rng = rand::thread_rng();
         for i in 0..self.species.len() {
-            let elites = std::cmp::min(conf::NEAT.elitism as usize, self.species[i].len());
+            let elites = std::cmp::min(
+                conf::NEAT.elitism as usize,
+                std::cmp::min(
+                    self.species[i].len(),
+                    self.species[i].offsprings.floor() as usize,
+                ),
+            );
             let reproductions = self.species[i].offsprings.floor() as usize - elites;
 
             for j in 0..elites {
