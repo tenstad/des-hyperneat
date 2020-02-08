@@ -25,6 +25,7 @@ pub struct Link {
     pub to: NodeRef,
     pub weight: f64,
     pub enabled: bool,
+    pub split: bool,     // Link has been split
     pub innovation: u64, // Global innovation number
 }
 
@@ -39,6 +40,7 @@ impl Link {
             to: self.to,
             weight: (self.weight + other.weight) / 2.0,
             enabled: self.enabled || other.enabled,
+            split: self.split || other.split,
             innovation: self.innovation,
         }
     }
@@ -116,35 +118,40 @@ impl Genome {
         // Disable link
         if let Some(link) = self.links.get_mut(&(link.from, link.to)) {
             link.enabled = false;
+            link.split = true;
         }
 
         // Remove connection
-        let vec = self.connections.get_mut(&link.from).unwrap();
-        let index = vec.iter().position(|x| *x == link.to).unwrap();
+        let vec = self
+            .connections
+            .get_mut(&link.from)
+            .expect("Connections does not exist.");
+        let index = vec
+            .iter()
+            .position(|x| *x == link.to)
+            .expect("Connections does not exist.");
         vec.swap_remove(index);
 
         // Remove action
-        if let Some(index) = self
+        let index = self
             .actions
             .iter()
             .position(|x| *x == Action::Link(link.from, link.to))
-        {
-            self.actions.remove(index);
-        }
+            .expect("Link action does not exist");
+        self.actions.remove(index);
 
         let new_node_ref = NodeRef::Hidden(new_node_id);
 
-        // Might already be inherited from parent
-        if !self.hidden_nodes.contains_key(&new_node_ref) {
-            self.hidden_nodes
-                .insert(new_node_ref, HiddenNode::new(new_node_id));
-        }
+        assert!(!self.hidden_nodes.contains_key(&new_node_ref));
+        self.hidden_nodes
+            .insert(new_node_ref, HiddenNode::new(new_node_id));
 
         let link1 = Link {
             from: link.from,
             to: new_node_ref,
             weight: 1.0,
             enabled: true,
+            split: false,
             innovation: innovation_number,
         };
 
@@ -153,16 +160,15 @@ impl Genome {
             to: link.to,
             weight: link.weight,
             enabled: true,
+            split: false,
             innovation: innovation_number + 1,
         };
 
-        // Might already be inherited from parent
-        if !self.links.contains_key(&(link1.from, link1.to)) {
-            self.insert_link(link1, false);
-        }
-        if !self.links.contains_key(&(link2.from, link2.to)) {
-            self.insert_link(link2, false);
-        }
+        assert!(!self.links.contains_key(&(link1.from, link1.to)));
+        self.insert_link(link1, false);
+
+        assert!(!self.links.contains_key(&(link2.from, link2.to)));
+        self.insert_link(link2, false);
 
         let mut skip = 0;
 
@@ -183,8 +189,10 @@ impl Genome {
         for (i, action) in self.actions.iter().skip(skip).enumerate() {
             if let Action::Activation(_) = action {
                 self.actions.insert(i + skip, Action::Activation(link1.to));
-                self.actions
-                    .insert(i + skip + 1, Action::Link(link2.from, link2.to));
+                self.actions.insert(
+                    i + skip + 1,
+                    Action::Link(link2.from, link2.to),
+                );
                 break;
             }
         }
@@ -214,7 +222,8 @@ impl Genome {
                             self.sort_actions_topologically();
                             break;
                         } else if link.from == *node_ref {
-                            self.actions.insert(i + 1, Action::Link(link.from, link.to));
+                            self.actions
+                                .insert(i + 1, Action::Link(link.from, link.to));
                             break;
                         }
                     }
@@ -343,7 +352,7 @@ impl Genome {
         if let Some(index) = self
             .links
             .iter()
-            .filter(|(_, link)| link.enabled)
+            .filter(|(_, link)| !link.split)
             .map(|(i, _)| *i)
             .collect::<Vec<(NodeRef, NodeRef)>>()
             .choose(&mut rand::thread_rng())
@@ -430,6 +439,7 @@ impl Genome {
                             to,
                             weight: rng.gen::<f64>() - 0.5,
                             enabled: true,
+                            split: false,
                             innovation,
                         },
                         true,
@@ -533,7 +543,6 @@ impl Genome {
             .keys()
             .map(|node_ref| (node_ref.get_id(), *values.get(node_ref).unwrap_or(&0.0)))
             .collect();
-        
         // Normalize
         if conf::NEAT.normalize_output {
             let sum: f64 = result.values().sum();
