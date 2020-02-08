@@ -1,6 +1,6 @@
 use rand::Rng;
-use std::fmt::Display;
 use std::fmt;
+use std::fmt::Display;
 
 #[derive(Copy, Clone)]
 pub struct InputNode {
@@ -187,7 +187,7 @@ impl Activation {
                 } else {
                     v
                 }
-            },
+            }
         }
     }
 }
