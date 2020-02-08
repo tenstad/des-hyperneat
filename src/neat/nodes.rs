@@ -42,7 +42,7 @@ impl OutputNode {
         OutputNode {
             id: id,
             bias: 0.0,
-            activation: Activation::Sigmoid,
+            activation: Activation::Softmax,
         }
     }
 }
@@ -159,11 +159,12 @@ impl NodeRef {
     }
 }
 
-#[derive(Copy, Clone, Debug, Display)]
+#[derive(Copy, Clone, Debug, Display, PartialEq)]
 pub enum Activation {
     None,
     ReLU,
     Sigmoid,
+    Softmax,
 }
 
 impl Activation {
@@ -178,6 +179,15 @@ impl Activation {
                 }
             }
             Activation::Sigmoid => 1.0 / (1.0 + (-x).exp()),
+            Activation::Softmax => {
+                let v = x.exp();
+
+                if v.is_infinite() {
+                    10000.0
+                } else {
+                    v
+                }
+            },
         }
     }
 }

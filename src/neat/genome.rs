@@ -528,11 +528,23 @@ impl Genome {
         }
 
         // Return values of output nodes
-        return self
+        let mut result: HashMap<u64, f64> = self
             .outputs
             .keys()
             .map(|node_ref| (node_ref.get_id(), *values.get(node_ref).unwrap_or(&0.0)))
             .collect();
+        
+        // Normalize
+        if conf::NEAT.normalize_output {
+            let sum: f64 = result.values().sum();
+            if sum != 0.0 {
+                for v in result.values_mut() {
+                    *v = *v / sum;
+                }
+            }
+        }
+
+        return result;
     }
 
     pub fn evaluate_n(&self, inputs: &Vec<f64>, target_len: u64) -> Vec<f64> {
