@@ -5,13 +5,13 @@ pub struct Conf {
     #[envconfig(from = "DATASET_FILENAME", default = "datasets/mnist")]
     pub dataset_filename: String,
 
-    #[envconfig(from = "POPULATION_SIZE", default = "100")]
+    #[envconfig(from = "POPULATION_SIZE", default = "200")]
     pub population_size: u64,
 
     #[envconfig(from = "ITERATIONS", default = "10000")]
     pub iterations: u64,
 
-    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.8")]
+    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.85")]
     pub speciation_threshold: f64,
 
     #[envconfig(from = "INTERSPECIES_REPRODUCTION_CHANCE", default = "0.15")]
@@ -29,19 +29,19 @@ pub struct Conf {
     #[envconfig(from = "MUTATE_LINK_WEIGHT_PROBABILITY", default = "0.8")]
     pub mutate_link_weight_probability: f64,
 
-    #[envconfig(from = "MUTATE_LINK_WEIGHT_SIZE", default = "0.2")]
+    #[envconfig(from = "MUTATE_LINK_WEIGHT_SIZE", default = "0.05")]
     pub mutate_link_weight_size: f64,
 
     #[envconfig(from = "MUTATE_HIDDEN_BIAS_PROBABILIT", default = "0.8")]
     pub mutate_hidden_bias_probability: f64,
 
-    #[envconfig(from = "MUTATE_HIDDEN_BIAS_SIZE", default = "0.2")]
+    #[envconfig(from = "MUTATE_HIDDEN_BIAS_SIZE", default = "0.05")]
     pub mutate_hidden_bias_size: f64,
 
     #[envconfig(from = "MUTATE_OUTPUT_BIAS_PROBABILIT", default = "0.8")]
     pub mutate_output_bias_probability: f64,
 
-    #[envconfig(from = "MUTATE_OUTPUT_BIAS_SIZE", default = "0.2")]
+    #[envconfig(from = "MUTATE_OUTPUT_BIAS_SIZE", default = "0.05")]
     pub mutate_output_bias_size: f64,
 
     #[envconfig(from = "DROPOFF_AGE", default = "30")]
