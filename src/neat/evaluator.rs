@@ -1,4 +1,6 @@
+extern crate libc;
 use crate::neat::nodes::Activation;
+use std::mem;
 
 pub struct Evaluator {
     values: Vec<f64>,
@@ -30,8 +32,17 @@ impl Evaluator {
 
     /// Evaluate network, takes input node values, returns output node values
     pub fn evaluate(&mut self, inputs: &Vec<f64>) -> Vec<f64> {
-        for i in 0..self.values.len() {
+        /*for i in 0..self.values.len() {
             self.values[i] = 0.0;
+        }*/
+
+        // Same as loop above, but this unsafe implementation is faster
+        unsafe {
+            libc::memset(
+                self.values.as_mut_ptr() as _,
+                0,
+                self.values.len() * mem::size_of::<f64>(),
+            );
         }
 
         // Copy inputs into values
@@ -74,6 +85,9 @@ mod tests {
             ],
         );
 
-        assert_eq!(actions.evaluate(&vec![1.0, 2.0, 3.0, 4.0]), vec![15.0, 0.0, 0.0, 0.0]);
+        assert_eq!(
+            actions.evaluate(&vec![1.0, 2.0, 3.0, 4.0]),
+            vec![15.0, 0.0, 0.0, 0.0]
+        );
     }
 }

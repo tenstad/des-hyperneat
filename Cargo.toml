@@ -12,6 +12,7 @@ lazy_static = "1.4.0"
 envconfig = "0.6.0"
 envconfig_derive = "0.6.0"
 enum-display-derive = "0.1.0"
+libc = "0.2"
 
 [profile.release]
 debug = true
