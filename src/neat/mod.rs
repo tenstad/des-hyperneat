@@ -1,3 +1,5 @@
+mod actions;
+mod connections;
 mod dot;
 pub mod environment;
 pub mod experiments;

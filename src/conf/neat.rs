@@ -2,7 +2,7 @@ use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "DATASET_FILENAME", default = "datasets/wine")]
+    #[envconfig(from = "DATASET_FILENAME", default = "datasets/xor")]
     pub dataset_filename: String,
 
     #[envconfig(from = "POPULATION_SIZE", default = "100")]
@@ -22,6 +22,9 @@ pub struct Conf {
 
     #[envconfig(from = "ADD_CONNECTION_PROBABILITY", default = "0.05")]
     pub add_connection_probability: f64,
+
+    #[envconfig(from = "DISABLE_CONNECTION_PROBABILITY", default = "0.2")]
+    pub disable_connection_probability: f64,
 
     #[envconfig(from = "MUTATE_LINK_WEIGHT_PROBABILITY", default = "0.8")]
     pub mutate_link_weight_probability: f64,

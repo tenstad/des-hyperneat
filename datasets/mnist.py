@@ -9,6 +9,8 @@ n = 200
 size = (8,8)
 
 with open('mnist', 'w') as f:
+	f.write('true\ntrue\n\n')
+
 	for i in range(n):
 		x = x_train[i]
 		x = cv2.resize(x, dsize=size, interpolation=cv2.INTER_CUBIC)
