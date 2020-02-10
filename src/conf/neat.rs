@@ -2,7 +2,7 @@ use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "DATASET_FILENAME", default = "datasets/xor")]
+    #[envconfig(from = "DATASET_FILENAME", default = "datasets/wine")]
     pub dataset_filename: String,
 
     #[envconfig(from = "POPULATION_SIZE", default = "100")]
@@ -11,7 +11,7 @@ pub struct Conf {
     #[envconfig(from = "ITERATIONS", default = "10000")]
     pub iterations: u64,
 
-    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.9")]
+    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.8")]
     pub speciation_threshold: f64,
 
     #[envconfig(from = "INTERSPECIES_REPRODUCTION_CHANCE", default = "0.15")]
@@ -23,7 +23,7 @@ pub struct Conf {
     #[envconfig(from = "ADD_CONNECTION_PROBABILITY", default = "0.05")]
     pub add_connection_probability: f64,
 
-    #[envconfig(from = "DISABLE_CONNECTION_PROBABILITY", default = "0.2")]
+    #[envconfig(from = "DISABLE_CONNECTION_PROBABILITY", default = "0.02")]
     pub disable_connection_probability: f64,
 
     #[envconfig(from = "MUTATE_LINK_WEIGHT_PROBABILITY", default = "0.8")]
@@ -44,7 +44,7 @@ pub struct Conf {
     #[envconfig(from = "MUTATE_OUTPUT_BIAS_SIZE", default = "0.2")]
     pub mutate_output_bias_size: f64,
 
-    #[envconfig(from = "DROPOFF_AGE", default = "20")]
+    #[envconfig(from = "DROPOFF_AGE", default = "30")]
     pub dropoff_age: u64,
 
     #[envconfig(from = "YOUNG_SPECIES_FITNESS_MULTIPLIER", default = "1.05")]
@@ -61,5 +61,7 @@ pub struct Conf {
 
     #[envconfig(from = "NORMALIZE_OUTPUT", default = "true")]
     pub normalize_output: bool,
-    
+
+    #[envconfig(from = "OUTPUT_ACTIVATION", default = "Softmax")]
+    pub output_activation: crate::neat::nodes::Activation,
 }

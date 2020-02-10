@@ -41,8 +41,8 @@ impl Link {
             from: self.from,
             to: self.to,
             weight: (self.weight + other.weight) / 2.0,
-            enabled: self.enabled && other.enabled,
-            split: self.split || other.split,
+            enabled: self.enabled || other.enabled,
+            split: self.split && other.split,
             innovation: self.innovation,
         }
     }
@@ -104,15 +104,21 @@ impl Genome {
             link.split = true;
         }
 
+        let new_node_ref = NodeRef::Hidden(new_node_id);
+
+        // Might have inherited that the connection is not split, but also the nodes splitting it
+        if self.hidden_nodes.contains_key(&new_node_ref) {
+            return;
+        }
+
         // Disable connection
         self.connections.disable(link.from, link.to);
-
-        let new_node_ref = NodeRef::Hidden(new_node_id);
+        self.connections.add_enabled(link.from, new_node_ref);
+        self.connections.add_enabled(new_node_ref, link.to);
 
         // Add and remvoe actions
         self.actions.split_link(link.from, link.to, new_node_ref);
 
-        assert!(!self.hidden_nodes.contains_key(&new_node_ref));
         self.hidden_nodes
             .insert(new_node_ref, HiddenNode::new(new_node_id));
 
@@ -237,6 +243,7 @@ impl Genome {
         if rng.gen::<f64>() < conf::NEAT.mutate_hidden_bias_probability {
             self.mutate_hidden_bias();
         }
+
         if rng.gen::<f64>() < conf::NEAT.mutate_output_bias_probability {
             self.mutate_output_bias();
         }
@@ -485,6 +492,7 @@ impl Genome {
             .keys()
             .map(|node_ref| (node_ref.get_id(), *values.get(node_ref).unwrap_or(&0.0)))
             .collect();
+
         // Normalize
         if conf::NEAT.normalize_output {
             let sum: f64 = result.values().sum();

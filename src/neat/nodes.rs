@@ -1,3 +1,4 @@
+use crate::conf;
 use rand::Rng;
 use std::fmt;
 use std::fmt::Display;
@@ -42,7 +43,7 @@ impl OutputNode {
         OutputNode {
             id: id,
             bias: 0.0,
-            activation: Activation::Softmax,
+            activation: conf::NEAT.output_activation,
         }
     }
 }
@@ -188,6 +189,20 @@ impl Activation {
                     v
                 }
             }
+        }
+    }
+}
+
+impl std::str::FromStr for Activation {
+    type Err = u64;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "None" => Ok(Activation::None),
+            "ReLU" => Ok(Activation::ReLU),
+            "Sigmoid" => Ok(Activation::Sigmoid),
+            "Softmax" => Ok(Activation::Softmax),
+            _ => Err(0),
         }
     }
 }

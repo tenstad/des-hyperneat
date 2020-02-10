@@ -4,7 +4,7 @@ mod dot;
 pub mod environment;
 pub mod experiments;
 mod genome;
-mod nodes;
+pub mod nodes;
 mod organism;
 mod population;
 mod species;

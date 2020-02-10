@@ -5,7 +5,7 @@ import tensorflow as tf
 
 print(x_train.shape, y_train.shape)
 
-n = 200
+n = 1000
 size = (8,8)
 
 with open('mnist', 'w') as f:
@@ -27,4 +27,3 @@ with open('mnist', 'w') as f:
 		f.write(', '.join(y) + '\n')
 
 	f.write('\n')
-
