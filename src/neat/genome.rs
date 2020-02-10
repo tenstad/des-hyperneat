@@ -2,6 +2,8 @@ use crate::conf;
 use crate::neat::actions::Action;
 use crate::neat::actions::Actions;
 use crate::neat::connections::Connections;
+use crate::neat::evaluator::Evaluator;
+use crate::neat::evaluator::FastAction;
 use crate::neat::nodes::*;
 use crate::neat::population::InnovationLog;
 use crate::neat::population::InnovationTime;
@@ -449,75 +451,71 @@ impl Genome {
         };
     }
 
-    /// Evaluate network, takes input node values, returns output node values
-    pub fn evaluate(&self, inputs: &Vec<f64>) -> HashMap<u64, f64> {
-        // Init value storage with input values
-        let mut values: HashMap<NodeRef, f64> = inputs
+    /// Creates speed-optimized evaluator
+    pub fn create_evaluator(&self) -> Evaluator {
+        let length_inputs = self.inputs.len();
+        let length_hiddens = length_inputs + self.hidden_nodes.len();
+        let length_outputs = length_hiddens + self.outputs.len();
+
+        let mut input_keys: Vec<NodeRef> = self.inputs.keys().cloned().collect();
+        input_keys.sort();
+        let mut output_keys: Vec<NodeRef> = self.outputs.keys().cloned().collect();
+        output_keys.sort();
+
+        let node_mapper: HashMap<NodeRef, usize> = input_keys
             .iter()
             .enumerate()
-            .map(|(i, value)| (NodeRef::Input(i as u64), *value))
+            .map(|(i, node_ref)| (*node_ref, i))
+            .chain(
+                self.hidden_nodes
+                    .keys()
+                    .enumerate()
+                    .map(|(i, node_ref)| (*node_ref, i + length_inputs)),
+            )
+            .chain(
+                output_keys
+                    .iter()
+                    .enumerate()
+                    .map(|(i, node_ref)| (*node_ref, i + length_hiddens)),
+            )
             .collect();
 
-        // Do forward pass
-        for action in self.actions.iter() {
-            match action {
-                Action::Link(from, to) => {
-                    if let Some(link) = self.links.get(&(*from, *to)) {
-                        if link.enabled {
-                            values.insert(
-                                link.to,
-                                values.get(&link.to).unwrap_or(&0.0)
-                                    + values.get(&link.from).unwrap_or(&0.0) * link.weight,
-                            );
-                        }
-                    }
-                }
-                Action::Activation(node_ref) => {
-                    if let Some(activation) = self.get_activation(node_ref) {
-                        values.insert(
-                            *node_ref,
-                            activation.activate(
-                                *values.get(node_ref).unwrap_or(&0.0)
-                                    + self.get_bias(node_ref).unwrap_or(0.0),
-                            ),
-                        );
-                    }
-                }
-            }
-        }
-
-        // Return values of output nodes
-        let mut result: HashMap<u64, f64> = self
-            .outputs
-            .keys()
-            .map(|node_ref| (node_ref.get_id(), *values.get(node_ref).unwrap_or(&0.0)))
+        let actions = self
+            .actions
+            .iter()
+            .map(|action| match action {
+                Action::Link(from, to) => FastAction::Link(
+                    *node_mapper.get(from).unwrap(),
+                    *node_mapper.get(to).unwrap(),
+                    self.links.get(&(*from, *to)).unwrap().weight,
+                ),
+                Action::Activation(node) => FastAction::Activation(
+                    *node_mapper.get(node).unwrap(),
+                    self.get_bias(node).unwrap(),
+                    self.get_activation(node).unwrap(),
+                ),
+            })
             .collect();
 
-        // Normalize
-        if conf::NEAT.normalize_output {
-            let sum: f64 = result.values().sum();
-            if sum != 0.0 {
-                for v in result.values_mut() {
-                    *v = *v / sum;
-                }
-            }
-        }
-
-        return result;
-    }
-
-    pub fn evaluate_n(&self, inputs: &Vec<f64>, target_len: u64) -> Vec<f64> {
-        let output = self.evaluate(inputs);
-        (0..target_len)
-            .map(|i| *output.get(&(i as u64)).unwrap_or(&0.0))
-            .collect()
+        return Evaluator::create(
+            length_outputs,
+            input_keys
+                .iter()
+                .map(|node| node.get_id() as usize)
+                .collect(),
+            output_keys
+                .iter()
+                .map(|node| node.get_id() as usize + length_hiddens)
+                .collect(),
+            actions,
+        );
     }
 
     fn get_activation(&self, node_ref: &NodeRef) -> Option<Activation> {
         match node_ref {
             NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref)?.get_activation(),
             NodeRef::Output(_) => self.outputs.get(node_ref)?.get_activation(),
-            _ => None,
+            _ => Some(Activation::None),
         }
     }
 
@@ -525,7 +523,7 @@ impl Genome {
         match node_ref {
             NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref)?.get_bias(),
             NodeRef::Output(_) => self.outputs.get(node_ref)?.get_bias(),
-            _ => None,
+            _ => Some(0.0),
         }
     }
 }

@@ -2,7 +2,7 @@ use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "DATASET_FILENAME", default = "datasets/wine")]
+    #[envconfig(from = "DATASET_FILENAME", default = "datasets/mnist")]
     pub dataset_filename: String,
 
     #[envconfig(from = "POPULATION_SIZE", default = "100")]

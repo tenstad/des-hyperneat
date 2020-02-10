@@ -29,22 +29,26 @@ impl Environment for DatasetExperiment {
     }
 
     fn evaluate(&self, genome: &Genome) -> f64 {
+        let mut evaluator = genome.create_evaluator();
+
         let outputs: Vec<Vec<f64>> = self
             .dataset
             .inputs
             .iter()
-            .map(|input| genome.evaluate_n(input, self.dataset.dimensions.outputs))
+            .map(|input| evaluator.evaluate(input))
             .collect();
 
         1.0 - self.dataset.mse(&outputs)
     }
 
     fn evaluate_accuracy(&self, genome: &Genome) -> f64 {
+        let mut evaluator = genome.create_evaluator();
+
         let outputs: Vec<Vec<f64>> = self
             .dataset
             .inputs
             .iter()
-            .map(|input| genome.evaluate_n(input, self.dataset.dimensions.outputs))
+            .map(|input| evaluator.evaluate(input))
             .collect();
 
         self.dataset.acc(&outputs)

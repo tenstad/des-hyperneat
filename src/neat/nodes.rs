@@ -150,6 +150,18 @@ impl fmt::Display for NodeRef {
     }
 }
 
+impl std::cmp::Ord for NodeRef {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.get_id().cmp(&other.get_id())
+    }
+}
+
+impl std::cmp::PartialOrd for NodeRef {
+    fn partial_cmp(&self, other: &Self) -> std::option::Option<std::cmp::Ordering> {
+        self.get_id().partial_cmp(&other.get_id())
+    }
+}
+
 impl NodeRef {
     pub fn get_id(&self) -> u64 {
         match self {
