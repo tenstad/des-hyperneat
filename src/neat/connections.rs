@@ -4,8 +4,8 @@ use std::hash::Hash;
 
 /// Fast structure for looking up all outgoing connections from a node,
 /// either enabled, disabled or both. Can also check if addition creates cycle.
-#[derive(Clone, Debug)]
-pub struct Connections<T: Hash + Eq> {
+#[derive(Clone)]
+pub struct Connections<T: Hash> {
     enabled: HashMap<T, Vec<T>>,
     disabled: HashMap<T, Vec<T>>,
 }
@@ -30,11 +30,11 @@ impl<T: Hash + Eq + Copy> Connections<T> {
     }
 
     pub fn add_enabled(&mut self, from: T, to: T) {
-        debug_assert!(
+        assert!(
             !self.contains_disabled(&from, to),
             "Cannot add existing connection."
         );
-        debug_assert!(
+        assert!(
             !self.creates_cycle(from, to),
             "Cannot add link that creates cycle"
         );
@@ -42,11 +42,11 @@ impl<T: Hash + Eq + Copy> Connections<T> {
     }
 
     pub fn add_disabled(&mut self, from: T, to: T) {
-        debug_assert!(
+        assert!(
             !self.contains_enabled(&from, to),
             "Cannot add existing connection."
         );
-        debug_assert!(
+        assert!(
             !self.creates_cycle(from, to),
             "Cannot add link that creates cycle"
         );
@@ -137,7 +137,7 @@ impl<T: Hash + Eq + Copy> Connections<T> {
 
 fn add_connection<T: Hash + Eq>(connections: &mut HashMap<T, Vec<T>>, from: T, to: T) {
     if let Some(vec) = connections.get_mut(&from) {
-        debug_assert!(!vec.contains(&to), "Cannot add existing connection.");
+        assert!(!vec.contains(&to), "Cannot add existing connection.");
         vec.push(to);
     } else {
         connections.insert(from, vec![to]);

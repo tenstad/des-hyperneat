@@ -114,8 +114,6 @@ impl Genome {
 
         // Disable connection
         self.connections.disable(link.from, link.to);
-        self.connections.add_enabled(link.from, new_node_ref);
-        self.connections.add_enabled(new_node_ref, link.to);
 
         // Add and remvoe actions
         self.actions.split_link(link.from, link.to, new_node_ref);

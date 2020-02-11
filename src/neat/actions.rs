@@ -12,14 +12,14 @@ pub struct Actions<T> {
     actions: Vec<Action<T>>,
 }
 
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Action<T> {
     Link(T, T),
     Activation(T),
 }
 
 #[allow(dead_code)]
-impl<T: Hash + Eq + PartialEq + Copy + Clone + std::fmt::Display + std::fmt::Debug> Actions<T> {
+impl<T: Hash + Eq + Copy> Actions<T> {
     pub fn empty() -> Actions<T> {
         Actions {
             inputs: Vec::new(),
@@ -186,20 +186,19 @@ impl<T: Hash + Eq + PartialEq + Copy + Clone + std::fmt::Display + std::fmt::Deb
 impl<T: fmt::Display> fmt::Display for Action<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Action::Link(from, to) => write!(f, "Link({}, {})", from, to),
-            Action::Activation(id) => write!(f, "Activation({})", id),
+            Action::Link(from, to) => write!(f, "{}->{}", from, to),
+            Action::Activation(id) => write!(f, "{}", id),
         }
     }
 }
 
-impl<T: Hash + Eq + PartialEq + Copy + Clone + fmt::Display + std::fmt::Debug> fmt::Display
-    for Actions<T>
-{
+impl<T: Hash + Eq + Copy + fmt::Display> fmt::Display for Actions<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Actions[")?;
         for action in self.iter() {
-            write!(f, "{}, ", action)?;
+            write!(f, " {}", action)?;
         }
-        write!(f, "")
+        write!(f, " ]")
     }
 }
 
@@ -207,12 +206,7 @@ impl<T: Hash + Eq + PartialEq + Copy + Clone + fmt::Display + std::fmt::Debug> f
 mod tests {
     use super::*;
 
-    fn assert_equal<
-        T: Hash + Eq + PartialEq + Copy + Clone + std::fmt::Debug + std::fmt::Display,
-    >(
-        actions: Actions<T>,
-        target: Vec<Action<T>>,
-    ) {
+    fn assert_equal<T: Hash + Eq + Copy + fmt::Debug>(actions: Actions<T>, target: Vec<Action<T>>) {
         let mut actions = actions.iter();
         let mut target = target.iter();
         while let (Some(a), Some(t)) = (actions.next(), target.next()) {
