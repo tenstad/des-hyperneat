@@ -2,8 +2,7 @@ use crate::conf;
 use crate::neat::actions::Action;
 use crate::neat::actions::Actions;
 use crate::neat::connections::Connections;
-use crate::neat::evaluator::Evaluator;
-use crate::neat::evaluator::FastAction;
+use crate::neat::evaluator;
 use crate::neat::nodes::*;
 use crate::neat::population::InnovationLog;
 use crate::neat::population::InnovationTime;
@@ -482,7 +481,7 @@ impl Genome {
     }
 
     /// Creates speed-optimized evaluator
-    pub fn create_evaluator(&self) -> Evaluator {
+    pub fn create_evaluator(&self) -> evaluator::Evaluator {
         let length_inputs = self.inputs.len();
         let length_hiddens = length_inputs + self.hidden_nodes.len();
         let length_outputs = length_hiddens + self.outputs.len();
@@ -514,12 +513,12 @@ impl Genome {
             .actions
             .iter()
             .map(|action| match action {
-                Action::Link(from, to) => FastAction::Link(
+                Action::Link(from, to) => evaluator::Action::Link(
                     *node_mapper.get(from).unwrap(),
                     *node_mapper.get(to).unwrap(),
                     self.links.get(&(*from, *to)).unwrap().weight,
                 ),
-                Action::Activation(node) => FastAction::Activation(
+                Action::Activation(node) => evaluator::Action::Activation(
                     *node_mapper.get(node).unwrap(),
                     self.get_bias(node).unwrap(),
                     self.get_activation(node).unwrap(),
@@ -527,7 +526,7 @@ impl Genome {
             })
             .collect();
 
-        return Evaluator::create(
+        evaluator::Evaluator::create(
             length_outputs,
             input_keys
                 .iter()
@@ -538,7 +537,7 @@ impl Genome {
                 .map(|node| node.get_id() as usize + length_hiddens)
                 .collect(),
             actions,
-        );
+        )
     }
 
     fn get_activation(&self, node_ref: &NodeRef) -> Option<Activation> {
