@@ -1,8 +1,9 @@
+use crate::neat::nodes;
 use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "DATASET_FILENAME", default = "datasets/mnist")]
+    #[envconfig(from = "DATASET_FILENAME", default = "datasets/wine")]
     pub dataset_filename: String,
 
     #[envconfig(from = "POPULATION_SIZE", default = "200")]
@@ -38,11 +39,17 @@ pub struct Conf {
     #[envconfig(from = "MUTATE_HIDDEN_BIAS_SIZE", default = "0.05")]
     pub mutate_hidden_bias_size: f64,
 
+    #[envconfig(from = "MUTATE_HIDDEN_ACTIVATION_PROBABILIT", default = "0.2")]
+    pub mutate_hidden_activation_probability: f64,
+
     #[envconfig(from = "MUTATE_OUTPUT_BIAS_PROBABILIT", default = "0.8")]
     pub mutate_output_bias_probability: f64,
 
     #[envconfig(from = "MUTATE_OUTPUT_BIAS_SIZE", default = "0.05")]
     pub mutate_output_bias_size: f64,
+
+    #[envconfig(from = "MUTATE_OUTPUT_ACTIVATION_PROBABILITY", default = "0.0")]
+    pub mutate_output_activation_probability: f64,
 
     #[envconfig(from = "DROPOFF_AGE", default = "30")]
     pub dropoff_age: u64,
@@ -62,9 +69,12 @@ pub struct Conf {
     #[envconfig(from = "ELITISM", default = "1")]
     pub elitism: u64,
 
+    #[envconfig(from = "HIDDEN_ACTIVATIONS", default = "None ReLU Sigmoid")]
+    pub hidden_activations: nodes::Activations,
+
     #[envconfig(from = "NORMALIZE_OUTPUT", default = "true")]
     pub normalize_output: bool,
 
-    #[envconfig(from = "OUTPUT_ACTIVATION", default = "Softmax")]
-    pub output_activation: crate::neat::nodes::Activation,
+    #[envconfig(from = "OUTPUT_ACTIVATIONS", default = "Softmax")]
+    pub output_activations: nodes::Activations,
 }

@@ -246,8 +246,16 @@ impl Genome {
             self.mutate_hidden_bias();
         }
 
+        if rng.gen::<f64>() < conf::NEAT.mutate_hidden_activation_probability {
+            self.mutate_hidden_activation();
+        }
+
         if rng.gen::<f64>() < conf::NEAT.mutate_output_bias_probability {
             self.mutate_output_bias();
+        }
+
+        if rng.gen::<f64>() < conf::NEAT.mutate_output_activation_probability {
+            self.mutate_output_activation();
         }
     }
 
@@ -278,6 +286,17 @@ impl Genome {
         }
     }
 
+    fn mutate_hidden_activation(&mut self) {
+        let mut rng = rand::thread_rng();
+
+        if !self.hidden_nodes.is_empty() {
+            let link_index = rng.gen_range(0, self.hidden_nodes.len());
+            if let Some(node) = self.hidden_nodes.values_mut().skip(link_index).next() {
+                node.activation = conf::NEAT.hidden_activations.random();
+            }
+        }
+    }
+
     fn mutate_output_bias(&mut self) {
         let mut rng = rand::thread_rng();
 
@@ -285,6 +304,17 @@ impl Genome {
             let link_index = rng.gen_range(0, self.outputs.len());
             if let Some(node) = self.outputs.values_mut().skip(link_index).next() {
                 node.bias += (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.mutate_output_bias_size;
+            }
+        }
+    }
+
+    fn mutate_output_activation(&mut self) {
+        let mut rng = rand::thread_rng();
+
+        if !self.outputs.is_empty() {
+            let link_index = rng.gen_range(0, self.outputs.len());
+            if let Some(node) = self.outputs.values_mut().skip(link_index).next() {
+                node.activation = conf::NEAT.output_activations.random();
             }
         }
     }
