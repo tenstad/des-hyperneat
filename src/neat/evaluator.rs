@@ -2,6 +2,7 @@ extern crate libc;
 use crate::neat::nodes::Activation;
 use std::mem;
 
+#[derive(Clone)]
 pub struct Evaluator {
     values: Vec<f64>,
     inputs: Vec<usize>,
@@ -9,7 +10,7 @@ pub struct Evaluator {
     actions: Vec<FastAction>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum FastAction {
     Link(usize, usize, f64),            // from, to, weight
     Activation(usize, f64, Activation), // node, bias, activation
@@ -36,6 +37,7 @@ impl Evaluator {
             self.values[i] = 0.0;
         }*/
 
+        // Clear network
         // Same as loop above, but this unsafe implementation is faster
         unsafe {
             libc::memset(
@@ -62,6 +64,7 @@ impl Evaluator {
             }
         }
 
+        // Collect output
         return self.outputs.iter().map(|o| self.values[*o]).collect();
     }
 }

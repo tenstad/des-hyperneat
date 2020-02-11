@@ -3,14 +3,14 @@ use crate::neat::organism::Organism;
 use rand::Rng;
 
 pub struct Species {
-    pub age: u64,
-    pub best_fitness: f64,
-    pub lifetime_best_fitness: f64,
-    pub last_improvement: u64,
+    age: u64,
+    best_fitness: f64,
+    lifetime_best_fitness: f64,
+    last_improvement: u64,
     pub offsprings: f64,
-    iter_locked: bool,
-    locked_organisms: usize,
     pub organisms: Vec<Organism>,
+    locked: bool, // When iter_locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
+    locked_organisms: usize, // The number of locked organisms, this is the length and number of iterated organisms when species is locked
 }
 
 impl Species {
@@ -21,12 +21,13 @@ impl Species {
             lifetime_best_fitness: 0.0,
             last_improvement: 0,
             offsprings: 0.0,
-            iter_locked: false,
+            locked: false,
             locked_organisms: 0,
             organisms: Vec::new(),
         }
     }
 
+    /// Determine wether a new organism is compatible
     pub fn is_compatible(&mut self, organism: &Organism) -> bool {
         if let Some(first_organism) = self.organisms.get(0) {
             first_organism.distance(organism) < conf::NEAT.speciation_threshold
@@ -35,28 +36,33 @@ impl Species {
         }
     }
 
+    /// Add an organism
     pub fn push(&mut self, individual: Organism) {
         self.organisms.push(individual);
     }
 
+    /// Number of organisms. Adheres to lock.
     pub fn len(&self) -> usize {
-        if self.iter_locked {
+        if self.locked {
             self.locked_organisms
         } else {
             self.organisms.len()
         }
     }
 
+    /// Iterate organisms. Adheres to lock.
     pub fn iter(&self) -> impl Iterator<Item = &Organism> {
         self.organisms.iter().take(self.len())
     }
 
+    /// Iterate organisms. Adheres to lock.
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
         let len = self.len();
 
         self.organisms.iter_mut().take(len)
     }
 
+    /// Gather a random organism. Adheres to lock.
     pub fn random_organism(&self) -> Option<&Organism> {
         let mut rng = rand::thread_rng();
 
@@ -65,9 +71,12 @@ impl Species {
             .next()
     }
 
+    /// Adjust fintesses of all organims
     pub fn adjust_fitness(&mut self) {
+        assert!(!self.locked);
+
         let is_stagnent = self.age - self.last_improvement > conf::NEAT.dropoff_age;
-        let is_young = self.age < 10;
+        let is_young = self.age < conf::NEAT.young_age_limit;
         let size: f64 = self.organisms.len() as f64;
 
         for organism in self.organisms.iter_mut() {
@@ -86,12 +95,13 @@ impl Species {
             // Share fitness within species
             organism.adjusted_fitness /= size;
 
+            // Avoid zero fitness
             if organism.adjusted_fitness <= 0.0 {
                 organism.adjusted_fitness = 0.0001;
             }
         }
 
-        // Sort organisms by descending adjusted fitness
+        // Sort organisms descendingly by adjusted fitness
         self.organisms
             .sort_by(|a, b| b.adjusted_fitness.partial_cmp(&a.adjusted_fitness).unwrap());
 
@@ -108,7 +118,9 @@ impl Species {
     }
 
     /// Retain only the best individuals
-    pub fn truncate(&mut self) {
+    pub fn retain_best(&mut self) {
+        assert!(!self.locked);
+
         // Assumes the individuals are sorted in descending fitness order
         self.organisms.truncate(std::cmp::max(
             (self.organisms.len() as f64 * conf::NEAT.survival_ratio).floor() as usize,
@@ -116,22 +128,32 @@ impl Species {
         ));
     }
 
+    /// Lock the species, so that next generation organisms are not used for reproduction
     pub fn lock(&mut self) {
-        self.iter_locked = true;
+        assert!(!self.locked);
+
+        self.locked = true;
         self.locked_organisms = self.organisms.len();
     }
 
+    /// Increase age and prepare for addition of new organisms
     pub fn age(&mut self) {
         self.lock();
         self.age += 1;
     }
 
+    /// Remove all the locked organisms (the old organisms), and retain the (next generation) organisms pushed after lock
     pub fn remove_old(&mut self) {
+        assert!(self.locked);
+    
         self.organisms = self.organisms.split_off(self.locked_organisms);
-        self.iter_locked = false;
+        self.locked = false;
     }
 
+    /// Calculate number of offsprings based on adjusted fitness of organisms
     pub fn calculate_offsprings(&mut self, avg_fitness: f64) {
+        assert!(!self.locked);
+
         self.offsprings = self
             .organisms
             .iter()

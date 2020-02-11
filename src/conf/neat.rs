@@ -50,6 +50,9 @@ pub struct Conf {
     #[envconfig(from = "YOUNG_SPECIES_FITNESS_MULTIPLIER", default = "1.05")]
     pub young_species_fitness_multiplier: f64,
 
+    #[envconfig(from = "YOUNG_AGE_LIMIT", default = "10")]
+    pub young_age_limit: u64,
+
     #[envconfig(from = "STAGNENT_SPECIES_FITNESS_MULTIPLIER", default = "0.01")]
     pub stagnent_species_fitness_multiplier: f64,
 

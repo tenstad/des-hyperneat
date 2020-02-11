@@ -22,6 +22,7 @@ impl Organism {
         }
     }
 
+    /// Breed organism with other organism
     pub fn crossover(&self, other: &Self) -> Self {
         Organism {
             genome: self
@@ -33,18 +34,22 @@ impl Organism {
         }
     }
 
+    /// Compare to other organism based on non-adjusted fitness
     pub fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.fitness.partial_cmp(&other.fitness).unwrap()
     }
 
+    /// Evaluate organism
     pub fn evaluate(&mut self, environment: &dyn Environment) {
         self.fitness = environment.evaluate(&self.genome);
     }
 
+    /// Mutate organism
     pub fn mutate(&mut self, log: &mut InnovationLog, global_innovation: &mut InnovationTime) {
         self.genome.mutate(log, global_innovation);
     }
 
+    /// Genetic distance to other organism
     pub fn distance(&self, other: &Self) -> f64 {
         self.genome.distance(&other.genome)
     }

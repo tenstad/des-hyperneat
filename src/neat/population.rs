@@ -31,6 +31,7 @@ impl Population {
         return population;
     }
 
+    /// Add organism to population
     pub fn push(&mut self, organism: Organism, lock_new: bool) {
         if let Some(species) = self.compatible_species(&organism) {
             species.push(organism);
@@ -44,6 +45,7 @@ impl Population {
         }
     }
 
+    /// Find first species compatible with organism
     fn compatible_species(&mut self, organism: &Organism) -> Option<&mut Species> {
         for species in self.species.iter_mut() {
             if species.is_compatible(&organism) {
@@ -54,6 +56,7 @@ impl Population {
         None
     }
 
+    /// Evolve the population
     pub fn evolve(&mut self, environment: &dyn Environment) {
         // Adjust fitnesses based on age, stagnation and apply fitness sharing
         for species in self.species.iter_mut() {
@@ -112,7 +115,7 @@ impl Population {
 
         // Kill individuals of low performance, not allowed to reproduce
         for species in self.species.iter_mut() {
-            species.truncate();
+            species.retain_best();
         }
 
         // Increase the age of the species, making current organisms old
@@ -132,21 +135,31 @@ impl Population {
             );
             let reproductions = self.species[i].offsprings.floor() as usize - elites;
 
+            // Directly copy elites, without crossover or mutation
             for j in 0..elites {
                 self.push(self.species[i].organisms[j].clone(), true);
             }
 
+            // Breed new organisms
             for _ in 0..reproductions {
-                let organism = if rng.gen::<f64>() < conf::NEAT.interspecies_reproduction_chance {
+                let error = "Unable to gather organism";
+                let father = if rng.gen::<f64>() < conf::NEAT.interspecies_reproduction_chance {
+                    // Interspecies breeding
                     self.tournament_select(2)
+                        .expect(error)
                 } else {
-                    self.species[i].random_organism()
+                    // Breeding within species
+                    self.species[i]
+                        .random_organism()
+                        .expect(error)
                 };
-                if let (Some(a), Some(b)) = (self.species[i].random_organism(), organism) {
-                    let mut child = a.crossover(b);
-                    child.mutate(&mut self.innovation_log, &mut self.global_innovation);
-                    self.push(child, true);
-                }
+                let mother = self.species[i]
+                    .random_organism()
+                    .expect(error);
+
+                let mut child = mother.crossover(father);
+                child.mutate(&mut self.innovation_log, &mut self.global_innovation);
+                self.push(child, true);
             }
         }
 
@@ -168,19 +181,25 @@ impl Population {
         }
         println!("");
 
-        // Verify correct number of individuals
+        // Verify correct number of individuals in new population
         assert_eq!(self.iter().count(), conf::NEAT.population_size as usize);
 
         self.evaluate(environment);
     }
 
+    /// Gather random organism from population
     pub fn random_organism(&self) -> Option<&Organism> {
         let mut rng = rand::thread_rng();
         let len = self.iter().count();
 
+        if len == 0 {
+            return None;
+        }
+
         self.iter().skip(rng.gen_range(0, len) as usize).next()
     }
 
+    /// Use tournament selection to select an organism
     pub fn tournament_select(&self, k: u64) -> Option<&Organism> {
         let mut best: Option<&Organism> = None;
         let mut best_fitness = -1.0;
@@ -197,16 +216,19 @@ impl Population {
         return best;
     }
 
+    /// Evaluate organisms
     pub fn evaluate(&mut self, environment: &dyn Environment) {
         for organism in self.iter_mut() {
             organism.evaluate(environment);
         }
     }
 
+    /// Iterate organisms
     pub fn iter(&self) -> impl Iterator<Item = &Organism> {
         self.species.iter().map(|species| species.iter()).flatten()
     }
 
+    /// Iterate organisms
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
         self.species
             .iter_mut()
@@ -214,6 +236,7 @@ impl Population {
             .flatten()
     }
 
+    /// Gather best organism
     pub fn best(&self) -> Option<&Organism> {
         self.iter().max_by(|a, b| a.cmp(&b))
     }
