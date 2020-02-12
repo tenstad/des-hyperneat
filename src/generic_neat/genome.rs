@@ -1,7 +1,11 @@
 use crate::conf;
-use crate::neat::nodes::*;
-use crate::neat::population::InnovationLog;
-use crate::neat::population::InnovationTime;
+use crate::generic_neat::innovation::InnovationLog;
+use crate::generic_neat::innovation::InnovationTime;
+use crate::generic_neat::link;
+use crate::generic_neat::link::Link;
+use crate::generic_neat::node;
+use crate::generic_neat::node::Node;
+use crate::generic_neat::node::NodeRef;
 use crate::network::activation;
 use crate::network::connection;
 use crate::network::evaluate;
@@ -11,51 +15,18 @@ use rand::Rng;
 use std::collections::HashMap;
 
 #[derive(Clone)]
-pub struct Genome {
-    pub inputs: HashMap<NodeRef, InputNode>,
-    pub outputs: HashMap<NodeRef, OutputNode>,
-    pub hidden_nodes: HashMap<NodeRef, HiddenNode>,
-    pub links: HashMap<(NodeRef, NodeRef), Link>, // Links between nodes
+pub struct Genome<I, H, O, L> {
+    pub inputs: HashMap<NodeRef, Node<I>>,
+    pub hidden_nodes: HashMap<NodeRef, Node<H>>,
+    pub outputs: HashMap<NodeRef, Node<O>>,
+    pub links: HashMap<(NodeRef, NodeRef), Link<L>>, // Links between nodes
 
     order: order::Order<NodeRef>, // Actions to perform when evaluating
     connections: connection::Connections<NodeRef>, // Fast connection lookup
 }
 
-/// Link between two nodes
-#[derive(Copy, Clone, Debug)]
-pub struct Link {
-    pub from: NodeRef,
-    pub to: NodeRef,
-    pub weight: f64,
-    pub enabled: bool,
-    pub split: bool,     // Link has been split
-    pub innovation: u64, // Global innovation number
-}
-
-impl Link {
-    fn crossover(&self, other: &Link) -> Link {
-        assert_eq!(self.from, other.from);
-        assert_eq!(self.to, other.to);
-        assert_eq!(self.innovation, other.innovation);
-
-        Link {
-            from: self.from,
-            to: self.to,
-            weight: (self.weight + other.weight) / 2.0,
-            enabled: self.enabled || other.enabled,
-            split: self.split && other.split,
-            innovation: self.innovation,
-        }
-    }
-
-    fn distance(&self, other: &Link) -> f64 {
-        0.5 * (self.weight - other.weight).tanh().abs()
-            + 0.5 * ((self.enabled == other.enabled) as u64) as f64
-    }
-}
-
-impl Genome {
-    pub fn empty() -> Genome {
+impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<I, H, O, L> {
+    pub fn empty() -> Genome<I, H, O, L> {
         Genome {
             inputs: HashMap::new(),
             outputs: HashMap::new(),
@@ -67,13 +38,13 @@ impl Genome {
     }
 
     /// Generate genome with default activation and no connections
-    pub fn new(inputs: u64, outputs: u64) -> Genome {
-        let inputs: HashMap<NodeRef, InputNode> = (0..inputs)
-            .map(|i| (NodeRef::Input(i), InputNode::new(i)))
+    pub fn new(inputs: u64, outputs: u64) -> Genome<I, H, O, L> {
+        let inputs: HashMap<NodeRef, Node<I>> = (0..inputs)
+            .map(|i| (NodeRef::Input(i), Node::<I>::new(NodeRef::Input(i))))
             .collect();
 
-        let outputs: HashMap<NodeRef, OutputNode> = (0..outputs)
-            .map(|i| (NodeRef::Output(i), OutputNode::new(i)))
+        let outputs: HashMap<NodeRef, Node<O>> = (0..outputs)
+            .map(|i| (NodeRef::Output(i), Node::<O>::new(NodeRef::Output(i))))
             .collect();
 
         let order = order::Order::<NodeRef>::from_nodes(
@@ -92,7 +63,7 @@ impl Genome {
         }
     }
 
-    fn split_link(&mut self, link: Link, new_node_id: u64, innovation_number: u64) {
+    fn split_link(&mut self, link: Link<L>, new_node_id: u64, innovation_number: u64) {
         {
             // Disable link
             let link = self
@@ -119,25 +90,10 @@ impl Genome {
         self.order.split_link(link.from, link.to, new_node_ref);
 
         self.hidden_nodes
-            .insert(new_node_ref, HiddenNode::new(new_node_id));
+            .insert(new_node_ref, Node::<H>::new(NodeRef::Hidden(new_node_id)));
 
-        let link1 = Link {
-            from: link.from,
-            to: new_node_ref,
-            weight: 1.0,
-            enabled: true,
-            split: false,
-            innovation: innovation_number,
-        };
-
-        let link2 = Link {
-            from: new_node_ref,
-            to: link.to,
-            weight: link.weight,
-            enabled: true,
-            split: false,
-            innovation: innovation_number + 1,
-        };
+        let link1 = Link::<L>::new(link.from, new_node_ref, 1.0, innovation_number);
+        let link2 = Link::<L>::new(new_node_ref, link.to, link.weight, innovation_number + 1);
 
         assert!(!self.links.contains_key(&(link1.from, link1.to)));
         self.insert_link(link1, false);
@@ -146,7 +102,7 @@ impl Genome {
         self.insert_link(link2, false);
     }
 
-    fn insert_link(&mut self, link: Link, add_action: bool) {
+    fn insert_link(&mut self, link: Link<L>, add_action: bool) {
         // Add link
         self.links.insert((link.from, link.to), link);
 
@@ -165,7 +121,7 @@ impl Genome {
         }
     }
 
-    pub fn crossover(&self, other: &Self, is_fitter: bool) -> Genome {
+    pub fn crossover(&self, other: &Self, is_fitter: bool) -> Genome<I, H, O, L> {
         // Let parent1 be the fitter parent
         let (parent1, parent2) = if is_fitter {
             (self, other)
@@ -412,14 +368,7 @@ impl Genome {
                     };
 
                     self.insert_link(
-                        Link {
-                            from,
-                            to,
-                            weight: rng.gen::<f64>() - 0.5,
-                            enabled: true,
-                            split: false,
-                            innovation,
-                        },
+                        Link::<L>::new(from, to, rng.gen::<f64>() - 0.5, innovation),
                         true,
                     );
                     break;
@@ -518,39 +467,36 @@ impl Genome {
                 ),
                 order::Action::Activation(node) => evaluate::Action::Activation(
                     *node_mapper.get(node).unwrap(),
-                    self.get_bias(node).unwrap(),
-                    self.get_activation(node).unwrap(),
+                    self.get_bias(node),
+                    self.get_activation(node),
                 ),
             })
             .collect();
 
         evaluate::Evaluator::create(
             length_outputs,
-            input_keys
-                .iter()
-                .map(|node| node.get_id() as usize)
-                .collect(),
+            input_keys.iter().map(|node| node.id() as usize).collect(),
             output_keys
                 .iter()
-                .map(|node| node.get_id() as usize + length_hiddens)
+                .map(|node| node.id() as usize + length_hiddens)
                 .collect(),
             actions,
         )
     }
 
-    fn get_activation(&self, node_ref: &NodeRef) -> Option<activation::Activation> {
+    fn get_activation(&self, node_ref: &NodeRef) -> activation::Activation {
         match node_ref {
-            NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref)?.get_activation(),
-            NodeRef::Output(_) => self.outputs.get(node_ref)?.get_activation(),
-            _ => Some(activation::Activation::None),
+            NodeRef::Input(_) => self.inputs.get(node_ref).unwrap().activation,
+            NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref).unwrap().activation,
+            NodeRef::Output(_) => self.outputs.get(node_ref).unwrap().activation,
         }
     }
 
-    fn get_bias(&self, node_ref: &NodeRef) -> Option<f64> {
+    fn get_bias(&self, node_ref: &NodeRef) -> f64 {
         match node_ref {
-            NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref)?.get_bias(),
-            NodeRef::Output(_) => self.outputs.get(node_ref)?.get_bias(),
-            _ => Some(0.0),
+            NodeRef::Input(_) => self.inputs.get(node_ref).unwrap().bias,
+            NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref).unwrap().bias,
+            NodeRef::Output(_) => self.outputs.get(node_ref).unwrap().bias,
         }
     }
 }

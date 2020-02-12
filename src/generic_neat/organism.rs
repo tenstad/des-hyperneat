@@ -1,19 +1,21 @@
-use crate::neat::environment::Environment;
-use crate::neat::genome::Genome;
-use crate::neat::population::InnovationLog;
-use crate::neat::population::InnovationTime;
+use crate::generic_neat::environment::Environment;
+use crate::generic_neat::genome::Genome;
+use crate::generic_neat::innovation::InnovationLog;
+use crate::generic_neat::innovation::InnovationTime;
+use crate::generic_neat::link;
+use crate::generic_neat::node;
 use std::cmp;
 
 #[derive(Clone)]
-pub struct Organism {
-    pub genome: Genome,
+pub struct Organism<I, H, O, L> {
+    pub genome: Genome<I, H, O, L>,
     pub fitness: f64,
     pub adjusted_fitness: f64,
     pub generation: u64,
 }
 
-impl Organism {
-    pub fn new(generation: u64, inputs: u64, outputs: u64) -> Organism {
+impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Organism<I, H, O, L> {
+    pub fn new(generation: u64, inputs: u64, outputs: u64) -> Organism<I, H, O, L> {
         Organism {
             genome: Genome::new(inputs, outputs),
             fitness: 0.0,
@@ -40,8 +42,8 @@ impl Organism {
     }
 
     /// Evaluate organism
-    pub fn evaluate(&mut self, environment: &dyn Environment) {
-        self.fitness = environment.evaluate(&self.genome);
+    pub fn evaluate(&mut self, environment: &dyn Environment<I, H, O, L>) {
+        self.fitness = environment.fitness(&self.genome);
     }
 
     /// Mutate organism

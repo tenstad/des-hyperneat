@@ -1,25 +1,29 @@
 use crate::data::dataset::Dataset;
 use crate::data::dataset::Dimensions;
-use crate::neat::environment::Environment;
-use crate::neat::genome::Genome;
+use crate::generic_neat::environment::Environment;
+use crate::generic_neat::genome::Genome;
+use crate::generic_neat::link;
+use crate::generic_neat::node;
 use std::fmt;
 use std::io::Error;
 
-pub struct DatasetExperiment {
+pub struct DatasetEnvironment {
     name: String,
     dataset: Dataset,
 }
 
-impl DatasetExperiment {
-    pub fn init(filename: &String) -> Result<DatasetExperiment, Error> {
-        Ok(DatasetExperiment {
+impl DatasetEnvironment {
+    pub fn init(filename: &String) -> Result<DatasetEnvironment, Error> {
+        Ok(DatasetEnvironment {
             name: filename.clone(),
             dataset: Dataset::load(filename)?,
         })
     }
 }
 
-impl Environment for DatasetExperiment {
+impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Environment<I, H, O, L>
+    for DatasetEnvironment
+{
     fn get_name(&self) -> &String {
         &self.name
     }
@@ -28,7 +32,7 @@ impl Environment for DatasetExperiment {
         return &self.dataset.dimensions;
     }
 
-    fn evaluate(&self, genome: &Genome) -> f64 {
+    fn fitness(&self, genome: &Genome<I, H, O, L>) -> f64 {
         let mut evaluator = genome.create_evaluator();
 
         let outputs: Vec<Vec<f64>> = self
@@ -41,7 +45,7 @@ impl Environment for DatasetExperiment {
         1.0 - self.dataset.mse(&outputs)
     }
 
-    fn evaluate_accuracy(&self, genome: &Genome) -> f64 {
+    fn accuracy(&self, genome: &Genome<I, H, O, L>) -> f64 {
         let mut evaluator = genome.create_evaluator();
 
         let outputs: Vec<Vec<f64>> = self
@@ -55,8 +59,8 @@ impl Environment for DatasetExperiment {
     }
 }
 
-impl fmt::Display for DatasetExperiment {
+impl fmt::Display for DatasetEnvironment {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return write!(f, "{}", self.name)
+        return write!(f, "{}", self.name);
     }
 }

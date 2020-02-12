@@ -1,20 +1,22 @@
 use crate::conf;
 use crate::data::dataset::Dimensions;
-use crate::neat::environment::Environment;
-use crate::neat::nodes;
-use crate::neat::organism::Organism;
-use crate::neat::species::Species;
+use crate::generic_neat::environment::Environment;
+use crate::generic_neat::innovation::InnovationLog;
+use crate::generic_neat::innovation::InnovationTime;
+use crate::generic_neat::link;
+use crate::generic_neat::node;
+use crate::generic_neat::organism::Organism;
+use crate::generic_neat::species::Species;
 use rand::Rng;
-use std::collections::HashMap;
 
-pub struct Population {
-    species: Vec<Species>,
+pub struct Population<I, H, O, L> {
+    species: Vec<Species<I, H, O, L>>,
     pub innovation_log: InnovationLog,
     pub global_innovation: InnovationTime,
 }
 
-impl Population {
-    pub fn new(dimensions: &Dimensions) -> Population {
+impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Population<I, H, O, L> {
+    pub fn new(dimensions: &Dimensions) -> Population<I, H, O, L> {
         let mut population = Population {
             species: Vec::new(),
             innovation_log: InnovationLog::new(),
@@ -32,7 +34,7 @@ impl Population {
     }
 
     /// Add organism to population
-    pub fn push(&mut self, organism: Organism, lock_new: bool) {
+    pub fn push(&mut self, organism: Organism<I, H, O, L>, lock_new: bool) {
         if let Some(species) = self.compatible_species(&organism) {
             species.push(organism);
         } else {
@@ -46,7 +48,10 @@ impl Population {
     }
 
     /// Find first species compatible with organism
-    fn compatible_species(&mut self, organism: &Organism) -> Option<&mut Species> {
+    fn compatible_species(
+        &mut self,
+        organism: &Organism<I, H, O, L>,
+    ) -> Option<&mut Species<I, H, O, L>> {
         for species in self.species.iter_mut() {
             if species.is_compatible(&organism) {
                 return Some(species);
@@ -57,7 +62,7 @@ impl Population {
     }
 
     /// Evolve the population
-    pub fn evolve(&mut self, environment: &dyn Environment) {
+    pub fn evolve(&mut self, environment: &dyn Environment<I, H, O, L>) {
         // Adjust fitnesses based on age, stagnation and apply fitness sharing
         for species in self.species.iter_mut() {
             species.adjust_fitness();
@@ -83,7 +88,7 @@ impl Population {
             .sum();
 
         // Sort species based on closeness to additional offspring
-        let mut sorted_species: Vec<(f64, &mut Species)> = self
+        let mut sorted_species: Vec<(f64, &mut Species<I, H, O, L>)> = self
             .species
             .iter_mut()
             .map(|species| (species.offsprings % 1.0, species))
@@ -145,17 +150,12 @@ impl Population {
                 let error = "Unable to gather organism";
                 let father = if rng.gen::<f64>() < conf::NEAT.interspecies_reproduction_chance {
                     // Interspecies breeding
-                    self.tournament_select(2)
-                        .expect(error)
+                    self.tournament_select(2).expect(error)
                 } else {
                     // Breeding within species
-                    self.species[i]
-                        .random_organism()
-                        .expect(error)
+                    self.species[i].random_organism().expect(error)
                 };
-                let mother = self.species[i]
-                    .random_organism()
-                    .expect(error);
+                let mother = self.species[i].random_organism().expect(error);
 
                 let mut child = mother.crossover(father);
                 child.mutate(&mut self.innovation_log, &mut self.global_innovation);
@@ -188,7 +188,7 @@ impl Population {
     }
 
     /// Gather random organism from population
-    pub fn random_organism(&self) -> Option<&Organism> {
+    pub fn random_organism(&self) -> Option<&Organism<I, H, O, L>> {
         let mut rng = rand::thread_rng();
         let len = self.iter().count();
 
@@ -200,8 +200,8 @@ impl Population {
     }
 
     /// Use tournament selection to select an organism
-    pub fn tournament_select(&self, k: u64) -> Option<&Organism> {
-        let mut best: Option<&Organism> = None;
+    pub fn tournament_select(&self, k: u64) -> Option<&Organism<I, H, O, L>> {
+        let mut best: Option<&Organism<I, H, O, L>> = None;
         let mut best_fitness = -1.0;
 
         for _ in 0..k {
@@ -217,19 +217,19 @@ impl Population {
     }
 
     /// Evaluate organisms
-    pub fn evaluate(&mut self, environment: &dyn Environment) {
+    pub fn evaluate(&mut self, environment: &dyn Environment<I, H, O, L>) {
         for organism in self.iter_mut() {
             organism.evaluate(environment);
         }
     }
 
     /// Iterate organisms
-    pub fn iter(&self) -> impl Iterator<Item = &Organism> {
+    pub fn iter(&self) -> impl Iterator<Item = &Organism<I, H, O, L>> {
         self.species.iter().map(|species| species.iter()).flatten()
     }
 
     /// Iterate organisms
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<I, H, O, L>> {
         self.species
             .iter_mut()
             .map(|species| species.iter_mut())
@@ -237,35 +237,7 @@ impl Population {
     }
 
     /// Gather best organism
-    pub fn best(&self) -> Option<&Organism> {
+    pub fn best(&self) -> Option<&Organism<I, H, O, L>> {
         self.iter().max_by(|a, b| a.cmp(&b))
-    }
-}
-
-pub struct InnovationLog {
-    pub node_additions: HashMap<u64, InnovationTime>,
-    pub edge_additions: HashMap<(nodes::NodeRef, nodes::NodeRef), u64>,
-}
-
-impl InnovationLog {
-    pub fn new() -> InnovationLog {
-        InnovationLog {
-            node_additions: HashMap::<u64, InnovationTime>::new(),
-            edge_additions: HashMap::<(nodes::NodeRef, nodes::NodeRef), u64>::new(),
-        }
-    }
-}
-
-pub struct InnovationTime {
-    pub node_number: u64,
-    pub innovation_number: u64,
-}
-
-impl InnovationTime {
-    pub fn new() -> InnovationTime {
-        InnovationTime {
-            node_number: 0,
-            innovation_number: 0,
-        }
     }
 }
