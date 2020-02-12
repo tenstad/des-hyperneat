@@ -1,5 +1,5 @@
 extern crate libc;
-use crate::neat::nodes::Activation;
+use crate::network::activation::Activation;
 use std::mem;
 
 #[derive(Clone)]

@@ -1,4 +1,4 @@
-use crate::neat::nodes;
+use crate::network::activation;
 use envconfig::Envconfig;
 
 #[derive(Envconfig)]
@@ -70,11 +70,11 @@ pub struct Conf {
     pub elitism: u64,
 
     #[envconfig(from = "HIDDEN_ACTIVATIONS", default = "None ReLU Sigmoid")]
-    pub hidden_activations: nodes::Activations,
+    pub hidden_activations: activation::Activations,
 
     #[envconfig(from = "NORMALIZE_OUTPUT", default = "true")]
     pub normalize_output: bool,
 
     #[envconfig(from = "OUTPUT_ACTIVATIONS", default = "Softmax")]
-    pub output_activations: nodes::Activations,
+    pub output_activations: activation::Activations,
 }

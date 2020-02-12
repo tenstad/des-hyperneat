@@ -8,6 +8,7 @@ extern crate enum_display_derive;
 mod conf;
 mod data;
 mod neat;
+mod network;
 
 use neat::experiments::dataset_experiment::DatasetExperiment;
 

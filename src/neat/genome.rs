@@ -1,11 +1,11 @@
 use crate::conf;
-use crate::neat::actions::Action;
-use crate::neat::actions::Actions;
-use crate::neat::connections::Connections;
-use crate::neat::evaluator;
 use crate::neat::nodes::*;
 use crate::neat::population::InnovationLog;
 use crate::neat::population::InnovationTime;
+use crate::network::activation;
+use crate::network::connection;
+use crate::network::evaluate;
+use crate::network::order;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use std::collections::HashMap;
@@ -17,8 +17,8 @@ pub struct Genome {
     pub hidden_nodes: HashMap<NodeRef, HiddenNode>,
     pub links: HashMap<(NodeRef, NodeRef), Link>, // Links between nodes
 
-    actions: Actions<NodeRef>,         // Actions to perform when evaluating
-    connections: Connections<NodeRef>, // Fast connection lookup
+    order: order::Order<NodeRef>, // Actions to perform when evaluating
+    connections: connection::Connections<NodeRef>, // Fast connection lookup
 }
 
 /// Link between two nodes
@@ -61,8 +61,8 @@ impl Genome {
             outputs: HashMap::new(),
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
-            actions: Actions::<NodeRef>::empty(),
-            connections: Connections::<NodeRef>::new(),
+            order: order::Order::<NodeRef>::empty(),
+            connections: connection::Connections::<NodeRef>::new(),
         }
     }
 
@@ -76,7 +76,7 @@ impl Genome {
             .map(|i| (NodeRef::Output(i), OutputNode::new(i)))
             .collect();
 
-        let actions = Actions::<NodeRef>::from_nodes(
+        let order = order::Order::<NodeRef>::from_nodes(
             inputs.keys().cloned().collect(),
             vec![],
             outputs.keys().cloned().collect(),
@@ -87,8 +87,8 @@ impl Genome {
             outputs,
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
-            actions,
-            connections: Connections::<NodeRef>::new(),
+            order,
+            connections: connection::Connections::<NodeRef>::new(),
         }
     }
 
@@ -116,7 +116,7 @@ impl Genome {
         self.connections.disable(link.from, link.to);
 
         // Add and remvoe actions
-        self.actions.split_link(link.from, link.to, new_node_ref);
+        self.order.split_link(link.from, link.to, new_node_ref);
 
         self.hidden_nodes
             .insert(new_node_ref, HiddenNode::new(new_node_id));
@@ -161,7 +161,7 @@ impl Genome {
             // self.actions when all links are inserted.
             // Except when the link is added by split, then self.action should
             // perform the split internally.
-            self.actions.add_link(link.from, link.to, &self.connections);
+            self.order.add_link(link.from, link.to, &self.connections);
         }
     }
 
@@ -193,7 +193,7 @@ impl Genome {
             } else {
                 genome.inputs.insert(*node_ref, *node);
             }
-            genome.actions.add_input(*node_ref);
+            genome.order.add_input(*node_ref);
         }
 
         for (node_ref, node) in parent1.hidden_nodes.iter() {
@@ -202,7 +202,7 @@ impl Genome {
             } else {
                 genome.hidden_nodes.insert(*node_ref, *node);
             }
-            genome.actions.add_hidden(*node_ref);
+            genome.order.add_hidden(*node_ref);
         }
 
         for (node_ref, node) in parent1.outputs.iter() {
@@ -211,11 +211,11 @@ impl Genome {
             } else {
                 genome.outputs.insert(*node_ref, *node);
             }
-            genome.actions.add_output(*node_ref);
+            genome.order.add_output(*node_ref);
         }
 
         // Topologically sort actions of child, as this is not done when inserting links and nodes
-        genome.actions.sort_topologically(&genome.connections);
+        genome.order.sort_topologically(&genome.connections);
 
         return genome;
     }
@@ -330,7 +330,7 @@ impl Genome {
             .collect::<Vec<(NodeRef, NodeRef)>>()
             .choose(&mut rand::thread_rng())
         {
-            assert!(self.actions.contains(&Action::Link(index.0, index.1)));
+            assert!(self.order.contains(&order::Action::Link(index.0, index.1)));
 
             if let Some(&link) = self.links.get(index) {
                 // Check if this link has been split by another individual
@@ -442,7 +442,7 @@ impl Genome {
             let connection_ref = *connection_ref;
 
             self.connections.disable(connection_ref.0, connection_ref.1);
-            self.actions.remove_link(connection_ref.0, connection_ref.1);
+            self.order.remove_link(connection_ref.0, connection_ref.1);
 
             if let Some(link) = self.links.get_mut(&connection_ref) {
                 link.enabled = false;
@@ -479,7 +479,7 @@ impl Genome {
     }
 
     /// Creates speed-optimized evaluator
-    pub fn create_evaluator(&self) -> evaluator::Evaluator {
+    pub fn create_evaluator(&self) -> evaluate::Evaluator {
         let length_inputs = self.inputs.len();
         let length_hiddens = length_inputs + self.hidden_nodes.len();
         let length_outputs = length_hiddens + self.outputs.len();
@@ -508,15 +508,15 @@ impl Genome {
             .collect();
 
         let actions = self
-            .actions
+            .order
             .iter()
             .map(|action| match action {
-                Action::Link(from, to) => evaluator::Action::Link(
+                order::Action::Link(from, to) => evaluate::Action::Link(
                     *node_mapper.get(from).unwrap(),
                     *node_mapper.get(to).unwrap(),
                     self.links.get(&(*from, *to)).unwrap().weight,
                 ),
-                Action::Activation(node) => evaluator::Action::Activation(
+                order::Action::Activation(node) => evaluate::Action::Activation(
                     *node_mapper.get(node).unwrap(),
                     self.get_bias(node).unwrap(),
                     self.get_activation(node).unwrap(),
@@ -524,7 +524,7 @@ impl Genome {
             })
             .collect();
 
-        evaluator::Evaluator::create(
+        evaluate::Evaluator::create(
             length_outputs,
             input_keys
                 .iter()
@@ -538,11 +538,11 @@ impl Genome {
         )
     }
 
-    fn get_activation(&self, node_ref: &NodeRef) -> Option<Activation> {
+    fn get_activation(&self, node_ref: &NodeRef) -> Option<activation::Activation> {
         match node_ref {
             NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref)?.get_activation(),
             NodeRef::Output(_) => self.outputs.get(node_ref)?.get_activation(),
-            _ => Some(Activation::None),
+            _ => Some(activation::Activation::None),
         }
     }
 

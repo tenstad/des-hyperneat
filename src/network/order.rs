@@ -1,11 +1,11 @@
-use crate::neat::connections::Connections;
+use crate::network::connection::Connections;
 use std::collections::HashMap;
 use std::fmt;
 use std::hash::Hash;
 
 /// Topologically sorted list of actions to perform when evalutating network
 #[derive(Clone)]
-pub struct Actions<T> {
+pub struct Order<T> {
     inputs: Vec<T>,
     outputs: Vec<T>,
     hiddens: Vec<T>,
@@ -19,9 +19,9 @@ pub enum Action<T> {
 }
 
 #[allow(dead_code)]
-impl<T: Hash + Eq + Copy> Actions<T> {
-    pub fn empty() -> Actions<T> {
-        Actions {
+impl<T: Hash + Eq + Copy> Order<T> {
+    pub fn empty() -> Order<T> {
+        Order {
             inputs: Vec::new(),
             outputs: Vec::new(),
             hiddens: Vec::new(),
@@ -29,7 +29,7 @@ impl<T: Hash + Eq + Copy> Actions<T> {
         }
     }
 
-    pub fn from_nodes(inputs: Vec<T>, hiddens: Vec<T>, outputs: Vec<T>) -> Actions<T> {
+    pub fn from_nodes(inputs: Vec<T>, hiddens: Vec<T>, outputs: Vec<T>) -> Order<T> {
         let actions = inputs
             .iter()
             .map(|x| Action::Activation(*x))
@@ -37,7 +37,7 @@ impl<T: Hash + Eq + Copy> Actions<T> {
             .chain(outputs.iter().map(|x| Action::Activation(*x)))
             .collect();
 
-        Actions {
+        Order {
             inputs,
             outputs,
             hiddens,
@@ -183,16 +183,7 @@ impl<T: Hash + Eq + Copy> Actions<T> {
     }
 }
 
-impl<T: fmt::Display> fmt::Display for Action<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Action::Link(from, to) => write!(f, "{}->{}", from, to),
-            Action::Activation(id) => write!(f, "{}", id),
-        }
-    }
-}
-
-impl<T: Hash + Eq + Copy + fmt::Display> fmt::Display for Actions<T> {
+impl<T: Hash + Eq + Copy + fmt::Display> fmt::Display for Order<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Actions[")?;
         for action in self.iter() {
@@ -202,24 +193,33 @@ impl<T: Hash + Eq + Copy + fmt::Display> fmt::Display for Actions<T> {
     }
 }
 
+impl<T: fmt::Display> fmt::Display for Action<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Action::Link(from, to) => write!(f, "{}->{}", from, to),
+            Action::Activation(id) => write!(f, "{}", id),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn assert_equal<T: Hash + Eq + Copy + fmt::Debug>(actions: Actions<T>, target: Vec<Action<T>>) {
-        let mut actions = actions.iter();
+    fn assert_equal<T: Hash + Eq + Copy + fmt::Debug>(order: Order<T>, target: Vec<Action<T>>) {
+        let mut order = order.iter();
         let mut target = target.iter();
-        while let (Some(a), Some(t)) = (actions.next(), target.next()) {
+        while let (Some(a), Some(t)) = (order.next(), target.next()) {
             assert_eq!(a, t);
         }
     }
 
     #[test]
     fn test_from_node() {
-        let actions = Actions::<u8>::from_nodes(vec![0, 1], vec![3, 4], vec![6, 7]);
+        let order = Order::<u8>::from_nodes(vec![0, 1], vec![3, 4], vec![6, 7]);
 
         assert_equal(
-            actions,
+            order,
             vec![
                 Action::Activation(0),
                 Action::Activation(1),
@@ -235,12 +235,12 @@ mod tests {
     fn test_add_remove_link() {
         let connections = Connections::<u8>::new();
 
-        let mut actions = Actions::<u8>::from_nodes(vec![0], vec![1], vec![2]);
-        actions.add_link(0, 1, &connections);
-        actions.add_link(0, 2, &connections);
+        let mut order = Order::<u8>::from_nodes(vec![0], vec![1], vec![2]);
+        order.add_link(0, 1, &connections);
+        order.add_link(0, 2, &connections);
 
         assert_equal(
-            actions.clone(),
+            order.clone(),
             vec![
                 Action::Activation(0),
                 Action::Link(0, 2),
@@ -250,9 +250,9 @@ mod tests {
             ],
         );
 
-        actions.remove_link(0, 2);
+        order.remove_link(0, 2);
         assert_equal(
-            actions,
+            order,
             vec![
                 Action::Activation(0),
                 Action::Link(0, 1),
@@ -266,12 +266,12 @@ mod tests {
     fn test_split_link() {
         let connections = Connections::<u8>::new();
 
-        let mut actions = Actions::<u8>::from_nodes(vec![0], vec![1], vec![2]);
-        actions.add_link(0, 1, &connections);
-        actions.split_link(0, 1, 3);
+        let mut order = Order::<u8>::from_nodes(vec![0], vec![1], vec![2]);
+        order.add_link(0, 1, &connections);
+        order.split_link(0, 1, 3);
 
         assert_equal(
-            actions,
+            order,
             vec![
                 Action::Activation(0),
                 Action::Link(0, 3),
@@ -288,13 +288,13 @@ mod tests {
         let mut connections = Connections::<u8>::new();
         connections.add_enabled(1, 2);
 
-        let mut actions = Actions::<u8>::from_nodes(vec![0], vec![1, 2], vec![3]);
-        actions.add_link(1, 2, &connections);
+        let mut order = Order::<u8>::from_nodes(vec![0], vec![1, 2], vec![3]);
+        order.add_link(1, 2, &connections);
 
-        actions.sort_topologically(&connections);
+        order.sort_topologically(&connections);
 
         assert_equal(
-            actions,
+            order,
             vec![
                 Action::Activation(0),
                 Action::Activation(1),
@@ -314,16 +314,16 @@ mod tests {
         connections.add_enabled(2, 3);
         connections.add_enabled(2, 1);
 
-        let mut actions = Actions::<u8>::from_nodes(vec![0], vec![1, 2], vec![3]);
-        actions.add_link(0, 1, &connections);
-        actions.add_link(1, 3, &connections);
-        actions.add_link(0, 2, &connections);
-        actions.add_link(2, 3, &connections);
+        let mut order = Order::<u8>::from_nodes(vec![0], vec![1, 2], vec![3]);
+        order.add_link(0, 1, &connections);
+        order.add_link(1, 3, &connections);
+        order.add_link(0, 2, &connections);
+        order.add_link(2, 3, &connections);
 
-        actions.add_link(2, 1, &connections);
+        order.add_link(2, 1, &connections);
 
         let pos = |x: u8| {
-            actions
+            order
                 .iter()
                 .position(|y| *y == Action::Activation(x))
                 .unwrap()
