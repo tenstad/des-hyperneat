@@ -6,6 +6,7 @@ use crate::generic_neat::innovation::InnovationTime;
 use crate::generic_neat::link;
 use crate::generic_neat::node;
 use crate::generic_neat::organism::Organism;
+use crate::generic_neat::phenotype;
 use crate::generic_neat::species::Species;
 use rand::Rng;
 
@@ -62,7 +63,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
     }
 
     /// Evolve the population
-    pub fn evolve(&mut self, environment: &dyn Environment<I, H, O, L>) {
+    pub fn evolve(&mut self) {
         // Adjust fitnesses based on age, stagnation and apply fitness sharing
         for species in self.species.iter_mut() {
             species.adjust_fitness();
@@ -183,8 +184,6 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
 
         // Verify correct number of individuals in new population
         assert_eq!(self.iter().count(), conf::NEAT.population_size as usize);
-
-        self.evaluate(environment);
     }
 
     /// Gather random organism from population
@@ -217,9 +216,13 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
     }
 
     /// Evaluate organisms
-    pub fn evaluate(&mut self, environment: &dyn Environment<I, H, O, L>) {
+    pub fn evaluate<P>(
+        &mut self,
+        environment: &dyn Environment<P>,
+        phenotype: &dyn phenotype::Develop<I, H, O, L, P>,
+    ) {
         for organism in self.iter_mut() {
-            organism.evaluate(environment);
+            organism.evaluate(environment, phenotype);
         }
     }
 

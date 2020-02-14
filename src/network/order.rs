@@ -8,7 +8,7 @@ use std::hash::Hash;
 pub struct Order<T> {
     inputs: Vec<T>,
     outputs: Vec<T>,
-    hiddens: Vec<T>,
+    pub hiddens: Vec<T>,
     actions: Vec<Action<T>>,
 }
 
@@ -20,7 +20,7 @@ pub enum Action<T> {
 
 #[allow(dead_code)]
 impl<T: Hash + Eq + Copy> Order<T> {
-    pub fn empty() -> Order<T> {
+    pub fn new() -> Order<T> {
         Order {
             inputs: Vec::new(),
             outputs: Vec::new(),

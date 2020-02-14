@@ -4,6 +4,7 @@ use crate::generic_neat::innovation::InnovationLog;
 use crate::generic_neat::innovation::InnovationTime;
 use crate::generic_neat::link;
 use crate::generic_neat::node;
+use crate::generic_neat::phenotype;
 use std::cmp;
 
 #[derive(Clone)]
@@ -42,8 +43,13 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Organis
     }
 
     /// Evaluate organism
-    pub fn evaluate(&mut self, environment: &dyn Environment<I, H, O, L>) {
-        self.fitness = environment.fitness(&self.genome);
+    pub fn evaluate<P>(
+        &mut self,
+        environment: &dyn Environment<P>,
+        developer: &dyn phenotype::Develop<I, H, O, L, P>,
+    ) {
+        let mut phenotype = developer.develop(&self.genome);
+        self.fitness = environment.fitness(&mut phenotype);
     }
 
     /// Mutate organism

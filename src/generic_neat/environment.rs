@@ -1,9 +1,8 @@
 use crate::data::dataset;
-use crate::generic_neat::genome;
 
-pub trait Environment<I, H, O, L> {
+pub trait Environment<P> {
     fn get_name(&self) -> &String;
-    fn fitness(&self, genome: &genome::Genome<I, H, O, L>) -> f64;
-    fn accuracy(&self, genome: &genome::Genome<I, H, O, L>) -> f64;
+    fn fitness(&self, phenotype: &mut P) -> f64;
+    fn accuracy(&self, phenotype: &mut P) -> f64;
     fn get_dimensions(&self) -> &dataset::Dimensions;
 }

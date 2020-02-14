@@ -32,7 +32,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
             outputs: HashMap::new(),
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
-            order: order::Order::<NodeRef>::empty(),
+            order: order::Order::<NodeRef>::new(),
             connections: connection::Connections::<NodeRef>::new(),
         }
     }
@@ -429,9 +429,9 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
 
     /// Creates speed-optimized evaluator
     pub fn create_evaluator(&self) -> evaluate::Evaluator {
-        let length_inputs = self.inputs.len();
-        let length_hiddens = length_inputs + self.hidden_nodes.len();
-        let length_outputs = length_hiddens + self.outputs.len();
+        let input_length = self.inputs.len();
+        let cumulative_hidden_length = input_length + self.hidden_nodes.len(); // Length of input and hidden
+        let cumulative_output_length = cumulative_hidden_length + self.outputs.len(); // Length of input, hidden and output
 
         let mut input_keys: Vec<NodeRef> = self.inputs.keys().cloned().collect();
         input_keys.sort();
@@ -446,13 +446,13 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
                 self.hidden_nodes
                     .keys()
                     .enumerate()
-                    .map(|(i, node_ref)| (*node_ref, i + length_inputs)),
+                    .map(|(i, node_ref)| (*node_ref, i + input_length)),
             )
             .chain(
                 output_keys
                     .iter()
                     .enumerate()
-                    .map(|(i, node_ref)| (*node_ref, i + length_hiddens)),
+                    .map(|(i, node_ref)| (*node_ref, i + cumulative_hidden_length)),
             )
             .collect();
 
@@ -474,11 +474,11 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
             .collect();
 
         evaluate::Evaluator::create(
-            length_outputs,
+            cumulative_output_length,
             input_keys.iter().map(|node| node.id() as usize).collect(),
             output_keys
                 .iter()
-                .map(|node| node.id() as usize + length_hiddens)
+                .map(|node| node.id() as usize + cumulative_hidden_length)
                 .collect(),
             actions,
         )

@@ -1,9 +1,7 @@
 use crate::data::dataset::Dataset;
 use crate::data::dataset::Dimensions;
 use crate::generic_neat::environment::Environment;
-use crate::generic_neat::genome::Genome;
-use crate::generic_neat::link;
-use crate::generic_neat::node;
+use crate::network::evaluate;
 use std::fmt;
 use std::io::Error;
 
@@ -21,9 +19,7 @@ impl DatasetEnvironment {
     }
 }
 
-impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Environment<I, H, O, L>
-    for DatasetEnvironment
-{
+impl Environment<evaluate::Evaluator> for DatasetEnvironment {
     fn get_name(&self) -> &String {
         &self.name
     }
@@ -32,27 +28,23 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Environ
         return &self.dataset.dimensions;
     }
 
-    fn fitness(&self, genome: &Genome<I, H, O, L>) -> f64 {
-        let mut evaluator = genome.create_evaluator();
-
+    fn fitness(&self, network: &mut evaluate::Evaluator) -> f64 {
         let outputs: Vec<Vec<f64>> = self
             .dataset
             .inputs
             .iter()
-            .map(|input| evaluator.evaluate(input))
+            .map(|input| network.evaluate(input))
             .collect();
 
         1.0 - self.dataset.mse(&outputs)
     }
 
-    fn accuracy(&self, genome: &Genome<I, H, O, L>) -> f64 {
-        let mut evaluator = genome.create_evaluator();
-
+    fn accuracy(&self, network: &mut evaluate::Evaluator) -> f64 {
         let outputs: Vec<Vec<f64>> = self
             .dataset
             .inputs
             .iter()
-            .map(|input| evaluator.evaluate(input))
+            .map(|input| network.evaluate(input))
             .collect();
 
         self.dataset.acc(&outputs)
