@@ -1,2 +1,4 @@
 pub mod dataset;
-mod error;
+pub mod error;
+pub mod batch;
+pub mod accuracy;

@@ -1,3 +1,6 @@
+use crate::conf;
+use crate::data::accuracy;
+use crate::data::batch;
 use crate::data::error;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error};
@@ -5,10 +8,12 @@ use std::io::{BufRead, BufReader, Error};
 #[derive(Debug)]
 pub struct Dataset {
     pub dimensions: Dimensions,
-    is_classification: bool,
-    one_hot_output: bool,
+    pub size: usize,
+    pub is_classification: bool,
+    pub one_hot_output: bool,
     pub inputs: Vec<Vec<f64>>,
     pub targets: Vec<Vec<f64>>,
+    pub batches: Vec<(Vec<Vec<f64>>, Vec<Vec<f64>>)>,
 }
 
 #[derive(Debug)]
@@ -69,63 +74,49 @@ impl Dataset {
 
         Ok(Dataset {
             is_classification: is_classification,
+            size: inputs.len(),
             one_hot_output: one_hot_encoded,
             dimensions: Dimensions {
                 inputs: inputs[0].len() as u64,
                 outputs: outputs[0].len() as u64,
             },
+            batches: batch_data(&inputs)
+                .iter()
+                .cloned()
+                .zip(batch_data(&outputs).iter().cloned())
+                .collect(),
             inputs: inputs,
             targets: outputs,
         })
     }
 
-    pub fn mse(&self, outputs: &Vec<Vec<f64>>) -> f64 {
-        self.targets
-            .iter()
-            .zip(outputs.iter())
-            .map(|(t, o)| error::mse(t, o))
-            .sum::<f64>()
-            / self.targets.len() as f64
+    pub fn mse(&self, outputs: impl Iterator<Item = Vec<f64>>) -> f64 {
+        error::mse(&self.targets, outputs)
     }
 
-    pub fn acc(&self, outputs: &Vec<Vec<f64>>) -> f64 {
+    pub fn acc(&self, outputs: impl Iterator<Item = Vec<f64>>) -> f64 {
         if !self.is_classification {
-            return 0.0;
-        }
-
-        if self.one_hot_output {
-            self.targets
-                .iter()
-                .zip(outputs.iter())
-                .map(|(t, o)| if argmax(t) == argmax(o) { 1.0 } else { 0.0 })
-                .sum::<f64>()
-                / self.targets.len() as f64
+            0.0
+        } else if self.one_hot_output {
+            accuracy::one_hot_accuracy(&self.targets, outputs)
         } else {
-            self.targets
-                .iter()
-                .zip(outputs.iter())
-                .map(|(t, o)| {
-                    t.iter()
-                        .zip(o.iter())
-                        .map(|(t, o)| if t.round() == o.round() { 1.0 } else { 0.0 })
-                        .sum::<f64>()
-                })
-                .sum::<f64>()
-                / self.targets.len() as f64
+            accuracy::rounded_accuracy(&self.targets, outputs)
         }
     }
 }
 
-pub fn argmax(vec: &Vec<f64>) -> usize {
-    let mut max_i: usize = 0;
-    let mut max_v: f64 = -100000.0;
+pub fn batch_data(data: &Vec<Vec<f64>>) -> Vec<Vec<Vec<f64>>> {
+    let batch_count: usize = conf::GENERAL.threads;
+    let batches = batch::create_batches(batch_count, data.len());
 
-    for (i, &v) in vec.iter().enumerate() {
-        if v > max_v {
-            max_i = i;
-            max_v = v;
-        }
-    }
-
-    return max_i;
+    batches
+        .iter()
+        .map(|(start_index, size)| {
+            data.iter()
+                .skip(*start_index)
+                .take(*size)
+                .cloned()
+                .collect()
+        })
+        .collect()
 }
