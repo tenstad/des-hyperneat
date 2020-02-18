@@ -1,32 +1,29 @@
 use crate::conf;
 use crate::generic_neat::innovation::InnovationLog;
 use crate::generic_neat::innovation::InnovationTime;
-use crate::generic_neat::link;
 use crate::generic_neat::link::Link;
-use crate::generic_neat::node;
 use crate::generic_neat::node::Node;
 use crate::generic_neat::node::NodeRef;
 use crate::network::activation;
 use crate::network::connection;
-use crate::network::evaluate;
 use crate::network::order;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use std::collections::HashMap;
 
 #[derive(Clone)]
-pub struct Genome<I, H, O, L> {
-    pub inputs: HashMap<NodeRef, Node<I>>,
-    pub hidden_nodes: HashMap<NodeRef, Node<H>>,
-    pub outputs: HashMap<NodeRef, Node<O>>,
-    pub links: HashMap<(NodeRef, NodeRef), Link<L>>, // Links between nodes
+pub struct Genome {
+    pub inputs: HashMap<NodeRef, Node>,
+    pub hidden_nodes: HashMap<NodeRef, Node>,
+    pub outputs: HashMap<NodeRef, Node>,
+    pub links: HashMap<(NodeRef, NodeRef), Link>, // Links between nodes
 
-    order: order::Order<NodeRef>, // Actions to perform when evaluating
-    connections: connection::Connections<NodeRef>, // Fast connection lookup
+    pub order: order::Order<NodeRef>, // Actions to perform when evaluating
+    pub connections: connection::Connections<NodeRef>, // Fast connection lookup
 }
 
-impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<I, H, O, L> {
-    pub fn empty() -> Genome<I, H, O, L> {
+impl Genome {
+    pub fn empty() -> Genome {
         Genome {
             inputs: HashMap::new(),
             outputs: HashMap::new(),
@@ -38,13 +35,13 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
     }
 
     /// Generate genome with default activation and no connections
-    pub fn new(inputs: u64, outputs: u64) -> Genome<I, H, O, L> {
-        let inputs: HashMap<NodeRef, Node<I>> = (0..inputs)
-            .map(|i| (NodeRef::Input(i), Node::<I>::new(NodeRef::Input(i))))
+    pub fn new(inputs: usize, outputs: usize) -> Genome {
+        let inputs: HashMap<NodeRef, Node> = (0..inputs as u64)
+            .map(|i| (NodeRef::Input(i), Node::new(NodeRef::Input(i))))
             .collect();
 
-        let outputs: HashMap<NodeRef, Node<O>> = (0..outputs)
-            .map(|i| (NodeRef::Output(i), Node::<O>::new(NodeRef::Output(i))))
+        let outputs: HashMap<NodeRef, Node> = (0..outputs as u64)
+            .map(|i| (NodeRef::Output(i), Node::new(NodeRef::Output(i))))
             .collect();
 
         let order = order::Order::<NodeRef>::from_nodes(
@@ -63,7 +60,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
         }
     }
 
-    fn split_link(&mut self, link: Link<L>, new_node_id: u64, innovation_number: u64) {
+    fn split_link(&mut self, link: Link, new_node_id: u64, innovation_number: u64) {
         {
             // Disable link
             let link = self
@@ -90,10 +87,10 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
         self.order.split_link(link.from, link.to, new_node_ref);
 
         self.hidden_nodes
-            .insert(new_node_ref, Node::<H>::new(NodeRef::Hidden(new_node_id)));
+            .insert(new_node_ref, Node::new(NodeRef::Hidden(new_node_id)));
 
-        let link1 = Link::<L>::new(link.from, new_node_ref, 1.0, innovation_number);
-        let link2 = Link::<L>::new(new_node_ref, link.to, link.weight, innovation_number + 1);
+        let link1 = Link::new(link.from, new_node_ref, 1.0, innovation_number);
+        let link2 = Link::new(new_node_ref, link.to, link.weight, innovation_number + 1);
 
         assert!(!self.links.contains_key(&(link1.from, link1.to)));
         self.insert_link(link1, false);
@@ -102,7 +99,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
         self.insert_link(link2, false);
     }
 
-    fn insert_link(&mut self, link: Link<L>, add_action: bool) {
+    fn insert_link(&mut self, link: Link, add_action: bool) {
         // Add link
         self.links.insert((link.from, link.to), link);
 
@@ -121,7 +118,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
         }
     }
 
-    pub fn crossover(&self, other: &Self, is_fitter: bool) -> Genome<I, H, O, L> {
+    pub fn crossover(&self, other: &Self, is_fitter: bool) -> Genome {
         // Let parent1 be the fitter parent
         let (parent1, parent2) = if is_fitter {
             (self, other)
@@ -368,7 +365,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
                     };
 
                     self.insert_link(
-                        Link::<L>::new(from, to, rng.gen::<f64>() - 0.5, innovation),
+                        Link::new(from, to, rng.gen::<f64>() - 0.5, innovation),
                         true,
                     );
                     break;
@@ -427,64 +424,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
         };
     }
 
-    /// Creates speed-optimized evaluator
-    pub fn create_evaluator(&self) -> evaluate::Evaluator {
-        let input_length = self.inputs.len();
-        let cumulative_hidden_length = input_length + self.hidden_nodes.len(); // Length of input and hidden
-        let cumulative_output_length = cumulative_hidden_length + self.outputs.len(); // Length of input, hidden and output
-
-        let mut input_keys: Vec<NodeRef> = self.inputs.keys().cloned().collect();
-        input_keys.sort();
-        let mut output_keys: Vec<NodeRef> = self.outputs.keys().cloned().collect();
-        output_keys.sort();
-
-        let node_mapper: HashMap<NodeRef, usize> = input_keys
-            .iter()
-            .enumerate()
-            .map(|(i, node_ref)| (*node_ref, i))
-            .chain(
-                self.hidden_nodes
-                    .keys()
-                    .enumerate()
-                    .map(|(i, node_ref)| (*node_ref, i + input_length)),
-            )
-            .chain(
-                output_keys
-                    .iter()
-                    .enumerate()
-                    .map(|(i, node_ref)| (*node_ref, i + cumulative_hidden_length)),
-            )
-            .collect();
-
-        let actions = self
-            .order
-            .iter()
-            .map(|action| match action {
-                order::Action::Link(from, to) => evaluate::Action::Link(
-                    *node_mapper.get(from).unwrap(),
-                    *node_mapper.get(to).unwrap(),
-                    self.links.get(&(*from, *to)).unwrap().weight,
-                ),
-                order::Action::Activation(node) => evaluate::Action::Activation(
-                    *node_mapper.get(node).unwrap(),
-                    self.get_bias(node),
-                    self.get_activation(node),
-                ),
-            })
-            .collect();
-
-        evaluate::Evaluator::create(
-            cumulative_output_length,
-            input_keys.iter().map(|node| node.id() as usize).collect(),
-            output_keys
-                .iter()
-                .map(|node| node.id() as usize + cumulative_hidden_length)
-                .collect(),
-            actions,
-        )
-    }
-
-    fn get_activation(&self, node_ref: &NodeRef) -> activation::Activation {
+    pub fn get_activation(&self, node_ref: &NodeRef) -> activation::Activation {
         match node_ref {
             NodeRef::Input(_) => self.inputs.get(node_ref).unwrap().activation,
             NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref).unwrap().activation,
@@ -492,7 +432,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Genome<
         }
     }
 
-    fn get_bias(&self, node_ref: &NodeRef) -> f64 {
+    pub fn get_bias(&self, node_ref: &NodeRef) -> f64 {
         match node_ref {
             NodeRef::Input(_) => self.inputs.get(node_ref).unwrap().bias,
             NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref).unwrap().bias,

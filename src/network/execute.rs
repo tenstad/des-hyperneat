@@ -3,7 +3,7 @@ use crate::network::activation::Activation;
 use std::mem;
 
 #[derive(Clone)]
-pub struct Evaluator {
+pub struct Executor {
     values: Vec<f64>,
     inputs: Vec<usize>,
     outputs: Vec<usize>,
@@ -16,14 +16,14 @@ pub enum Action {
     Activation(usize, f64, Activation), // node, bias, activation
 }
 
-impl Evaluator {
+impl Executor {
     pub fn create(
         length: usize,
         inputs: Vec<usize>,
         outputs: Vec<usize>,
         actions: Vec<Action>,
-    ) -> Evaluator {
-        Evaluator {
+    ) -> Executor {
+        Executor {
             values: vec![0.0; length],
             inputs,
             outputs,
@@ -32,7 +32,7 @@ impl Evaluator {
     }
 
     /// Evaluate network, takes input node values, returns output node values
-    pub fn evaluate(&mut self, inputs: &Vec<f64>) -> Vec<f64> {
+    pub fn execute(&mut self, inputs: &Vec<f64>) -> Vec<f64> {
         /*for i in 0..self.values.len() {
             self.values[i] = 0.0;
         }*/
@@ -75,7 +75,7 @@ mod tests {
 
     #[test]
     fn test_evaluator() {
-        let mut actions = Evaluator::create(
+        let mut actions = Executor::create(
             10,
             vec![0, 2, 1],
             vec![7, 8, 9, 6],
@@ -89,13 +89,13 @@ mod tests {
         );
 
         assert_eq!(
-            actions.evaluate(&vec![1.0, 2.0, 3.0, 4.0]),
+            actions.execute(&vec![1.0, 2.0, 3.0, 4.0]),
             vec![15.0, 0.0, 0.0, 0.0]
         );
 
         // Data from last evaluation should not impact next evaluation
         assert_eq!(
-            actions.evaluate(&vec![1.0, 2.0, 3.0, 4.0]),
+            actions.execute(&vec![1.0, 2.0, 3.0, 4.0]),
             vec![15.0, 0.0, 0.0, 0.0]
         );
     }

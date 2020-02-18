@@ -1,6 +1,4 @@
-use crate::conf;
 use crate::data::accuracy;
-use crate::data::batch;
 use crate::data::error;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error};
@@ -13,13 +11,12 @@ pub struct Dataset {
     pub one_hot_output: bool,
     pub inputs: Vec<Vec<f64>>,
     pub targets: Vec<Vec<f64>>,
-    pub batches: Vec<(Vec<Vec<f64>>, Vec<Vec<f64>>)>,
 }
 
 #[derive(Debug)]
 pub struct Dimensions {
-    pub inputs: u64,
-    pub outputs: u64,
+    pub inputs: usize,
+    pub outputs: usize,
 }
 
 impl Dataset {
@@ -77,21 +74,16 @@ impl Dataset {
             size: inputs.len(),
             one_hot_output: one_hot_encoded,
             dimensions: Dimensions {
-                inputs: inputs[0].len() as u64,
-                outputs: outputs[0].len() as u64,
+                inputs: inputs[0].len(),
+                outputs: outputs[0].len(),
             },
-            batches: batch_data(&inputs)
-                .iter()
-                .cloned()
-                .zip(batch_data(&outputs).iter().cloned())
-                .collect(),
             inputs: inputs,
             targets: outputs,
         })
     }
 
     pub fn mse(&self, outputs: impl Iterator<Item = Vec<f64>>) -> f64 {
-        error::mse(&self.targets, outputs)
+        error::mse(&self.targets, outputs, self.is_classification && self.is_classification)
     }
 
     pub fn acc(&self, outputs: impl Iterator<Item = Vec<f64>>) -> f64 {
@@ -103,20 +95,4 @@ impl Dataset {
             accuracy::rounded_accuracy(&self.targets, outputs)
         }
     }
-}
-
-pub fn batch_data(data: &Vec<Vec<f64>>) -> Vec<Vec<Vec<f64>>> {
-    let batch_count: usize = conf::GENERAL.threads;
-    let batches = batch::create_batches(batch_count, data.len());
-
-    batches
-        .iter()
-        .map(|(start_index, size)| {
-            data.iter()
-                .skip(*start_index)
-                .take(*size)
-                .cloned()
-                .collect()
-        })
-        .collect()
 }

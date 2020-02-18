@@ -1,41 +1,37 @@
 use crate::conf;
 use crate::data::dataset::Dimensions;
-use crate::generic_neat::environment::Environment;
+use crate::generic_neat::evaluate;
 use crate::generic_neat::innovation::InnovationLog;
 use crate::generic_neat::innovation::InnovationTime;
-use crate::generic_neat::link;
-use crate::generic_neat::node;
 use crate::generic_neat::organism::Organism;
-use crate::generic_neat::phenotype;
 use crate::generic_neat::species::Species;
 use rand::Rng;
 
-pub struct Population<I, H, O, L> {
-    species: Vec<Species<I, H, O, L>>,
+pub struct Population {
+    population_size: usize,
+    species: Vec<Species>,
     pub innovation_log: InnovationLog,
     pub global_innovation: InnovationTime,
 }
 
-impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Population<I, H, O, L> {
-    pub fn new(dimensions: &Dimensions) -> Population<I, H, O, L> {
+impl Population {
+    pub fn new(population_size: usize, inputs: usize, outputs: usize) -> Population {
         let mut population = Population {
+            population_size,
             species: Vec::new(),
             innovation_log: InnovationLog::new(),
             global_innovation: InnovationTime::new(),
         };
 
-        for _ in 0..conf::NEAT.population_size {
-            population.push(
-                Organism::new(0, dimensions.inputs, dimensions.outputs),
-                false,
-            );
+        for _ in 0..population_size {
+            population.push(Organism::new(0, inputs, outputs), false);
         }
 
         return population;
     }
 
     /// Add organism to population
-    pub fn push(&mut self, organism: Organism<I, H, O, L>, lock_new: bool) {
+    pub fn push(&mut self, organism: Organism, lock_new: bool) {
         if let Some(species) = self.compatible_species(&organism) {
             species.push(organism);
         } else {
@@ -49,10 +45,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
     }
 
     /// Find first species compatible with organism
-    fn compatible_species(
-        &mut self,
-        organism: &Organism<I, H, O, L>,
-    ) -> Option<&mut Species<I, H, O, L>> {
+    fn compatible_species(&mut self, organism: &Organism) -> Option<&mut Species> {
         for species in self.species.iter_mut() {
             if species.is_compatible(&organism) {
                 return Some(species);
@@ -82,14 +75,14 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
         }
 
         // The total size of the next population before making up for floting point precicsion
-        let mut new_population_size: u64 = self
+        let mut new_population_size: usize = self
             .species
             .iter()
-            .map(|species| species.offsprings.floor() as u64)
+            .map(|species| species.offsprings.floor() as usize)
             .sum();
 
         // Sort species based on closeness to additional offspring
-        let mut sorted_species: Vec<(f64, &mut Species<I, H, O, L>)> = self
+        let mut sorted_species: Vec<(f64, &mut Species)> = self
             .species
             .iter_mut()
             .map(|species| (species.offsprings % 1.0, species))
@@ -99,12 +92,12 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
 
         // Distribute missing offsprings amongs species
         // in order of floating distance from additional offspring
-        while new_population_size < conf::NEAT.population_size {
+        while new_population_size < self.population_size {
             for (_, species) in sorted_species.iter_mut() {
                 species.offsprings += 1.0;
                 new_population_size += 1;
 
-                if new_population_size == conf::NEAT.population_size {
+                if new_population_size == self.population_size {
                     break;
                 }
             }
@@ -114,9 +107,9 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
         assert_eq!(
             self.species
                 .iter()
-                .map(|species| species.offsprings.floor() as u64)
-                .sum::<u64>(),
-            conf::NEAT.population_size
+                .map(|species| species.offsprings.floor() as usize)
+                .sum::<usize>(),
+            self.population_size
         );
 
         // Kill individuals of low performance, not allowed to reproduce
@@ -187,7 +180,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
     }
 
     /// Gather random organism from population
-    pub fn random_organism(&self) -> Option<&Organism<I, H, O, L>> {
+    fn random_organism(&self) -> Option<&Organism> {
         let mut rng = rand::thread_rng();
         let len = self.iter().count();
 
@@ -199,8 +192,8 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
     }
 
     /// Use tournament selection to select an organism
-    pub fn tournament_select(&self, k: u64) -> Option<&Organism<I, H, O, L>> {
-        let mut best: Option<&Organism<I, H, O, L>> = None;
+    fn tournament_select(&self, k: u64) -> Option<&Organism> {
+        let mut best: Option<&Organism> = None;
         let mut best_fitness = -1.0;
 
         for _ in 0..k {
@@ -215,24 +208,41 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
         return best;
     }
 
-    /// Evaluate organisms
-    pub fn evaluate<P>(
-        &mut self,
-        environment: &dyn Environment<P>,
-        phenotype: &dyn phenotype::Develop<I, H, O, L, P>,
-    ) {
-        for organism in self.iter_mut() {
-            organism.evaluate(environment, phenotype);
+    pub fn evaluate(&mut self, evaluator: &impl evaluate::Evaluate) {
+        for (species_index, organism_index, fitness) in evaluator
+            .evaluate(
+                self.enumerate()
+                    .map(|(species_index, organism_index, organism)| {
+                        (species_index, organism_index, organism.genome.clone())
+                    }),
+            )
+            .iter()
+        {
+            self.species[*species_index].organisms[*organism_index].fitness = *fitness;
         }
     }
 
     /// Iterate organisms
-    pub fn iter(&self) -> impl Iterator<Item = &Organism<I, H, O, L>> {
+    fn iter(&self) -> impl Iterator<Item = &Organism> {
         self.species.iter().map(|species| species.iter()).flatten()
     }
 
+    /// Enumerate organisms
+    fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &Organism)> {
+        self.species
+            .iter()
+            .enumerate()
+            .map(|(species_index, species)| {
+                species
+                    .iter()
+                    .enumerate()
+                    .map(move |(genome_index, genome)| (species_index, genome_index, genome))
+            })
+            .flatten()
+    }
+
     /// Iterate organisms
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<I, H, O, L>> {
+    fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
         self.species
             .iter_mut()
             .map(|species| species.iter_mut())
@@ -240,7 +250,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Populat
     }
 
     /// Gather best organism
-    pub fn best(&self) -> Option<&Organism<I, H, O, L>> {
+    pub fn best(&self) -> Option<&Organism> {
         self.iter().max_by(|a, b| a.cmp(&b))
     }
 }

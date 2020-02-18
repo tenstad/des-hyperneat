@@ -1,13 +1,8 @@
 use crate::generic_neat::genome;
-use crate::generic_neat::link;
-use crate::generic_neat::node;
 use std::fs::File;
 use std::io::prelude::*;
 
-pub fn genome_to_dot<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom>(
-    fname: String,
-    genome: &genome::Genome<I, H, O, L>,
-) -> std::io::Result<()> {
+pub fn genome_to_dot(fname: String, genome: &genome::Genome) -> std::io::Result<()> {
     let mut file = File::create(fname)?;
     file.write_all(b"digraph g {\n")?;
 

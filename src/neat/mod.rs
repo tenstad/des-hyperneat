@@ -1,11 +1,10 @@
 pub mod dataset_environment;
-mod phenotype;
+pub mod phenotype;
 
 use crate::generic_neat;
-use crate::generic_neat::environment::Environment;
-use crate::network::evaluate::Evaluator as P;
+use crate::generic_neat::evaluate;
+use crate::network::execute::Executor as P;
 
-pub fn neat(environment: &dyn Environment<P>) {
-    let developer = phenotype::Developer {};
-    generic_neat::neat(environment, &developer);
+pub fn neat<E: evaluate::Environment<P> + Default>() {
+    generic_neat::neat::<P, E, phenotype::Developer>();
 }

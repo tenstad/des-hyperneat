@@ -4,20 +4,14 @@ use rand::Rng;
 use std::fmt;
 
 #[derive(Copy, Clone)]
-pub struct Node<T> {
+pub struct Node {
     pub node_ref: NodeRef,
     pub bias: f64,
     pub activation: Activation,
-    pub custom: T,
 }
 
-pub trait Custom: Copy + Clone {
-    fn new() -> Self;
-    fn crossover(&self, other: &Self) -> Self;
-}
-
-impl<T: Custom> Node<T> {
-    pub fn new(node_ref: NodeRef) -> Node<T> {
+impl Node {
+    pub fn new(node_ref: NodeRef) -> Node {
         Node {
             node_ref: node_ref,
             bias: 0.0,
@@ -26,7 +20,6 @@ impl<T: Custom> Node<T> {
                 NodeRef::Hidden(_) => conf::NEAT.hidden_activations.random(),
                 NodeRef::Output(_) => conf::NEAT.output_activations.random(),
             },
-            custom: T::new(),
         }
     }
 
@@ -41,7 +34,6 @@ impl<T: Custom> Node<T> {
             } else {
                 other.activation
             },
-            custom: self.custom.crossover(&other.custom),
         }
     }
 }

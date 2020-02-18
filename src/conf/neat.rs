@@ -3,16 +3,13 @@ use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "DATASET_FILENAME", default = "datasets/mnist")]
-    pub dataset_filename: String,
-
-    #[envconfig(from = "POPULATION_SIZE", default = "200")]
-    pub population_size: u64,
+    #[envconfig(from = "POPULATION_SIZE", default = "100")]
+    pub population_size: usize,
 
     #[envconfig(from = "ITERATIONS", default = "10000")]
     pub iterations: u64,
 
-    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.85")]
+    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.7")]
     pub speciation_threshold: f64,
 
     #[envconfig(from = "INTERSPECIES_REPRODUCTION_CHANCE", default = "0.15")]
@@ -51,7 +48,7 @@ pub struct Conf {
     #[envconfig(from = "MUTATE_OUTPUT_ACTIVATION_PROBABILITY", default = "0.0")]
     pub mutate_output_activation_probability: f64,
 
-    #[envconfig(from = "DROPOFF_AGE", default = "100")]
+    #[envconfig(from = "DROPOFF_AGE", default = "30")]
     pub dropoff_age: u64,
 
     #[envconfig(from = "YOUNG_SPECIES_FITNESS_MULTIPLIER", default = "1.05")]
@@ -69,11 +66,8 @@ pub struct Conf {
     #[envconfig(from = "ELITISM", default = "1")]
     pub elitism: u64,
 
-    #[envconfig(from = "HIDDEN_ACTIVATIONS", default = "None ReLU Sigmoid Sine Normal")]
+    #[envconfig(from = "HIDDEN_ACTIVATIONS", default = "None ReLU Sigmoid Normal Sine")]
     pub hidden_activations: activation::Activations,
-
-    #[envconfig(from = "NORMALIZE_OUTPUT", default = "true")]
-    pub normalize_output: bool,
 
     #[envconfig(from = "OUTPUT_ACTIVATIONS", default = "None")]
     pub output_activations: activation::Activations,

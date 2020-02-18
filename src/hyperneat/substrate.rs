@@ -1,21 +1,19 @@
-use crate::network::activation;
 use crate::network::basic_order;
 use crate::network::connection;
-use crate::network::evaluate;
 use crate::network::order;
 
 pub struct Network {
-    length: usize,
-    actions: Vec<Action>,
-    inputs: Vec<usize>,
-    outputs: Vec<usize>,
+    pub length: usize,
+    pub actions: Vec<Action>,
+    pub inputs: Vec<usize>,
+    pub outputs: Vec<usize>,
 }
 
 pub type Point = (i64, u64, i64, u64);
 
-enum Action {
-    Activation(usize),                      // node
-    Link(usize, usize, f64, f64, f64, f64), // from to x0 y0 x1 y1
+pub enum Action {
+    Activation(usize, f64, f64),            // node, x, y
+    Link(usize, usize, f64, f64, f64, f64), // from, to, x0, y0, x1, y1
 }
 
 pub fn horizontal_point_line(y: f64, x0: f64, x1: f64, n: usize) -> Vec<Point> {
@@ -51,7 +49,11 @@ impl Network {
             }
         }
 
-        Network::create(connections, layers.first().unwrap().iter().cloned().collect(), layers.last().unwrap().iter().cloned().collect())
+        Network::create(
+            connections,
+            layers.first().unwrap().iter().cloned().collect(),
+            layers.last().unwrap().iter().cloned().collect(),
+        )
     }
 
     pub fn create(
@@ -98,7 +100,11 @@ impl Network {
         let actions = order
             .iter()
             .map(|action| match action {
-                order::Action::Activation(node) => Action::Activation(index_of(node)),
+                order::Action::Activation(node) => Action::Activation(
+                    index_of(node),
+                    (node.0 as f64) / (node.1 as f64),
+                    (node.2 as f64) / (node.3 as f64),
+                ),
                 order::Action::Link(from, to) => Action::Link(
                     index_of(from),
                     index_of(to),
@@ -116,36 +122,5 @@ impl Network {
             inputs: (0..input_length).collect(),
             outputs: (cumulative_hidden_length..cumulative_output_length).collect(),
         }
-    }
-
-    pub fn create_evaluator(&self, evaluator: &mut evaluate::Evaluator) -> evaluate::Evaluator {
-        evaluate::Evaluator::create(
-            self.length,
-            self.inputs.iter().cloned().collect(),
-            self.outputs.iter().cloned().collect(),
-            self.actions
-                .iter()
-                .map(|action| match action {
-                    Action::Activation(node) => evaluate::Action::Activation(
-                        *node,
-                        0.0,
-                        if self.outputs.contains(node) {
-                            activation::Activation::Softmax
-                        } else {
-                            activation::Activation::Sigmoid
-                        },
-                    ),
-                    Action::Link(from, to, x0, y0, x1, y1) => evaluate::Action::Link(
-                        *from,
-                        *to,
-                        evaluator.evaluate(&vec![*x0, *y0, *x1, *y1])[0],
-                    ),
-                })
-                .filter(|action| match action {
-                    evaluate::Action::Activation(_, _, _) => true,
-                    evaluate::Action::Link(_, _, weight) => weight.abs() > 0.05,
-                })
-                .collect(),
-        )
     }
 }

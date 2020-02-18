@@ -1,22 +1,20 @@
 use crate::conf;
-use crate::generic_neat::link;
-use crate::generic_neat::node;
 use crate::generic_neat::organism::Organism;
 use rand::Rng;
 
-pub struct Species<I, H, O, L> {
+pub struct Species {
     age: u64,
     best_fitness: f64,
     lifetime_best_fitness: f64,
     last_improvement: u64,
     pub offsprings: f64,
-    pub organisms: Vec<Organism<I, H, O, L>>,
+    pub organisms: Vec<Organism>,
     locked: bool, // When iter_locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
     locked_organisms: usize, // The number of locked organisms, this is the length and number of iterated organisms when species is locked
 }
 
-impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Species<I, H, O, L> {
-    pub fn new() -> Species<I, H, O, L> {
+impl Species {
+    pub fn new() -> Species {
         Species {
             age: 0,
             best_fitness: 0.0,
@@ -30,7 +28,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Species
     }
 
     /// Determine wether a new organism is compatible
-    pub fn is_compatible(&mut self, organism: &Organism<I, H, O, L>) -> bool {
+    pub fn is_compatible(&mut self, organism: &Organism) -> bool {
         if let Some(first_organism) = self.organisms.get(0) {
             first_organism.distance(organism) < conf::NEAT.speciation_threshold
         } else {
@@ -39,7 +37,7 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Species
     }
 
     /// Add an organism
-    pub fn push(&mut self, individual: Organism<I, H, O, L>) {
+    pub fn push(&mut self, individual: Organism) {
         self.organisms.push(individual);
     }
 
@@ -53,19 +51,19 @@ impl<I: node::Custom, H: node::Custom, O: node::Custom, L: link::Custom> Species
     }
 
     /// Iterate organisms. Adheres to lock.
-    pub fn iter(&self) -> impl Iterator<Item = &Organism<I, H, O, L>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Organism> {
         self.organisms.iter().take(self.len())
     }
 
     /// Iterate organisms. Adheres to lock.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<I, H, O, L>> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
         let len = self.len();
 
         self.organisms.iter_mut().take(len)
     }
 
     /// Gather a random organism. Adheres to lock.
-    pub fn random_organism(&self) -> Option<&Organism<I, H, O, L>> {
+    pub fn random_organism(&self) -> Option<&Organism> {
         let mut rng = rand::thread_rng();
 
         self.iter()
