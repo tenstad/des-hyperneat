@@ -65,7 +65,16 @@ impl Executor {
         }
 
         // Collect output
-        return self.outputs.iter().map(|o| self.values[*o]).collect();
+        self.outputs
+            .iter()
+            .map(|o| {
+                if self.values[*o].is_finite() {
+                    self.values[*o]
+                } else {
+                    0.0
+                }
+            })
+            .collect()
     }
 }
 
