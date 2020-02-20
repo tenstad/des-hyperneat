@@ -15,6 +15,9 @@ pub struct Conf {
     #[envconfig(from = "INTERSPECIES_REPRODUCTION_CHANCE", default = "0.15")]
     pub interspecies_reproduction_chance: f64,
 
+    #[envconfig(from = "INTERSPECIES_TOURNAMENT_size", default = "2")]
+    pub interspecies_tournament_size: usize,
+
     #[envconfig(from = "ADD_NODE_PROBABILITY", default = "0.03")]
     pub add_node_probability: f64,
 
@@ -64,7 +67,7 @@ pub struct Conf {
     pub survival_ratio: f64,
 
     #[envconfig(from = "ELITISM", default = "1")]
-    pub elitism: u64,
+    pub elitism: usize,
 
     #[envconfig(from = "HIDDEN_ACTIVATIONS", default = "None ReLU Sigmoid Normal Sine")]
     pub hidden_activations: activation::Activations,

@@ -78,7 +78,8 @@ impl Population {
         }
 
         // Make sure best species reproduces (or survives through elitism, if enabled)
-        let best_specie = self.species
+        let best_specie = self
+            .species
             .iter_mut()
             .max_by(|a, b| a.best_fitness.partial_cmp(&b.best_fitness).unwrap())
             .unwrap();
@@ -138,7 +139,7 @@ impl Population {
         let mut rng = rand::thread_rng();
         for i in 0..self.species.len() {
             let elites = std::cmp::min(
-                conf::NEAT.elitism as usize,
+                conf::NEAT.elitism,
                 std::cmp::min(
                     self.species[i].len(),
                     self.species[i].offsprings.floor() as usize,
@@ -156,7 +157,7 @@ impl Population {
                 let error = "Unable to gather organism";
                 let father = if rng.gen::<f64>() < conf::NEAT.interspecies_reproduction_chance {
                     // Interspecies breeding
-                    self.tournament_select(2).expect(error)
+                    self.tournament_select(conf::NEAT.interspecies_tournament_size).expect(error)
                 } else {
                     // Breeding within species
                     self.species[i].random_organism().expect(error)
@@ -188,23 +189,24 @@ impl Population {
         println!("");
 
         // Verify correct number of individuals in new population
-        assert_eq!(self.iter().count(), conf::NEAT.population_size as usize);
+        assert_eq!(self.iter().count(), conf::NEAT.population_size);
     }
 
-    /// Gather random organism from population
+    /// Get random organism from population
     fn random_organism(&self) -> Option<&Organism> {
-        let mut rng = rand::thread_rng();
         let len = self.iter().count();
 
         if len == 0 {
-            return None;
+            None
+        } else {
+            self.iter()
+                .skip(rand::thread_rng().gen_range(0, len))
+                .next()
         }
-
-        self.iter().skip(rng.gen_range(0, len) as usize).next()
     }
 
     /// Use tournament selection to select an organism
-    fn tournament_select(&self, k: u64) -> Option<&Organism> {
+    fn tournament_select(&self, k: usize) -> Option<&Organism> {
         let mut best: Option<&Organism> = None;
         let mut best_fitness = -1.0;
 
@@ -220,6 +222,7 @@ impl Population {
         return best;
     }
 
+    /// Update fitness of all organisms
     pub fn evaluate(&mut self, evaluator: &impl evaluate::Evaluate) {
         for (species_index, organism_index, fitness) in evaluator
             .evaluate(
@@ -239,6 +242,14 @@ impl Population {
         self.species.iter().map(|species| species.iter()).flatten()
     }
 
+    /// Iterate organisms
+    fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
+        self.species
+            .iter_mut()
+            .map(|species| species.iter_mut())
+            .flatten()
+    }
+
     /// Enumerate organisms
     fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &Organism)> {
         self.species
@@ -250,14 +261,6 @@ impl Population {
                     .enumerate()
                     .map(move |(genome_index, genome)| (species_index, genome_index, genome))
             })
-            .flatten()
-    }
-
-    /// Iterate organisms
-    fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
-        self.species
-            .iter_mut()
-            .map(|species| species.iter_mut())
             .flatten()
     }
 
