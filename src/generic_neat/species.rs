@@ -2,6 +2,9 @@ use crate::conf;
 use crate::generic_neat::organism::Organism;
 use rand::Rng;
 
+/// Collection of similar organisms
+// The lock is used to add new organisms without affecting the reproduction of the previous generation.
+// It is unlocked after reproduction, which will remove the previous generation and keep the new.
 pub struct Species {
     age: u64,
     pub best_fitness: f64,
@@ -9,7 +12,7 @@ pub struct Species {
     last_improvement: u64,
     pub offsprings: f64,
     pub organisms: Vec<Organism>,
-    locked: bool, // When iter_locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
+    locked: bool, // When locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
     locked_organisms: usize, // The number of locked organisms, this is the length and number of iterated organisms when species is locked
 }
 
@@ -28,11 +31,11 @@ impl Species {
     }
 
     /// Determine wether a new organism is compatible
-    pub fn is_compatible(&mut self, organism: &Organism) -> bool {
-        if let Some(first_organism) = self.organisms.get(0) {
-            first_organism.distance(organism) < conf::NEAT.speciation_threshold
+    pub fn is_compatible(&mut self, other: &Organism) -> bool {
+        if let Some(organism) = self.organisms.first() {
+            organism.distance(other) < conf::NEAT.speciation_threshold
         } else {
-            true
+            true // All organisms are compatible if the species is empty
         }
     }
 
@@ -55,19 +58,16 @@ impl Species {
         self.organisms.iter().take(self.len())
     }
 
-    /// Iterate organisms. Adheres to lock.
+    /// Iterate mutable organisms. Adheres to lock.
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
-        let len = self.len();
-
+        let len = self.len(); // Must read len before iter_mut
         self.organisms.iter_mut().take(len)
     }
 
-    /// Gather a random organism. Adheres to lock.
+    /// Get a random organism. Adheres to lock.
     pub fn random_organism(&self) -> Option<&Organism> {
-        let mut rng = rand::thread_rng();
-
         self.iter()
-            .skip(rng.gen_range(0, self.len()) as usize)
+            .skip(rand::thread_rng().gen_range(0, self.len()))
             .next()
     }
 
@@ -96,7 +96,7 @@ impl Species {
             organism.adjusted_fitness /= size;
 
             // Avoid zero fitness
-            if organism.adjusted_fitness <= 0.0 {
+            if organism.adjusted_fitness <= 0.0 || !organism.adjusted_fitness.is_finite() {
                 organism.adjusted_fitness = 0.0001;
             }
         }
@@ -132,8 +132,8 @@ impl Species {
     pub fn lock(&mut self) {
         assert!(!self.locked);
 
-        self.locked = true;
         self.locked_organisms = self.organisms.len();
+        self.locked = true;
     }
 
     /// Increase age and prepare for addition of new organisms
@@ -142,7 +142,7 @@ impl Species {
         self.age += 1;
     }
 
-    /// Remove all the locked organisms (the old organisms), and retain the (next generation) organisms pushed after lock
+    /// Remove all the locked organisms (the old generation), and retain the organisms pushed after lock (next generation)
     pub fn remove_old(&mut self) {
         assert!(self.locked);
         self.organisms = self.organisms.split_off(self.locked_organisms);
