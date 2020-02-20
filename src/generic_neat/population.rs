@@ -63,15 +63,27 @@ impl Population {
         }
 
         // Average fitness of all organisms
+        // Subtract 1 from pop size to make allow for potential increase of (up to) 1.0 in best fit species.
+        // If not increased by (up to) 1.0, the extra individual will be added to the spicies closest to
+        // reproducing an additional child.
         let avg_fitness: f64 = self
             .iter()
             .map(|organism| organism.adjusted_fitness)
             .sum::<f64>()
-            / conf::NEAT.population_size as f64;
+            / (conf::NEAT.population_size - 1) as f64;
 
         // Calculate number of new offsprings to produce within each new species
         for species in self.species.iter_mut() {
             species.calculate_offsprings(avg_fitness);
+        }
+
+        // Make sure best species reproduces (or survives through elitism, if enabled)
+        let best_specie = self.species
+            .iter_mut()
+            .max_by(|a, b| a.best_fitness.partial_cmp(&b.best_fitness).unwrap())
+            .unwrap();
+        if best_specie.offsprings < 1.0 {
+            best_specie.offsprings = 1.0;
         }
 
         // The total size of the next population before making up for floting point precicsion

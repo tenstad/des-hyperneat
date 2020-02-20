@@ -4,7 +4,7 @@ use rand::Rng;
 
 pub struct Species {
     age: u64,
-    best_fitness: f64,
+    pub best_fitness: f64,
     lifetime_best_fitness: f64,
     last_improvement: u64,
     pub offsprings: f64,
