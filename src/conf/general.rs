@@ -1,11 +1,10 @@
-use crate::network::activation;
 use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "DATASET", default = "datasets/iris")]
+    #[envconfig(from = "DATASET", default = "datasets/wine")]
     pub dataset: String,
 
-    #[envconfig(from = "THREADS", default = "4")]
+    #[envconfig(from = "THREADS", default = "8")]
     pub thread_count: usize,
 }

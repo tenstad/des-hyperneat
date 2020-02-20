@@ -3,7 +3,7 @@ use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "HIDDEN_ACTIVATION", default = "0.05")]
+    #[envconfig(from = "WEIGHT_THRESHOLD", default = "0.1")]
     pub weight_threshold: f64,
 
     #[envconfig(from = "HIDDEN_ACTIVATION", default = "ReLU")]

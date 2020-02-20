@@ -3,7 +3,7 @@ use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "POPULATION_SIZE", default = "100")]
+    #[envconfig(from = "POPULATION_SIZE", default = "200")]
     pub population_size: usize,
 
     #[envconfig(from = "ITERATIONS", default = "10000")]
@@ -72,6 +72,6 @@ pub struct Conf {
     #[envconfig(from = "HIDDEN_ACTIVATIONS", default = "None ReLU Sigmoid Normal Sine")]
     pub hidden_activations: activation::Activations,
 
-    #[envconfig(from = "OUTPUT_ACTIVATIONS", default = "None")]
+    #[envconfig(from = "OUTPUT_ACTIVATIONS", default = "None ReLU Sigmoid Normal Sine")]
     pub output_activations: activation::Activations,
 }

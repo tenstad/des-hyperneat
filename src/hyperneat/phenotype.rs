@@ -4,6 +4,7 @@ use crate::generic_neat::genome;
 use crate::hyperneat::substrate;
 use crate::neat::phenotype::Developer as NeatDeveloper;
 use crate::network::execute;
+use crate::network::activation;
 use crate::network::execute::Executor as P;
 
 pub struct Developer {
@@ -22,7 +23,7 @@ impl Developer {
 
 impl Default for Developer {
     fn default() -> Self {
-        let network = substrate::Network::layered(vec![4, 20, 20, 3]);
+        let network = substrate::Network::layered(vec![13, 16, 8, 3]);
 
         Developer::create(network)
     }
@@ -43,10 +44,12 @@ impl evaluate::Develop<P> for Developer {
                     substrate::Action::Activation(node, x, y) => execute::Action::Activation(
                         *node,
                         neat_executor.execute(&vec![0.0, 0.0, *x, *y])[1],
-                        if self.network.outputs.contains(node) {
-                            conf::HYPERNEAT.hidden_activation
-                        } else {
+                        if self.network.inputs.contains(node) {
+                            activation::Activation::None
+                        } else if self.network.outputs.contains(node) {
                             conf::HYPERNEAT.output_activation
+                        } else {
+                            conf::HYPERNEAT.hidden_activation
                         },
                     ),
                     substrate::Action::Link(from, to, x0, y0, x1, y1) => execute::Action::Link(
