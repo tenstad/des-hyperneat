@@ -3,8 +3,8 @@ use crate::generic_neat::evaluate;
 use crate::generic_neat::genome;
 use crate::hyperneat::substrate;
 use crate::neat::phenotype::Developer as NeatDeveloper;
-use crate::network::execute;
 use crate::network::activation;
+use crate::network::execute;
 use crate::network::execute::Executor as P;
 
 pub struct Developer {
@@ -23,7 +23,7 @@ impl Developer {
 
 impl Default for Developer {
     fn default() -> Self {
-        let network = substrate::Network::layered(vec![13, 16, 8, 3]);
+        let network = substrate::Network::layered(vec![4, 12, 8, 3]);
 
         Developer::create(network)
     }
@@ -60,7 +60,9 @@ impl evaluate::Develop<P> for Developer {
                 })
                 .filter(|action| match action {
                     execute::Action::Activation(_, _, _) => true,
-                    execute::Action::Link(_, _, weight) => weight.abs() > conf::HYPERNEAT.weight_threshold,
+                    execute::Action::Link(_, _, weight) => {
+                        weight.abs() > conf::HYPERNEAT.weight_threshold
+                    }
                 })
                 .collect(),
         )

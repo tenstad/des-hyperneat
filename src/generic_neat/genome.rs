@@ -365,7 +365,7 @@ impl Genome {
                     };
 
                     self.insert_link(
-                        Link::new(from, to, rng.gen::<f64>() - 0.5, innovation),
+                        Link::new(from, to, (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.initial_link_weight_size, innovation),
                         true,
                     );
                     break;

@@ -10,6 +10,8 @@ pub enum Activation {
     Softmax,
     Normal,
     Sine,
+    Square,
+    Exp,
 }
 
 #[derive(Clone)]
@@ -40,6 +42,8 @@ impl Activation {
             }
             Activation::Normal => 0.3989422804 * (-0.5 * x.powi(2)).exp(),
             Activation::Sine => x.sin(),
+            Activation::Square => x * x,
+            Activation::Exp => x.exp(),
         }
     }
 }
@@ -71,6 +75,8 @@ impl str::FromStr for Activation {
             "Softmax" => Ok(Activation::Softmax),
             "Normal" => Ok(Activation::Normal),
             "Sine" => Ok(Activation::Sine),
+            "Square" => Ok(Activation::Square),
+            "Exp" => Ok(Activation::Exp),
             _ => Err(1),
         }
     }
