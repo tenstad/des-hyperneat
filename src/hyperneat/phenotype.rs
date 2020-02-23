@@ -23,7 +23,7 @@ impl Developer {
 
 impl Default for Developer {
     fn default() -> Self {
-        let network = substrate::Network::layered(vec![4, 12, 8, 3]);
+        let network = substrate::Network::layered(vec![13, 12, 8, 3]);
 
         Developer::create(network)
     }

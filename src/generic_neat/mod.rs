@@ -6,7 +6,7 @@ pub mod link;
 pub mod log;
 pub mod node;
 pub mod organism;
-mod population;
+pub mod population;
 mod species;
 
 use crate::conf;
@@ -32,16 +32,12 @@ pub fn neat<
     );
 
     for i in 0..conf::NEAT.iterations {
-        println!("Iteration: {}", i + 1);
         population.evolve();
         population.evaluate(evaluator);
 
         let best_organism = population.best().unwrap();
         let acc = environment.accuracy(&mut developer.develop(&best_organism.genome));
-        println!("Best fitness: {}\nAcc: {}", best_organism.fitness, acc);
 
-        dot::genome_to_dot(String::from("g.dot"), &best_organism.genome).ok();
-
-        logger.log(&best_organism);
+        logger.log(i+1, &population, best_organism.fitness, acc);
     }
 }

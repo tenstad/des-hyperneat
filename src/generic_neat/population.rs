@@ -1,11 +1,11 @@
 use crate::conf;
-use crate::data::dataset::Dimensions;
 use crate::generic_neat::evaluate;
 use crate::generic_neat::innovation::InnovationLog;
 use crate::generic_neat::innovation::InnovationTime;
 use crate::generic_neat::organism::Organism;
 use crate::generic_neat::species::Species;
 use rand::Rng;
+use std::fmt;
 
 pub struct Population {
     population_size: usize,
@@ -157,7 +157,8 @@ impl Population {
                 let error = "Unable to gather organism";
                 let father = if rng.gen::<f64>() < conf::NEAT.interspecies_reproduction_chance {
                     // Interspecies breeding
-                    self.tournament_select(conf::NEAT.interspecies_tournament_size).expect(error)
+                    self.tournament_select(conf::NEAT.interspecies_tournament_size)
+                        .expect(error)
                 } else {
                     // Breeding within species
                     self.species[i].random_organism().expect(error)
@@ -181,12 +182,6 @@ impl Population {
                 self.species.swap_remove(i);
             }
         }
-
-        print!("{}: ", self.species.len());
-        for species in self.species.iter_mut() {
-            print!("{} ", species.organisms.len());
-        }
-        println!("");
 
         // Verify correct number of individuals in new population
         assert_eq!(self.iter().count(), conf::NEAT.population_size);
@@ -267,5 +262,15 @@ impl Population {
     /// Gather best organism
     pub fn best(&self) -> Option<&Organism> {
         self.iter().max_by(|a, b| a.cmp(&b))
+    }
+}
+
+impl fmt::Display for Population {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Population(species: {}): ", self.species.len())?;
+        for species in self.species.iter() {
+            write!(f, "{} ", species.organisms.len())?;
+        }
+        Ok(())
     }
 }

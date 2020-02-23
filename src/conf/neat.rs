@@ -3,13 +3,13 @@ use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "POPULATION_SIZE", default = "2000")]
+    #[envconfig(from = "POPULATION_SIZE", default = "500")]
     pub population_size: usize,
 
     #[envconfig(from = "ITERATIONS", default = "1000000")]
     pub iterations: u64,
 
-    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.9")]
+    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.85")]
     pub speciation_threshold: f64,
 
     #[envconfig(from = "INTERSPECIES_REPRODUCTION_CHANCE", default = "0.15")]
