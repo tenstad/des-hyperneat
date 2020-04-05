@@ -1,4 +1,5 @@
 use rand::Rng;
+use std::fmt;
 use std::fmt::Display;
 use std::str;
 
@@ -64,8 +65,17 @@ impl Activations {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct ParseActivationError;
+
+impl fmt::Display for ParseActivationError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "cannot parse activation function")
+    }
+}
+
 impl str::FromStr for Activation {
-    type Err = u64;
+    type Err = ParseActivationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -77,13 +87,13 @@ impl str::FromStr for Activation {
             "Sine" => Ok(Activation::Sine),
             "Square" => Ok(Activation::Square),
             "Exp" => Ok(Activation::Exp),
-            _ => Err(1),
+            _ => Err(ParseActivationError{}),
         }
     }
 }
 
 impl str::FromStr for Activations {
-    type Err = u64;
+    type Err = ParseActivationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Activations {
