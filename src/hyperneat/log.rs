@@ -19,8 +19,8 @@ impl Default for Logger {
 }
 
 impl log::Log for Logger {
-    fn log(&mut self, iteration: u64, population: &Population, fitness: f64, accuracy: f64) {
-        self.default_logger.log(iteration, population, fitness, accuracy);
+    fn log(&mut self, iteration: u64, population: &Population) {
+        self.default_logger.log(iteration, population);
 
         if iteration % 20 == 0 {
             let developer: &dyn evaluate::Develop<execute::Executor> = &self.developer;

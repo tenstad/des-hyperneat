@@ -35,9 +35,6 @@ pub fn neat<
         population.evolve();
         population.evaluate(evaluator);
 
-        let best_organism = population.best().unwrap();
-        let acc = environment.accuracy(&mut developer.develop(&best_organism.genome));
-
-        logger.log(i+1, &population, best_organism.fitness, acc);
+        logger.log(i+1, &population);
     }
 }

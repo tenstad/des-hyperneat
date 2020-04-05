@@ -10,6 +10,21 @@ pub struct DatasetEnvironment {
     dataset: Dataset,
 }
 
+impl DatasetEnvironment {
+    fn accuracy(&self, executor: &mut execute::Executor) -> f64 {
+        if !self.dataset.is_classification {
+            return 0.0;
+        }
+
+        self.dataset.acc(
+            self.dataset
+                .inputs
+                .iter()
+                .map(|input| executor.execute(input)),
+        )
+    }
+}
+
 impl Default for DatasetEnvironment {
     fn default() -> DatasetEnvironment {
         DatasetEnvironment {
@@ -22,29 +37,12 @@ impl Default for DatasetEnvironment {
 }
 
 impl Environment<execute::Executor> for DatasetEnvironment {
-    fn get_name(&self) -> &String {
-        &self.name
-    }
-
     fn get_dimensions(&self) -> &Dimensions {
         return &self.dataset.dimensions;
     }
 
     fn fitness(&self, executor: &mut execute::Executor) -> f64 {
         1.0 - self.dataset.mse(
-            self.dataset
-                .inputs
-                .iter()
-                .map(|input| executor.execute(input)),
-        )
-    }
-
-    fn accuracy(&self, executor: &mut execute::Executor) -> f64 {
-        if !self.dataset.is_classification {
-            return 0.0;
-        }
-
-        self.dataset.acc(
             self.dataset
                 .inputs
                 .iter()

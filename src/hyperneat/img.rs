@@ -49,3 +49,4 @@ pub fn plot_weights(
     .unwrap()
     .save(fname).ok();
 }
+

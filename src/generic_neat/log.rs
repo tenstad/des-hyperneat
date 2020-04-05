@@ -2,17 +2,18 @@ use crate::generic_neat::population::Population;
 use crate::generic_neat::dot;
 
 pub trait Log {
-    fn log(&mut self, iteration: u64, population: &Population, fitness: f64, accuracy: f64);
+    fn log(&mut self, iteration: u64, population: &Population);
 }
 
 pub struct DefaultLogger {}
 
 impl Log for DefaultLogger {
-    fn log(&mut self, iteration: u64, population: &Population, fitness: f64, accuracy: f64) {
+    fn log(&mut self, iteration: u64, population: &Population) {
         if iteration % 10 == 0 {
-            println!("Iter: {}\t Fitness: {} \t Acc: {}", iteration, fitness, accuracy);
+            let best = &population.best().unwrap();
+            println!("Iter: {}\t Fitness: {}", iteration, best.fitness);
             println!("{}", population);
-            dot::genome_to_dot(String::from("g.dot"), &population.best().unwrap().genome).ok();
+            dot::genome_to_dot(String::from("g.dot"), &best.genome).ok();
         }
     }
 }
