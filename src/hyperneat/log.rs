@@ -1,6 +1,7 @@
 use crate::generic_neat::evaluate;
 use crate::generic_neat::log;
 use crate::generic_neat::population::Population;
+use crate::hyperneat::img;
 use crate::neat::phenotype::Developer;
 use crate::network::execute;
 
@@ -24,11 +25,12 @@ impl log::Log for Logger {
 
         if iteration % 20 == 0 {
             let developer: &dyn evaluate::Develop<execute::Executor> = &self.developer;
-            crate::hyperneat::img::plot_weights(
+
+            img::plot_weights(
                 developer.develop(&population.best().unwrap().genome),
                 0.0,
                 0.0,
-                10.0,
+                1.0,
                 256,
                 "w.png",
             );

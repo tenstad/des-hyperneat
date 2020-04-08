@@ -9,6 +9,7 @@ mod conf;
 mod data;
 mod generic_neat;
 mod hyperneat;
+mod eshyperneat;
 mod neat;
 mod network;
 
