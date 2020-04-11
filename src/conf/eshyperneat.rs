@@ -16,4 +16,7 @@ pub struct Conf {
 
     #[envconfig(from = "MAX_DEPTH", default = "8")]
     pub max_depth: u32,
+
+    #[envconfig(from = "RESOLUTION", default = "1048576.0")]
+    pub resolution: f64,
 }
