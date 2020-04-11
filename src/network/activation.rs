@@ -87,7 +87,7 @@ impl str::FromStr for Activation {
             "Sine" => Ok(Activation::Sine),
             "Square" => Ok(Activation::Square),
             "Exp" => Ok(Activation::Exp),
-            _ => Err(ParseActivationError{}),
+            _ => Err(ParseActivationError {}),
         }
     }
 }

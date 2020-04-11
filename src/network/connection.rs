@@ -229,7 +229,10 @@ mod tests {
         connections.add_enabled(2, 1);
         connections.add_disabled(3, 4);
 
-        let mut all_sources = connections.enabled_sources().map(|x| *x).collect::<Vec<u8>>();
+        let mut all_sources = connections
+            .enabled_sources()
+            .map(|x| *x)
+            .collect::<Vec<u8>>();
         all_sources.sort();
 
         assert_eq!(all_sources, vec![0, 1, 2]);
