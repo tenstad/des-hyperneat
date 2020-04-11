@@ -38,11 +38,11 @@ impl Network {
             })
             .collect();
 
-        let mut connections = connection::Connections::<Point>::new();
+        let mut connections = connection::TogglableConnections::<Point, ()>::new();
         for i in 0..(layers.len() - 1) {
             for from in layers[i].iter() {
                 for to in layers[i + 1].iter() {
-                    connections.add_enabled(*from, *to);
+                    connections.add_enabled(*from, *to, ());
                 }
             }
         }
@@ -65,7 +65,7 @@ impl Network {
         inputs: Vec<Point>,
         hiddens: Vec<Point>,
         outputs: Vec<Point>,
-        connections: connection::Connections<Point>,
+        connections: connection::TogglableConnections<Point, ()>,
     ) -> Network {
         let mut order = basic_order::BasicOrder::<Point>::new();
         order.sort_topologically(&connections);

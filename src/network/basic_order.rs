@@ -16,8 +16,8 @@ impl<T: Hash + Eq + Copy> BasicOrder<T> {
         }
     }
 
-    pub fn sort_topologically(&mut self, connections: &connection::Connections<T>) {
-        self.order.hiddens = connections.enabled_sources().cloned().collect();
+    pub fn sort_topologically(&mut self, connections: &connection::TogglableConnections<T, ()>) {
+        self.order.hiddens = connections.get_enabled_sources().cloned().collect();
         self.order.sort_topologically(connections);
     }
 

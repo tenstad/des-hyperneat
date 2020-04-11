@@ -1,4 +1,4 @@
-use crate::network::connection::Connections;
+use crate::network::connection::TogglableConnections;
 use std::collections::HashMap;
 use std::fmt;
 use std::hash::Hash;
@@ -71,7 +71,7 @@ impl<T: Hash + Eq + Copy> Order<T> {
         self.actions.contains(action)
     }
 
-    pub fn add_link(&mut self, from: T, to: T, connections: &Connections<T>) {
+    pub fn add_link(&mut self, from: T, to: T, connections: &TogglableConnections<T, ()>) {
         for (i, action) in self.actions.iter().enumerate() {
             if let Action::Activation(node_ref) = action {
                 if from == *node_ref {
@@ -127,14 +127,14 @@ impl<T: Hash + Eq + Copy> Order<T> {
     ///
     /// To allow for insertion of new links without finding new topological sorting,
     /// all nodes must be included, even though they are not currently connected.
-    pub fn sort_topologically(&mut self, connections: &Connections<T>) {
+    pub fn sort_topologically(&mut self, connections: &TogglableConnections<T, ()>) {
         self.actions.clear();
 
         // Store number of incoming connections for all nodes
         // Ignore disabled connections
         let mut backward_count: HashMap<T, u64> = HashMap::new();
-        for source in connections.enabled_sources() {
-            for target in connections.get_enabled(source) {
+        for source in connections.get_enabled_sources() {
+            for target in connections.get_enabled_targets(source) {
                 backward_count.insert(*target, *backward_count.get(target).unwrap_or(&0) + 1);
             }
         }
@@ -162,7 +162,7 @@ impl<T: Hash + Eq + Copy> Order<T> {
             self.actions.push(Action::Activation(node));
 
             // Process all outgoing connections from the current node
-            for to in connections.get_enabled(&node) {
+            for to in connections.get_enabled_targets(&node) {
                 self.actions.push(Action::Link(node, *to));
 
                 // Reduce backward count by 1
@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn test_add_remove_link() {
-        let connections = Connections::<u8>::new();
+        let connections = TogglableConnections::<u8, ()>::new();
 
         let mut order = Order::<u8>::from_nodes(vec![0], vec![1], vec![2]);
         order.add_link(0, 1, &connections);
@@ -264,7 +264,7 @@ mod tests {
 
     #[test]
     fn test_split_link() {
-        let connections = Connections::<u8>::new();
+        let connections = TogglableConnections::<u8, ()>::new();
 
         let mut order = Order::<u8>::from_nodes(vec![0], vec![1], vec![2]);
         order.add_link(0, 1, &connections);
@@ -285,8 +285,8 @@ mod tests {
 
     #[test]
     fn test_unreachable() {
-        let mut connections = Connections::<u8>::new();
-        connections.add_enabled(1, 2);
+        let mut connections = TogglableConnections::<u8, ()>::new();
+        connections.add_enabled(1, 2, ());
 
         let mut order = Order::<u8>::from_nodes(vec![0], vec![1, 2], vec![3]);
         order.add_link(1, 2, &connections);
@@ -307,12 +307,12 @@ mod tests {
 
     #[test]
     fn test_add_link_causing_sort() {
-        let mut connections = Connections::<u8>::new();
-        connections.add_enabled(0, 1);
-        connections.add_enabled(1, 3);
-        connections.add_enabled(0, 2);
-        connections.add_enabled(2, 3);
-        connections.add_enabled(2, 1);
+        let mut connections = TogglableConnections::<u8, ()>::new();
+        connections.add_enabled(0, 1, ());
+        connections.add_enabled(1, 3, ());
+        connections.add_enabled(0, 2, ());
+        connections.add_enabled(2, 3, ());
+        connections.add_enabled(2, 1, ());
 
         let mut order = Order::<u8>::from_nodes(vec![0], vec![1, 2], vec![3]);
         order.add_link(0, 1, &connections);

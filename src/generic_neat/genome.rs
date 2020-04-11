@@ -19,7 +19,7 @@ pub struct Genome {
     pub links: HashMap<(NodeRef, NodeRef), Link>, // Links between nodes
 
     pub order: order::Order<NodeRef>, // Actions to perform when evaluating
-    pub connections: connection::Connections<NodeRef>, // Fast connection lookup
+    pub connections: connection::TogglableConnections<NodeRef, ()>, // Fast connection lookup
 }
 
 impl Genome {
@@ -30,12 +30,12 @@ impl Genome {
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
             order: order::Order::<NodeRef>::new(),
-            connections: connection::Connections::<NodeRef>::new(),
+            connections: connection::TogglableConnections::<NodeRef, ()>::new(),
         }
     }
 
     /// Generate genome with default activation and no connections
-    pub fn new(inputs: usize, outputs: usize) -> Genome {
+    pub fn new(inputs: usize, outputs: usize) -> Self {
         let inputs: HashMap<NodeRef, Node> = (0..inputs as u64)
             .map(|i| (NodeRef::Input(i), Node::new(NodeRef::Input(i))))
             .collect();
@@ -50,13 +50,13 @@ impl Genome {
             outputs.keys().cloned().collect(),
         );
 
-        Genome {
+        Self {
             inputs,
             outputs,
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
             order,
-            connections: connection::Connections::<NodeRef>::new(),
+            connections: connection::TogglableConnections::<NodeRef, ()>::new(),
         }
     }
 
@@ -104,7 +104,7 @@ impl Genome {
         self.links.insert((link.from, link.to), link);
 
         // Add connections
-        self.connections.add(link.from, link.to, link.enabled);
+        self.connections.add(link.from, link.to, (), link.enabled);
 
         // Add action
         if link.enabled && add_action {
