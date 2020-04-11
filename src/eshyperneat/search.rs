@@ -55,35 +55,13 @@ impl QuadPoint {
             || (self.depth < conf::ESHYPERNEAT.max_depth
                 && self.variance() > conf::ESHYPERNEAT.diversity_threshold)
         {
+            let mut child =
+                |x: f64, y: f64| Box::new(QuadPoint::new(self.x + x, self.y + y, width, depth, f));
             let mut children = [
-                Box::new(QuadPoint::new(
-                    self.x - width,
-                    self.y - width,
-                    width,
-                    depth,
-                    f,
-                )),
-                Box::new(QuadPoint::new(
-                    self.x - width,
-                    self.y + width,
-                    width,
-                    depth,
-                    f,
-                )),
-                Box::new(QuadPoint::new(
-                    self.x + width,
-                    self.y + width,
-                    width,
-                    depth,
-                    f,
-                )),
-                Box::new(QuadPoint::new(
-                    self.x + width,
-                    self.y - width,
-                    width,
-                    depth,
-                    f,
-                )),
+                child(-width, -width),
+                child(-width, width),
+                child(width, width),
+                child(width, -width),
             ];
 
             for child in children.iter_mut() {
