@@ -50,7 +50,7 @@ impl Genome {
         }
     }
 
-    fn split_link(&mut self, link: Link, new_node_id: u64, innovation_number: u64) {
+    pub fn split_link(&mut self, link: Link, new_node_id: u64, innovation_number: u64) {
         {
             // Disable link
             let link = self
@@ -86,7 +86,7 @@ impl Genome {
         self.insert_link(link2);
     }
 
-    fn insert_link(&mut self, link: Link) {
+    pub fn insert_link(&mut self, link: Link) {
         // Add link
         self.links.insert((link.from, link.to), link);
 

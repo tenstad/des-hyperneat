@@ -2,7 +2,7 @@ extern crate libc;
 use crate::network::activation::Activation;
 use std::mem;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Executor {
     values: Vec<f64>,
     inputs: Vec<usize>,

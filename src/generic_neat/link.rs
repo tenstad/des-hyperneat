@@ -11,11 +11,6 @@ pub struct Link {
     pub innovation: u64, // Global innovation number
 }
 
-pub trait Custom: Copy + Clone + Send {
-    fn new() -> Self;
-    fn crossover(&self, other: &Self) -> Self;
-}
-
 impl Link {
     pub fn new(from: NodeRef, to: NodeRef, weight: f64, innovation: u64) -> Link {
         Link {

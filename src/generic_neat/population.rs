@@ -6,6 +6,7 @@ use crate::generic_neat::organism::Organism;
 use crate::generic_neat::species::Species;
 use rand::Rng;
 use std::fmt;
+use std::f64;
 
 pub struct Population {
     population_size: usize,
@@ -203,7 +204,7 @@ impl Population {
     /// Use tournament selection to select an organism
     fn tournament_select(&self, k: usize) -> Option<&Organism> {
         let mut best: Option<&Organism> = None;
-        let mut best_fitness = -1.0;
+        let mut best_fitness = f64::MIN;
 
         for _ in 0..k {
             if let Some(organism) = self.random_organism() {

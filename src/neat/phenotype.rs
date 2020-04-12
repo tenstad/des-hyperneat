@@ -1,6 +1,8 @@
 use crate::generic_neat::evaluate;
 use crate::generic_neat::genome;
+use crate::generic_neat::link;
 use crate::generic_neat::node::NodeRef;
+use crate::network::activation;
 use crate::network::connection;
 use crate::network::execute;
 use crate::network::execute::Executor as P;
@@ -16,26 +18,35 @@ impl Default for Developer {
 
 impl evaluate::Develop<P> for Developer {
     fn develop(&self, genome: &genome::Genome) -> P {
-        let input_length = genome.inputs.len();
-        let cumulative_hidden_length = input_length + genome.hidden_nodes.len(); // Length of input and hidden
-        let cumulative_output_length = cumulative_hidden_length + genome.outputs.len(); // Length of input, hidden and output
-
         let mut input_keys: Vec<NodeRef> = genome.inputs.keys().cloned().collect();
         input_keys.sort();
         let mut output_keys: Vec<NodeRef> = genome.outputs.keys().cloned().collect();
         output_keys.sort();
 
-        let node_mapper: HashMap<NodeRef, usize> = input_keys
+        let order = genome.connections.sort_topologically();
+        let mut nodes = order
             .iter()
-            .chain(genome.hidden_nodes.keys())
-            .chain(output_keys.iter())
+            .filter_map(|action| match action {
+                connection::OrderedAction::Activation(NodeRef::Input(id)) => {
+                    Some(NodeRef::Input(*id))
+                }
+                connection::OrderedAction::Activation(NodeRef::Hidden(id)) => {
+                    Some(NodeRef::Hidden(*id))
+                }
+                _ => None,
+            })
+            .collect::<Vec<NodeRef>>();
+        nodes.sort();
+        let max_output_id = genome.outputs.keys().map(|n| n.id()).max().unwrap() as usize;
+        nodes.extend((0..(max_output_id as u64 + 1)).map(|i| NodeRef::Output(i)));
+
+        let node_mapper: HashMap<NodeRef, usize> = nodes
+            .iter()
             .enumerate()
             .map(|(i, node_ref)| (*node_ref, i))
             .collect();
 
-        let actions = genome
-            .connections
-            .sort_topologically()
+        let actions = order
             .iter()
             .filter_map(|action| match action {
                 connection::OrderedAction::Link(from, to) => {
@@ -57,14 +68,64 @@ impl evaluate::Develop<P> for Developer {
             })
             .collect();
 
+        let first_output_position = *node_mapper.get(&NodeRef::Output(0)).unwrap();
+
         execute::Executor::create(
-            cumulative_output_length,
-            input_keys.iter().map(|node| node.id() as usize).collect(),
-            output_keys
+            nodes.len(),
+            nodes
                 .iter()
-                .map(|node| node.id() as usize + cumulative_hidden_length)
+                .filter_map(|node| {
+                    if let NodeRef::Input(id) = node {
+                        Some(*id as usize)
+                    } else {
+                        None
+                    }
+                })
                 .collect(),
+            (first_output_position..(first_output_position + max_output_id + 1)).collect(),
             actions,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_develop() {
+        let mut genome = genome::Genome::new(4, 2);
+        let link = link::Link::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
+
+        genome.insert_link(link);
+        genome.split_link(link, 0, 1);
+
+        genome
+            .inputs
+            .get_mut(&NodeRef::Input(1))
+            .unwrap()
+            .activation = activation::Activation::None;
+        genome
+            .hidden_nodes
+            .get_mut(&NodeRef::Hidden(0))
+            .unwrap()
+            .activation = activation::Activation::Exp;
+        genome
+            .outputs
+            .get_mut(&NodeRef::Output(1))
+            .unwrap()
+            .activation = activation::Activation::Sine;
+
+        let developer: &dyn evaluate::Develop<execute::Executor> = &Developer::default();
+        let mut phenotype = developer.develop(&genome);
+
+        let result = phenotype.execute(&vec![5.0, 7.0]);
+        assert_eq!(
+            result,
+            vec![
+                0.0,
+                activation::Activation::Sine.activate(3.0 * activation::Activation::Exp.activate(7.0))
+            ]
+        );
     }
 }
