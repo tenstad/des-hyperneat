@@ -18,73 +18,68 @@ impl Default for Developer {
 
 impl evaluate::Develop<P> for Developer {
     fn develop(&self, genome: &genome::Genome) -> P {
-        let mut input_keys: Vec<NodeRef> = genome.inputs.keys().cloned().collect();
-        input_keys.sort();
-        let mut output_keys: Vec<NodeRef> = genome.outputs.keys().cloned().collect();
-        output_keys.sort();
-
+        // Sort genomes netowrk topologically
         let order = genome.connections.sort_topologically();
-        let mut nodes = order
+
+        // Create vector of all input node indexes, for insertion of nerual network inputs
+        let num_input_nodes = genome.inputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
+        let inputs = (0..num_input_nodes).collect::<Vec<usize>>();
+
+        // Prepend input nodes to extraction of hidden nodes from topological sorting
+        let mut nodes = inputs
             .iter()
-            .filter_map(|action| match action {
-                connection::OrderedAction::Activation(NodeRef::Input(id)) => {
-                    Some(NodeRef::Input(*id))
-                }
+            .map(|id| NodeRef::Input(*id as u64))
+            .chain(order.iter().filter_map(|action| match action {
                 connection::OrderedAction::Activation(NodeRef::Hidden(id)) => {
                     Some(NodeRef::Hidden(*id))
                 }
                 _ => None,
-            })
+            }))
             .collect::<Vec<NodeRef>>();
-        nodes.sort();
-        let max_output_id = genome.outputs.keys().map(|n| n.id()).max().unwrap() as usize;
-        nodes.extend((0..(max_output_id as u64 + 1)).map(|i| NodeRef::Output(i)));
 
-        let node_mapper: HashMap<NodeRef, usize> = nodes
+        // Create vector of all output node indexes, for extraction of nerual network execution result
+        let num_output_nodes = genome.outputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
+        let outputs = (nodes.len()..(nodes.len() + num_output_nodes)).collect();
+
+        // Append all output nodes. Disconnected nodes (not present in topological sorting)
+        // are added to make the output vector of the correct size. If num_output_nodes grows
+        // with evolution, this could use the highest known num_output_nodes of all genomes.
+        nodes.extend((0..(num_output_nodes as u64)).map(|i| NodeRef::Output(i)));
+
+        // Create mapping from NodeRef to array index in Network's node vector
+        let node_mapping: HashMap<NodeRef, usize> = nodes
             .iter()
             .enumerate()
             .map(|(i, node_ref)| (*node_ref, i))
             .collect();
 
+        // Map topologically sorted order to neural network actions. Filter disabled edges, as
+        // these are present in Connections to avoid cycles when re-enabling disabled edges.
         let actions = order
             .iter()
             .filter_map(|action| match action {
                 connection::OrderedAction::Link(from, to) => {
-                    if genome.links.get(&(*from, *to)).unwrap().enabled {
+                    let link = genome.links.get(&(*from, *to)).unwrap();
+                    if link.enabled {
                         Some(execute::Action::Link(
-                            *node_mapper.get(from).unwrap(),
-                            *node_mapper.get(to).unwrap(),
-                            genome.links.get(&(*from, *to)).unwrap().weight,
+                            *node_mapping.get(from).unwrap(),
+                            *node_mapping.get(to).unwrap(),
+                            link.weight,
                         ))
                     } else {
                         None
                     }
                 }
                 connection::OrderedAction::Activation(node) => Some(execute::Action::Activation(
-                    *node_mapper.get(node).unwrap(),
+                    *node_mapping.get(node).unwrap(),
                     genome.get_bias(node),
                     genome.get_activation(node),
                 )),
             })
             .collect();
 
-        let first_output_position = *node_mapper.get(&NodeRef::Output(0)).unwrap();
-
-        execute::Executor::create(
-            nodes.len(),
-            nodes
-                .iter()
-                .filter_map(|node| {
-                    if let NodeRef::Input(id) = node {
-                        Some(*id as usize)
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            (first_output_position..(first_output_position + max_output_id + 1)).collect(),
-            actions,
-        )
+        // Create neural network executor
+        execute::Executor::create(nodes.len(), inputs, outputs, actions)
     }
 }
 
@@ -119,12 +114,13 @@ mod tests {
         let developer: &dyn evaluate::Develop<execute::Executor> = &Developer::default();
         let mut phenotype = developer.develop(&genome);
 
-        let result = phenotype.execute(&vec![5.0, 7.0]);
+        let result = phenotype.execute(&vec![5.0, 7.0, -1.0, -1.0]);
         assert_eq!(
             result,
             vec![
                 0.0,
-                activation::Activation::Sine.activate(3.0 * activation::Activation::Exp.activate(7.0))
+                activation::Activation::Sine
+                    .activate(3.0 * activation::Activation::Exp.activate(7.0))
             ]
         );
     }
