@@ -80,13 +80,13 @@ impl Genome {
         let link2 = Link::new(new_node_ref, link.to, link.weight, innovation_number + 1);
 
         assert!(!self.links.contains_key(&(link1.from, link1.to)));
-        self.insert_link(link1, false);
+        self.insert_link(link1);
 
         assert!(!self.links.contains_key(&(link2.from, link2.to)));
-        self.insert_link(link2, false);
+        self.insert_link(link2);
     }
 
-    fn insert_link(&mut self, link: Link, add_action: bool) {
+    fn insert_link(&mut self, link: Link) {
         // Add link
         self.links.insert((link.from, link.to), link);
 
@@ -108,9 +108,9 @@ impl Genome {
         for (link_ref, link) in parent1.links.iter() {
             if !genome.connections.creates_cycle(link.from, link.to) {
                 if let Some(link2) = parent2.links.get(link_ref) {
-                    genome.insert_link(link.crossover(link2), false);
+                    genome.insert_link(link.crossover(link2));
                 } else {
-                    genome.insert_link(*link, false);
+                    genome.insert_link(*link);
                 }
             }
         }
@@ -332,15 +332,12 @@ impl Genome {
                         }
                     };
 
-                    self.insert_link(
-                        Link::new(
-                            from,
-                            to,
-                            (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.initial_link_weight_size,
-                            innovation,
-                        ),
-                        true,
-                    );
+                    self.insert_link(Link::new(
+                        from,
+                        to,
+                        (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.initial_link_weight_size,
+                        innovation,
+                    ));
                     break;
                 }
             } else {
