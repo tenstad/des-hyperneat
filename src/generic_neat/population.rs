@@ -155,7 +155,7 @@ impl Population {
 
             // Breed new organisms
             for _ in 0..reproductions {
-                let error = "Unable to gather organism";
+                let error = "unable to gather organism";
                 let father = if rng.gen::<f64>() < conf::NEAT.interspecies_reproduction_chance {
                     // Interspecies breeding
                     self.tournament_select(conf::NEAT.interspecies_tournament_size)

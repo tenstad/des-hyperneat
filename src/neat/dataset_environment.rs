@@ -31,7 +31,7 @@ impl Default for DatasetEnvironment {
             name: conf::GENERAL.dataset.clone(),
             dataset: Dataset::load(&conf::GENERAL.dataset)
                 .ok()
-                .expect("Unable to load dataset."),
+                .expect("unable to load dataset"),
         }
     }
 }

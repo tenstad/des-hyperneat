@@ -35,9 +35,9 @@ impl<T: Hash + Eq + Copy, U> Connections<T, U> {
     pub fn add(&mut self, from: T, to: T, edge: U) {
         assert!(
             !self.creates_cycle(from, to),
-            "Cannot add link that creates cycle"
+            "cannot add link that creates cycle"
         );
-        assert!(!self.contains(&from, to), "Cannot add existing connection.");
+        assert!(!self.contains(&from, to), "cannot add existing connection");
 
         if let Some(vec) = self.connections.get_mut(&from) {
             vec.push((to, edge));
@@ -47,14 +47,14 @@ impl<T: Hash + Eq + Copy, U> Connections<T, U> {
     }
 
     pub fn set_edge<'a>(&mut self, from: &'a T, to: T, edge: U) {
-        let error = "Cannot set non-existent edge.";
+        let error = "cannot set non-existent edge";
         let edges = self.connections.get_mut(from).expect(error);
         let index = edges.iter().position(|(n, _)| *n == to).expect(error);
         edges[index].1 = edge;
     }
 
     pub fn get_edge<'a>(&'a self, from: &'a T, to: T) -> &'a U {
-        let error = "Cannot get non-existent edge.";
+        let error = "cannot get non-existent edge";
         let edges = self.connections.get(from).expect(error);
         let index = edges.iter().position(|(n, _)| *n == to).expect(error);
         &edges[index].1
@@ -77,7 +77,7 @@ impl<T: Hash + Eq + Copy, U> Connections<T, U> {
     }
 
     pub fn remove(&mut self, from: &T, to: T) -> U {
-        let error = "Cannot remove non-existent connection.";
+        let error = "cannot remove non-existent connection";
         let vec = self.connections.get_mut(from).expect(error);
         let index = vec.iter().position(|(x, _)| *x == to).expect(error);
         vec.swap_remove(index).1

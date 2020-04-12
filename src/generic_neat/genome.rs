@@ -56,7 +56,7 @@ impl Genome {
             let link = self
                 .links
                 .get_mut(&(link.from, link.to))
-                .expect("Unable to split nonexistent link");
+                .expect("unable to split nonexistent link");
 
             assert!(link.enabled);
             link.enabled = false;

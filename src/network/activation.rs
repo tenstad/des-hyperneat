@@ -61,7 +61,7 @@ impl Activations {
             .iter()
             .skip(rand::thread_rng().gen_range(0, self.activations.len()))
             .next()
-            .expect("List of activation functions cannot be empty")
+            .expect("list of activation functions cannot be empty")
     }
 }
 
