@@ -6,7 +6,6 @@ use crate::generic_neat::node::Node;
 use crate::generic_neat::node::NodeRef;
 use crate::network::activation;
 use crate::network::connection;
-use crate::network::order;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use std::collections::HashMap;
@@ -18,19 +17,17 @@ pub struct Genome {
     pub outputs: HashMap<NodeRef, Node>,
     pub links: HashMap<(NodeRef, NodeRef), Link>, // Links between nodes
 
-    pub order: order::Order<NodeRef>, // Actions to perform when evaluating
-    pub connections: connection::TogglableConnections<NodeRef, ()>, // Fast connection lookup
+    pub connections: connection::Connections<NodeRef, ()>, // Fast connection lookup
 }
 
 impl Genome {
-    pub fn empty() -> Genome {
-        Genome {
+    pub fn empty() -> Self {
+        Self {
             inputs: HashMap::new(),
             outputs: HashMap::new(),
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
-            order: order::Order::<NodeRef>::new(),
-            connections: connection::TogglableConnections::<NodeRef, ()>::new(),
+            connections: connection::Connections::<NodeRef, ()>::new(),
         }
     }
 
@@ -44,19 +41,12 @@ impl Genome {
             .map(|i| (NodeRef::Output(i), Node::new(NodeRef::Output(i))))
             .collect();
 
-        let order = order::Order::<NodeRef>::from_nodes(
-            inputs.keys().cloned().collect(),
-            vec![],
-            outputs.keys().cloned().collect(),
-        );
-
         Self {
             inputs,
             outputs,
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
-            order,
-            connections: connection::TogglableConnections::<NodeRef, ()>::new(),
+            connections: connection::Connections::<NodeRef, ()>::new(),
         }
     }
 
@@ -80,11 +70,8 @@ impl Genome {
             return;
         }
 
-        // Disable connection
-        self.connections.disable(link.from, link.to);
-
-        // Add and remvoe actions
-        self.order.split_link(link.from, link.to, new_node_ref);
+        // Remove connection
+        self.connections.remove(&link.from, link.to);
 
         self.hidden_nodes
             .insert(new_node_ref, Node::new(NodeRef::Hidden(new_node_id)));
@@ -104,18 +91,7 @@ impl Genome {
         self.links.insert((link.from, link.to), link);
 
         // Add connections
-        self.connections.add(link.from, link.to, (), link.enabled);
-
-        // Add action
-        if link.enabled && add_action {
-            // When adding many links at the same time, it is faster to sort
-            // topologically at the end than adding every connection independently
-            // When 'add_action' is false, 'sort_topologically' must be called on
-            // self.actions when all links are inserted.
-            // Except when the link is added by split, then self.action should
-            // perform the split internally.
-            self.order.add_link(link.from, link.to, &self.connections);
-        }
+        self.connections.add(link.from, link.to, ());
     }
 
     pub fn crossover(&self, other: &Self, is_fitter: bool) -> Genome {
@@ -146,7 +122,6 @@ impl Genome {
             } else {
                 genome.inputs.insert(*node_ref, *node);
             }
-            genome.order.add_input(*node_ref);
         }
 
         for (node_ref, node) in parent1.hidden_nodes.iter() {
@@ -155,7 +130,6 @@ impl Genome {
             } else {
                 genome.hidden_nodes.insert(*node_ref, *node);
             }
-            genome.order.add_hidden(*node_ref);
         }
 
         for (node_ref, node) in parent1.outputs.iter() {
@@ -164,11 +138,7 @@ impl Genome {
             } else {
                 genome.outputs.insert(*node_ref, *node);
             }
-            genome.order.add_output(*node_ref);
         }
-
-        // Topologically sort actions of child, as this is not done when inserting links and nodes
-        genome.order.sort_topologically(&genome.connections);
 
         return genome;
     }
@@ -283,8 +253,6 @@ impl Genome {
             .collect::<Vec<(NodeRef, NodeRef)>>()
             .choose(&mut rand::thread_rng())
         {
-            assert!(self.order.contains(&order::Action::Link(index.0, index.1)));
-
             if let Some(&link) = self.links.get(index) {
                 // Check if this link has been split by another individual
 
@@ -365,7 +333,12 @@ impl Genome {
                     };
 
                     self.insert_link(
-                        Link::new(from, to, (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.initial_link_weight_size, innovation),
+                        Link::new(
+                            from,
+                            to,
+                            (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.initial_link_weight_size,
+                            innovation,
+                        ),
                         true,
                     );
                     break;
@@ -380,19 +353,15 @@ impl Genome {
         if let Some(&connection_ref) = self
             .links
             .iter()
-            .filter(|(_, link)| link.enabled)
-            .map(|(i, _)| i)
+            .filter_map(|(i, link)| if link.enabled { Some(i) } else { None })
             .collect::<Vec<&(NodeRef, NodeRef)>>()
             .choose(&mut rand::thread_rng())
         {
             let connection_ref = *connection_ref;
 
-            self.connections.disable(connection_ref.0, connection_ref.1);
-            self.order.remove_link(connection_ref.0, connection_ref.1);
-
-            if let Some(link) = self.links.get_mut(&connection_ref) {
-                link.enabled = false;
-            }
+            // Do not remove connection as it is needed to check for cycles and might be enabled again
+            // self.connections.remove(&connection_ref.0, connection_ref.1);
+            self.links.get_mut(&connection_ref).unwrap().enabled = false;
         }
     }
 

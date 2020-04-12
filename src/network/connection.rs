@@ -1,6 +1,22 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fmt;
 use std::hash::Hash;
+
+#[derive(PartialEq)]
+pub enum OrderedAction<T> {
+    Link(T, T),
+    Activation(T),
+}
+
+impl<T: fmt::Display> fmt::Display for OrderedAction<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            OrderedAction::Link(from, to) => write!(f, "{}->{}", from, to),
+            OrderedAction::Activation(id) => write!(f, "{}", id),
+        }
+    }
+}
 
 /// Fast non-cyclic graph structure
 #[derive(Clone)]
@@ -21,16 +37,27 @@ impl<T: Hash + Eq + Copy, U> Connections<T, U> {
             !self.creates_cycle(from, to),
             "Cannot add link that creates cycle"
         );
-        assert!(
-            !self.contains(&from, to),
-            "Cannot add existing connection."
-        );
+        assert!(!self.contains(&from, to), "Cannot add existing connection.");
 
         if let Some(vec) = self.connections.get_mut(&from) {
             vec.push((to, edge));
         } else {
             self.connections.insert(from, vec![(to, edge)]);
         }
+    }
+
+    pub fn set_edge<'a>(&mut self, from: &'a T, to: T, edge: U) {
+        let error = "Cannot set non-existent edge.";
+        let edges = self.connections.get_mut(from).expect(error);
+        let index = edges.iter().position(|(n, _)| *n == to).expect(error);
+        edges[index].1 = edge;
+    }
+
+    pub fn get_edge<'a>(&'a self, from: &'a T, to: T) -> &'a U {
+        let error = "Cannot get non-existent edge.";
+        let edges = self.connections.get(from).expect(error);
+        let index = edges.iter().position(|(n, _)| *n == to).expect(error);
+        &edges[index].1
     }
 
     pub fn get_edges<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a (T, U)> {
@@ -46,10 +73,7 @@ impl<T: Hash + Eq + Copy, U> Connections<T, U> {
     }
 
     pub fn contains(&self, from: &T, to: T) -> bool {
-        !self
-            .get_edges(from)
-            .position(|(x, _)| *x == to)
-            .is_none()
+        !self.get_edges(from).position(|(x, _)| *x == to).is_none()
     }
 
     pub fn remove(&mut self, from: &T, to: T) -> U {
@@ -80,147 +104,47 @@ impl<T: Hash + Eq + Copy, U> Connections<T, U> {
 
         return false; // Unable to reach from when starting at to, addition will not cause cycle
     }
-}
 
-/// Same as Connections, but stores both enabled and disabled connections
-#[derive(Clone)]
-pub struct TogglableConnections<T: Hash, U> {
-    enabled: Connections<T, U>,
-    disabled: Connections<T, U>,
-}
-
-#[allow(dead_code)]
-impl<T: Hash + Eq + Copy, U> TogglableConnections<T, U> {
-    pub fn new() -> Self {
-        Self {
-            enabled: Connections::<T, U>::new(),
-            disabled: Connections::<T, U>::new(),
-        }
-    }
-
-    // Add
-    pub fn add(&mut self, from: T, to: T, edge: U, enabled: bool) {
-        if enabled {
-            self.add_enabled(from, to, edge);
-        } else {
-            self.add_disabled(from, to, edge);
-        }
-    }
-
-    pub fn add_enabled(&mut self, from: T, to: T, edge: U) {
-        assert!(
-            !self.contains_disabled(&from, to),
-            "Cannot add existing connection."
-        );
-        self.enabled.add(from, to, edge);
-    }
-
-    pub fn add_disabled(&mut self, from: T, to: T, edge: U) {
-        assert!(
-            !self.contains_enabled(&from, to),
-            "Cannot add existing connection."
-        );
-        self.disabled.add(from, to, edge);
-    }
-
-    // Get
-    pub fn get_edges<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a (T, U)> {
-        self.get_enabled_edges(from).chain(self.get_disabled_edges(from))
-    }
-
-    pub fn get_enabled_edges<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a (T, U)> {
-        self.enabled.get_edges(from)
-    }
-
-    pub fn get_disabled_edges<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a (T, U)> {
-        self.disabled.get_edges(from)
-    }
-
-    pub fn get_targets<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a T> {
-        self.get_enabled_targets(from).chain(self.get_disabled_targets(from))
-    }
-
-    pub fn get_enabled_targets<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a T> {
-        self.enabled.get_targets(from)
-    }
-
-    pub fn get_disabled_targets<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a T> {
-        self.disabled.get_targets(from)
-    }
-
-    pub fn get_enabled_sources<'a>(&'a self) -> impl Iterator<Item = &'a T> {
-        self.enabled.get_sources()
-    }
-
-    // Contains
-    pub fn contains(&self, from: &T, to: T) -> bool {
-        self.contains_enabled(from, to) || self.contains_disabled(from, to)
-    }
-
-    pub fn contains_enabled(&self, from: &T, to: T) -> bool {
-        self.enabled.contains(from, to)
-    }
-
-    pub fn contains_disabled(&self, from: &T, to: T) -> bool {
-        self.disabled.contains(from, to)
-    }
-
-    // Toggle
-    pub fn disable(&mut self, from: T, to: T) {
-        let edge = self.remove_enabled(&from, to);
-        self.add_disabled(from, to, edge);
-    }
-
-    pub fn enable(&mut self, from: T, to: T) {
-        let edge = self.remove_disabled(&from, to);
-        self.add_enabled(from, to, edge);
-    }
-
-    // Remove
-    pub fn remove(&mut self, from: &T, to: T, enabled: bool) {
-        if enabled {
-            self.remove_enabled(from, to);
-        } else {
-            self.remove_disabled(from, to);
-        }
-    }
-
-    pub fn remove_enabled(&mut self, from: &T, to: T) -> U {
-        self.enabled.remove(from, to)
-    }
-
-    pub fn remove_disabled(&mut self, from: &T, to: T) -> U{
-        self.disabled.remove(from, to)
-    }
-
-    /// DFS search to check for cycles.
-    ///
-    /// If 'from' is reachable from 'to', then addition will cause cycle
-    pub fn creates_cycle(&self, from: T, to: T) -> bool {
-        let mut visited: HashSet<T> = [to].iter().cloned().collect();
-        let mut stack: Vec<T> = vec![to];
-
-        while let Some(node) = stack.pop() {
-            if node == from {
-                return true; // Started at to and reached from, addition will cause cycle
-            } else {
-                // Add all connecting nodes to both stack and visited
-                // Avoid extra storage and double filtering by adding to stack and copying from stack into visited
-                let l = stack.len();
-                // Walk both enabled and disabled connections because disabled might become enabled later on
-                stack.extend(
-                    self.get_edges(&node)
-                        .map(|(n, _)| n)
-                        .filter(|n| !visited.contains(n)),
-                );
-                visited.extend(stack.iter().skip(l));
+    /// Determine order of nodes and links to actiave in forward pass
+    pub fn sort_topologically(&self) -> Vec<OrderedAction<T>> {
+        // Store number of incoming connections for all nodes
+        let mut backward_count: HashMap<T, u64> = HashMap::new();
+        for source in self.get_sources() {
+            for target in self.get_targets(source) {
+                backward_count.insert(*target, *backward_count.get(target).unwrap_or(&0) + 1);
             }
         }
 
-        return false; // Unable to reach from when starting at to, addition will not cause cycle
+        // Start search from all nodes without incoming connections
+        let mut stack: Vec<T> = self
+            .get_sources()
+            .filter(|node| *backward_count.get(node).unwrap_or(&0) == 0)
+            .cloned()
+            .collect();
+
+        let mut actions = Vec::<OrderedAction<T>>::new();
+
+        // Create topological order
+        while let Some(node) = stack.pop() {
+            actions.push(OrderedAction::Activation(node));
+
+            // Process all outgoing connections from the current node
+            for to in self.get_targets(&node) {
+                actions.push(OrderedAction::Link(node, *to));
+
+                // Reduce backward count by 1
+                backward_count.insert(*to, *backward_count.get(to).unwrap() - 1);
+
+                // Add nodes with no incoming connections to the stack
+                if *backward_count.get(to).unwrap() == 0 {
+                    stack.push(*to);
+                }
+            }
+        }
+
+        actions
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -228,123 +152,126 @@ mod tests {
 
     #[test]
     fn test_add() {
-        let mut connections = TogglableConnections::<u8, ()>::new();
+        let mut connections = Connections::<u8, ()>::new();
 
-        connections.add_enabled(0, 1, ());
-        connections.add(0, 2, (), true);
-        connections.add_disabled(1, 2, ());
-        connections.add(1, 3, (), false);
+        connections.add(0, 1, ());
+        connections.add(0, 2, ());
+        connections.add(1, 2, ());
+        connections.add(1, 3, ());
 
         assert!(connections.contains(&0, 1));
         assert!(connections.contains(&1, 2));
         assert!(connections.contains(&0, 2));
         assert!(connections.contains(&1, 3));
-
-        assert!(connections.contains_enabled(&0, 1));
-        assert!(connections.contains_enabled(&0, 2));
-        assert!(!connections.contains_disabled(&0, 1));
-        assert!(!connections.contains_disabled(&0, 2));
-
-        assert!(connections.contains_disabled(&1, 2));
-        assert!(connections.contains_disabled(&1, 3));
-        assert!(!connections.contains_enabled(&1, 2));
-        assert!(!connections.contains_enabled(&1, 3));
     }
 
     #[test]
     fn test_get() {
-        let mut connections = TogglableConnections::<u8, u8>::new();
+        let mut connections = Connections::<u8, u8>::new();
 
-        connections.add_enabled(0, 1, 5);
-        connections.add_enabled(0, 2, 6);
-        connections.add_disabled(0, 3, 7);
+        connections.add(0, 1, 5);
+        connections.add(0, 2, 6);
+        connections.add(0, 3, 7);
 
-        let mut all_targets = connections.get_edges(&0).cloned().collect::<Vec<(u8, u8)>>();
-        let mut enabled_targets = connections
-            .get_enabled_edges(&0)
+        let mut targets = connections
+            .get_edges(&0)
             .cloned()
             .collect::<Vec<(u8, u8)>>();
-        let mut disabled_targets = connections
-            .get_disabled_edges(&0)
-            .cloned()
-            .collect::<Vec<(u8, u8)>>();
+        targets.sort();
 
-        all_targets.sort();
-        enabled_targets.sort();
-        disabled_targets.sort();
-
-        assert_eq!(all_targets, vec![(1, 5), (2, 6), (3, 7)]);
-        assert_eq!(enabled_targets, vec![(1, 5), (2, 6)]);
-        assert_eq!(disabled_targets, vec![(3, 7)]);
+        assert_eq!(targets, vec![(1, 5), (2, 6), (3, 7)]);
         assert_eq!(connections.get_edges(&5).next(), None);
     }
 
     #[test]
-    fn test_sources() {
-        let mut connections = TogglableConnections::<u8, ()>::new();
+    fn test_set_edge() {
+        let mut connections = Connections::<u8, u8>::new();
 
-        connections.add_enabled(0, 1, ());
-        connections.add_enabled(1, 3, ());
-        connections.add_enabled(0, 2, ());
-        connections.add_enabled(2, 3, ());
-        connections.add_enabled(2, 1, ());
-        connections.add_disabled(3, 4, ());
+        connections.add(0, 1, 5);
+        connections.add(0, 2, 6);
+        connections.set_edge(&0, 1, 7);
 
-        let mut all_sources = connections
-            .get_enabled_sources()
-            .map(|x| *x)
-            .collect::<Vec<u8>>();
-        all_sources.sort();
-
-        assert_eq!(all_sources, vec![0, 1, 2]);
+        assert_eq!(*connections.get_edge(&0, 1), 7);
     }
 
     #[test]
-    fn test_toggle() {
-        let mut connections = TogglableConnections::<u8, ()>::new();
+    fn test_get_edge() {
+        let mut connections = Connections::<u8, u8>::new();
 
-        connections.add_enabled(0, 1, ());
-        connections.disable(0, 1);
+        connections.add(0, 1, 5);
+        connections.add(2, 3, 6);
+        connections.add(1, 2, 7);
 
-        assert!(connections.contains_disabled(&0, 1));
-        assert!(!connections.contains_enabled(&0, 1));
+        assert_eq!(*connections.get_edge(&0, 1), 5);
+        assert_eq!(*connections.get_edge(&2, 3), 6);
+        assert_eq!(*connections.get_edge(&1, 2), 7);
+    }
 
-        connections.enable(0, 1);
+    #[test]
+    fn test_sources() {
+        let mut connections = Connections::<u8, ()>::new();
 
-        assert!(connections.contains_enabled(&0, 1));
-        assert!(!connections.contains_disabled(&0, 1));
+        connections.add(0, 1, ());
+        connections.add(1, 3, ());
+        connections.add(0, 2, ());
+        connections.add(2, 3, ());
+        connections.add(2, 1, ());
+        connections.add(3, 4, ());
+
+        let mut all_sources = connections.get_sources().cloned().collect::<Vec<u8>>();
+        all_sources.sort();
+
+        assert_eq!(all_sources, vec![0, 1, 2, 3]);
     }
 
     #[test]
     fn test_remove() {
-        let mut connections = TogglableConnections::<u8, ()>::new();
+        let mut connections = Connections::<u8, ()>::new();
 
-        connections.add_enabled(0, 1, ());
-        connections.add(0, 2, (), true);
-        connections.remove_enabled(&0, 1);
-        connections.remove(&0, 2, true);
+        connections.add(0, 1, ());
+        connections.add(1, 2, ());
+        connections.remove(&0, 1);
         assert!(!connections.contains(&0, 1));
-        assert!(!connections.contains(&0, 2));
-
-        connections.add_disabled(0, 1, ());
-        connections.add(0, 2, (), false);
-        connections.remove_disabled(&0, 1);
-        connections.remove(&0, 2, false);
-        assert!(!connections.contains(&0, 1));
-        assert!(!connections.contains(&0, 2));
+        connections.add(2, 0, ());
+        connections.remove(&2, 0);
+        assert!(!connections.contains(&2, 0));
     }
 
     #[test]
     fn test_cycle() {
-        let mut connections = TogglableConnections::<u8, ()>::new();
+        let mut connections = Connections::<u8, ()>::new();
 
-        connections.add_enabled(0, 1, ());
-        connections.add_disabled(1, 2, ());
+        connections.add(0, 1, ());
+        connections.add(1, 2, ());
 
         assert!(connections.creates_cycle(0, 0));
         assert!(connections.creates_cycle(3, 3));
         assert!(connections.creates_cycle(2, 0));
         assert!(!connections.creates_cycle(2, 3));
         assert!(!connections.creates_cycle(0, 2));
+    }
+
+    #[test]
+    fn test_sort() {
+        let mut connections = Connections::<u8, ()>::new();
+        connections.add(0, 1, ());
+        connections.add(1, 3, ());
+        connections.add(0, 2, ());
+        connections.add(2, 3, ());
+        connections.add(2, 1, ());
+
+        let order = connections.sort_topologically();
+        let pos = |x: u8| {
+            order
+                .iter()
+                .position(|y| *y == OrderedAction::Activation(x))
+                .unwrap()
+        };
+
+        assert!(pos(0) < pos(1));
+        assert!(pos(1) < pos(3));
+        assert!(pos(0) < pos(2));
+        assert!(pos(2) < pos(3));
+        assert!(pos(2) < pos(1));
     }
 }

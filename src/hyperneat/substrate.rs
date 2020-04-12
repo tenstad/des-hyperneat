@@ -1,7 +1,5 @@
 use crate::conf;
-use crate::network::basic_order;
 use crate::network::connection;
-use crate::network::order;
 
 pub struct Network {
     pub length: usize,
@@ -38,11 +36,11 @@ impl Network {
             })
             .collect();
 
-        let mut connections = connection::TogglableConnections::<Point, ()>::new();
+        let mut connections = connection::Connections::<Point, ()>::new();
         for i in 0..(layers.len() - 1) {
             for from in layers[i].iter() {
                 for to in layers[i + 1].iter() {
-                    connections.add_enabled(*from, *to, ());
+                    connections.add(*from, *to, ());
                 }
             }
         }
@@ -65,11 +63,8 @@ impl Network {
         inputs: Vec<Point>,
         hiddens: Vec<Point>,
         outputs: Vec<Point>,
-        connections: connection::TogglableConnections<Point, ()>,
+        connections: connection::Connections<Point, ()>,
     ) -> Network {
-        let mut order = basic_order::BasicOrder::<Point>::new();
-        order.sort_topologically(&connections);
-
         let all_nodes: Vec<Point> = inputs
             .iter()
             .chain(hiddens.iter())
@@ -78,15 +73,16 @@ impl Network {
             .collect();
         let index_of = |node: Point| all_nodes.iter().position(|x| node == *x).unwrap();
 
-        let actions = order
+        let actions = connections
+            .sort_topologically()
             .iter()
             .map(|action| match action {
-                order::Action::Activation(node) => Action::Activation(
+                connection::OrderedAction::Activation(node) => Action::Activation(
                     index_of(*node),
                     node.0 as f64 / conf::ESHYPERNEAT.resolution,
                     node.1 as f64 / conf::ESHYPERNEAT.resolution,
                 ),
-                order::Action::Link(from, to) => Action::Link(
+                connection::OrderedAction::Link(from, to) => Action::Link(
                     index_of(*from),
                     index_of(*to),
                     from.0 as f64 / conf::ESHYPERNEAT.resolution,

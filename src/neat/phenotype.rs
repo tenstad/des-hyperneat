@@ -1,9 +1,9 @@
 use crate::generic_neat::evaluate;
 use crate::generic_neat::genome;
 use crate::generic_neat::node::NodeRef;
+use crate::network::connection;
 use crate::network::execute;
 use crate::network::execute::Executor as P;
-use crate::network::order;
 use std::collections::HashMap;
 
 pub struct Developer;
@@ -27,37 +27,33 @@ impl evaluate::Develop<P> for Developer {
 
         let node_mapper: HashMap<NodeRef, usize> = input_keys
             .iter()
+            .chain(genome.hidden_nodes.keys())
+            .chain(output_keys.iter())
             .enumerate()
             .map(|(i, node_ref)| (*node_ref, i))
-            .chain(
-                genome
-                    .hidden_nodes
-                    .keys()
-                    .enumerate()
-                    .map(|(i, node_ref)| (*node_ref, i + input_length)),
-            )
-            .chain(
-                output_keys
-                    .iter()
-                    .enumerate()
-                    .map(|(i, node_ref)| (*node_ref, i + cumulative_hidden_length)),
-            )
             .collect();
 
         let actions = genome
-            .order
+            .connections
+            .sort_topologically()
             .iter()
-            .map(|action| match action {
-                order::Action::Link(from, to) => execute::Action::Link(
-                    *node_mapper.get(from).unwrap(),
-                    *node_mapper.get(to).unwrap(),
-                    genome.links.get(&(*from, *to)).unwrap().weight,
-                ),
-                order::Action::Activation(node) => execute::Action::Activation(
+            .filter_map(|action| match action {
+                connection::OrderedAction::Link(from, to) => {
+                    if genome.links.get(&(*from, *to)).unwrap().enabled {
+                        Some(execute::Action::Link(
+                            *node_mapper.get(from).unwrap(),
+                            *node_mapper.get(to).unwrap(),
+                            genome.links.get(&(*from, *to)).unwrap().weight,
+                        ))
+                    } else {
+                        None
+                    }
+                }
+                connection::OrderedAction::Activation(node) => Some(execute::Action::Activation(
                     *node_mapper.get(node).unwrap(),
                     genome.get_bias(node),
                     genome.get_activation(node),
-                ),
+                )),
             })
             .collect();
 
