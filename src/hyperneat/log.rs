@@ -1,5 +1,6 @@
 use crate::generic_neat::evaluate;
 use crate::generic_neat::log;
+use crate::neat::log as neatlog;
 use crate::generic_neat::population::Population;
 use crate::hyperneat::img;
 use crate::neat::phenotype::Developer;
@@ -7,14 +8,14 @@ use crate::network::execute;
 
 pub struct Logger {
     developer: Developer,
-    default_logger: log::DefaultLogger,
+    default_logger: neatlog::Logger,
 }
 
 impl Default for Logger {
     fn default() -> Logger {
         Logger {
             developer: Developer::default(),
-            default_logger: log::DefaultLogger::default(),
+            default_logger: neatlog::Logger::default(),
         }
     }
 }

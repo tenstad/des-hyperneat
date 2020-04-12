@@ -1,4 +1,4 @@
-mod dot;
+pub mod dot;
 pub mod evaluate;
 pub mod genome;
 mod innovation;
