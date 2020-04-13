@@ -9,7 +9,7 @@ pub struct Network {
     pub actions: Vec<Action>,
 }
 
-pub type Point = (u64, u64);
+pub type Point = (i64, i64);
 
 pub enum Action {
     Activation(usize, f64, f64),            // node, x, y
@@ -19,18 +19,18 @@ pub enum Action {
 impl Network {
     pub fn layered(layer_sizes: Vec<usize>) -> Network {
         let vertical_distance =
-            (conf::ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as u64;
-        let offset = (conf::ESHYPERNEAT.resolution / 2.0) as u64;
+            (2.0 * conf::ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as i64;
         let layers: Vec<Vec<Point>> = layer_sizes
             .iter()
             .enumerate()
             .map(|(j, n)| {
-                let horizontal_distance = (conf::ESHYPERNEAT.resolution / (*n as f64 - 1.0)) as u64;
+                let horizontal_distance =
+                    (2.0 * conf::ESHYPERNEAT.resolution / (*n as f64 - 1.0)) as i64;
                 (0..*n)
                     .map(|i| {
                         (
-                            horizontal_distance * i as u64 - offset,
-                            vertical_distance * j as u64 - offset,
+                            horizontal_distance * i as i64 - conf::ESHYPERNEAT.resolution as i64,
+                            vertical_distance * j as i64 - conf::ESHYPERNEAT.resolution as i64,
                         )
                     })
                     .collect()
