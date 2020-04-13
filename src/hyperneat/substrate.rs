@@ -16,26 +16,28 @@ pub enum Action {
     Link(usize, usize, f64, f64, f64, f64), // from, to, x0, y0, x1, y1
 }
 
+fn horizontal_row(n: usize, y: i64) -> Vec<(i64, i64)> {
+    let horizontal_distance = (2.0 * conf::ESHYPERNEAT.resolution / (n as f64 - 1.0)) as f64;
+    let offset = conf::ESHYPERNEAT.resolution as i64;
+    (0..n)
+        .map(|i| ((horizontal_distance * i as f64) as i64 - offset, y))
+        .collect()
+}
+
+fn horizontal_rows(layer_sizes: &Vec<usize>) -> Vec<Vec<Point>> {
+    let vertical_distance =
+        (2.0 * conf::ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as f64;
+    let offset = conf::ESHYPERNEAT.resolution as i64;
+    layer_sizes
+        .iter()
+        .enumerate()
+        .map(|(j, n)| horizontal_row(*n, (vertical_distance * j as f64) as i64 - offset))
+        .collect()
+}
+
 impl Network {
     pub fn layered(layer_sizes: Vec<usize>) -> Network {
-        let vertical_distance =
-            (2.0 * conf::ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as i64;
-        let layers: Vec<Vec<Point>> = layer_sizes
-            .iter()
-            .enumerate()
-            .map(|(j, n)| {
-                let horizontal_distance =
-                    (2.0 * conf::ESHYPERNEAT.resolution / (*n as f64 - 1.0)) as i64;
-                (0..*n)
-                    .map(|i| {
-                        (
-                            horizontal_distance * i as i64 - conf::ESHYPERNEAT.resolution as i64,
-                            vertical_distance * j as i64 - conf::ESHYPERNEAT.resolution as i64,
-                        )
-                    })
-                    .collect()
-            })
-            .collect();
+        let layers = horizontal_rows(&layer_sizes);
 
         let mut connections = connection::Connections::<Point, ()>::new();
         for i in 0..(layers.len() - 1) {
