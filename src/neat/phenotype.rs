@@ -58,7 +58,7 @@ impl evaluate::Develop<P> for Developer {
         let actions = order
             .iter()
             .filter_map(|action| match action {
-                connection::OrderedAction::Link(from, to) => {
+                connection::OrderedAction::Link(from, to, _) => {
                     let link = genome.links.get(&(*from, *to)).unwrap();
                     if link.enabled {
                         Some(execute::Action::Link(

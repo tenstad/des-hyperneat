@@ -28,7 +28,6 @@ impl Default for Developer {
         Developer::create(network)
     }
 }
-
 impl evaluate::Develop<P> for Developer {
     fn develop(&self, genome: &genome::Genome) -> P {
         let mut neat_executor = self.neat_developer.develop(genome);
@@ -40,8 +39,8 @@ impl evaluate::Develop<P> for Developer {
             self.network
                 .actions
                 .iter()
-                .map(|action| match action {
-                    substrate::Action::Activation(node, x, y) => execute::Action::Activation(
+                .filter_map(|action| match action {
+                    substrate::Action::Activation(node, x, y) => Some(execute::Action::Activation(
                         *node,
                         neat_executor.execute(&vec![0.0, 0.0, *x, *y])[1],
                         if self.network.inputs.contains(node) {
@@ -51,17 +50,14 @@ impl evaluate::Develop<P> for Developer {
                         } else {
                             conf::HYPERNEAT.hidden_activation
                         },
-                    ),
-                    substrate::Action::Link(from, to, x0, y0, x1, y1) => execute::Action::Link(
-                        *from,
-                        *to,
-                        neat_executor.execute(&vec![*x0, *y0, *x1, *y1])[0],
-                    ),
-                })
-                .filter(|action| match action {
-                    execute::Action::Activation(_, _, _) => true,
-                    execute::Action::Link(_, _, weight) => {
-                        weight.abs() > conf::HYPERNEAT.weight_threshold
+                    )),
+                    substrate::Action::Link(from, to, x0, y0, x1, y1) => {
+                        let weight = neat_executor.execute(&vec![*x0, *y0, *x1, *y1])[0];
+                        if weight.abs() > conf::HYPERNEAT.weight_threshold {
+                            Some(execute::Action::Link(*from, *to, weight))
+                        } else {
+                            None
+                        }
                     }
                 })
                 .collect(),

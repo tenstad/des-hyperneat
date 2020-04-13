@@ -1,11 +1,12 @@
 use crate::conf;
 use crate::network::connection;
+use std::collections::HashMap;
 
 pub struct Network {
     pub length: usize,
-    pub actions: Vec<Action>,
     pub inputs: Vec<usize>,
     pub outputs: Vec<usize>,
+    pub actions: Vec<Action>,
 }
 
 pub type Point = (u64, u64);
@@ -65,26 +66,27 @@ impl Network {
         outputs: Vec<Point>,
         connections: connection::Connections<Point, ()>,
     ) -> Network {
-        let all_nodes: Vec<Point> = inputs
+        // Create mapping from Point to array index in Network's node vector
+        let node_mapping: HashMap<Point, usize> = inputs
             .iter()
             .chain(hiddens.iter())
             .chain(outputs.iter())
-            .cloned()
+            .enumerate()
+            .map(|(i, point)| (*point, i))
             .collect();
-        let index_of = |node: Point| all_nodes.iter().position(|x| node == *x).unwrap();
 
         let actions = connections
             .sort_topologically()
             .iter()
             .map(|action| match action {
                 connection::OrderedAction::Activation(node) => Action::Activation(
-                    index_of(*node),
+                    *node_mapping.get(node).unwrap(),
                     node.0 as f64 / conf::ESHYPERNEAT.resolution,
                     node.1 as f64 / conf::ESHYPERNEAT.resolution,
                 ),
-                connection::OrderedAction::Link(from, to) => Action::Link(
-                    index_of(*from),
-                    index_of(*to),
+                connection::OrderedAction::Link(from, to, _) => Action::Link(
+                    *node_mapping.get(from).unwrap(),
+                    *node_mapping.get(to).unwrap(),
                     from.0 as f64 / conf::ESHYPERNEAT.resolution,
                     from.1 as f64 / conf::ESHYPERNEAT.resolution,
                     to.0 as f64 / conf::ESHYPERNEAT.resolution,
@@ -92,16 +94,13 @@ impl Network {
                 ),
             })
             .collect();
-
-        let input_length = inputs.len();
-        let cumulative_hidden_length = input_length + hiddens.len();
-        let cumulative_output_length = cumulative_hidden_length + outputs.len();
+        let non_output_count = inputs.len() + hiddens.len();
 
         Network {
-            length: cumulative_output_length,
+            length: node_mapping.len(),
+            inputs: (0..inputs.len()).collect(),
+            outputs: (non_output_count..(non_output_count + outputs.len())).collect(),
             actions,
-            inputs: (0..input_length).collect(),
-            outputs: (cumulative_hidden_length..cumulative_output_length).collect(),
         }
     }
 }

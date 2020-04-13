@@ -4,15 +4,15 @@ use std::fmt;
 use std::hash::Hash;
 
 #[derive(PartialEq)]
-pub enum OrderedAction<T> {
-    Link(T, T),
+pub enum OrderedAction<T, U> {
+    Link(T, T, U),
     Activation(T),
 }
 
-impl<T: fmt::Display> fmt::Display for OrderedAction<T> {
+impl<T: fmt::Display, U: fmt::Display> fmt::Display for OrderedAction<T, U> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            OrderedAction::Link(from, to) => write!(f, "{}->{}", from, to),
+            OrderedAction::Link(from, to, edge) => write!(f, "{}-({})>{}", from, edge, to),
             OrderedAction::Activation(id) => write!(f, "{}", id),
         }
     }
@@ -25,7 +25,7 @@ pub struct Connections<T: Hash, U> {
 }
 
 #[allow(dead_code)]
-impl<T: Hash + Eq + Copy, U> Connections<T, U> {
+impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
     pub fn new() -> Self {
         Self {
             connections: HashMap::<T, Vec<(T, U)>>::new(),
@@ -106,7 +106,7 @@ impl<T: Hash + Eq + Copy, U> Connections<T, U> {
     }
 
     /// Determine order of nodes and links to actiave in forward pass
-    pub fn sort_topologically(&self) -> Vec<OrderedAction<T>> {
+    pub fn sort_topologically(&self) -> Vec<OrderedAction<T, U>> {
         // Store number of incoming connections for all nodes
         let mut backward_count: HashMap<T, u64> = HashMap::new();
         for source in self.get_sources() {
@@ -122,15 +122,15 @@ impl<T: Hash + Eq + Copy, U> Connections<T, U> {
             .cloned()
             .collect();
 
-        let mut actions = Vec::<OrderedAction<T>>::new();
+        let mut actions = Vec::<OrderedAction<T, U>>::new();
 
         // Create topological order
         while let Some(node) = stack.pop() {
             actions.push(OrderedAction::Activation(node));
 
             // Process all outgoing connections from the current node
-            for to in self.get_targets(&node) {
-                actions.push(OrderedAction::Link(node, *to));
+            for (to, edge) in self.get_edges(&node) {
+                actions.push(OrderedAction::Link(node, *to, *edge));
 
                 // Reduce backward count by 1
                 backward_count.insert(*to, *backward_count.get(to).unwrap() - 1);
