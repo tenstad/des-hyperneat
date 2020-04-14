@@ -3,6 +3,31 @@ use std::collections::HashSet;
 use std::fmt;
 use std::hash::Hash;
 
+#[derive(Clone)]
+pub struct Target<T, U> {
+    pub node: T,
+    pub edge: U,
+}
+
+impl<T, U> Target<T, U> {
+    pub fn new(node: T, edge: U) -> Self {
+        Self { node, edge }
+    }
+}
+
+#[derive(Clone)]
+pub struct Connection<T, U> {
+    pub from: T,
+    pub to: T,
+    pub edge: U,
+}
+
+impl<T, U> Connection<T, U> {
+    pub fn new(from: T, to: T, edge: U) -> Self {
+        Self { from, to, edge }
+    }
+}
+
 #[derive(PartialEq)]
 pub enum OrderedAction<T, U> {
     Link(T, T, U),

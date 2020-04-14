@@ -16,7 +16,7 @@ pub enum Action {
     Link(usize, usize, f64, f64, f64, f64), // from, to, x0, y0, x1, y1
 }
 
-fn horizontal_row(n: usize, y: i64) -> Vec<(i64, i64)> {
+pub fn horizontal_row(n: usize, y: i64) -> Vec<(i64, i64)> {
     let horizontal_distance = (2.0 * conf::ESHYPERNEAT.resolution / (n as f64 - 1.0)) as f64;
     let offset = conf::ESHYPERNEAT.resolution as i64;
     (0..n)
@@ -24,7 +24,7 @@ fn horizontal_row(n: usize, y: i64) -> Vec<(i64, i64)> {
         .collect()
 }
 
-fn horizontal_rows(layer_sizes: &Vec<usize>) -> Vec<Vec<Point>> {
+pub fn horizontal_rows(layer_sizes: &Vec<usize>) -> Vec<Vec<Point>> {
     let vertical_distance =
         (2.0 * conf::ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as f64;
     let offset = conf::ESHYPERNEAT.resolution as i64;

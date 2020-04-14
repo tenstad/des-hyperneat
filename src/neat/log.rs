@@ -5,14 +5,14 @@ use crate::neat::phenotype::Developer;
 
 pub struct Logger {
     developer: Developer,
-    default_logger: log::DefaultLogger,
+    default_logger: log::Logger,
 }
 
 impl Default for Logger {
     fn default() -> Logger {
         Logger {
             developer: Developer::default(),
-            default_logger: log::DefaultLogger::default(),
+            default_logger: log::Logger::default(),
         }
     }
 }

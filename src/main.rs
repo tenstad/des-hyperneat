@@ -15,5 +15,6 @@ mod network;
 
 fn main() {
     // neat::neat::<neat::dataset_environment::DatasetEnvironment>();
-    hyperneat::hyperneat::<hyperneat::dataset_environment::DatasetEnvironment>();
+    // hyperneat::hyperneat::<hyperneat::dataset_environment::DatasetEnvironment>();
+    eshyperneat::hyperneat::<hyperneat::dataset_environment::DatasetEnvironment>();
 }

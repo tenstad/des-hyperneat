@@ -5,9 +5,9 @@ pub trait Log {
     fn log(&mut self, iteration: u64, population: &Population);
 }
 
-pub struct DefaultLogger {}
+pub struct Logger {}
 
-impl Log for DefaultLogger {
+impl Log for Logger {
     fn log(&mut self, iteration: u64, population: &Population) {
         if iteration % 10 == 0 {
             let best = &population.best().unwrap();
@@ -18,8 +18,8 @@ impl Log for DefaultLogger {
     }
 }
 
-impl Default for DefaultLogger {
-    fn default() -> DefaultLogger {
-        DefaultLogger {}
+impl Default for Logger {
+    fn default() -> Self {
+        Self {}
     }
 }

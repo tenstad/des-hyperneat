@@ -1,18 +1,8 @@
 use crate::conf;
+use crate::network::connection;
+use crate::network::connection::{Connection, Target};
 use crate::network::execute;
-
-#[derive(Debug)]
-pub struct Connection {
-    pub x: f64,
-    pub y: f64,
-    pub w: f64,
-}
-
-impl Connection {
-    fn new(x: f64, y: f64, w: f64) -> Self {
-        Connection { x, y, w }
-    }
-}
+use std::collections::HashSet;
 
 struct QuadPoint {
     x: f64,
@@ -25,7 +15,7 @@ struct QuadPoint {
 
 impl QuadPoint {
     fn new(x: f64, y: f64, width: f64, depth: u32, f: &mut dyn FnMut(f64, f64) -> f64) -> Self {
-        QuadPoint {
+        Self {
             x,
             y,
             width,
@@ -72,7 +62,7 @@ impl QuadPoint {
         }
     }
 
-    fn extract(&self, f: &mut dyn FnMut(f64, f64) -> f64) -> Vec<Connection> {
+    fn extract(&self, f: &mut dyn FnMut(f64, f64) -> f64) -> Vec<Target<(f64, f64), f64>> {
         self.children()
             .flat_map(|child| {
                 if child.variance() > conf::ESHYPERNEAT.variance_threshold {
@@ -84,13 +74,13 @@ impl QuadPoint {
                     let d_down = (child.weight - f(child.x, child.y + self.width)).abs();
 
                     if b(d_up, d_down, d_left, d_right) < conf::ESHYPERNEAT.band_threshold {
-                        vec![Connection::new(child.x, child.y, child.weight)]
+                        vec![Target::new((child.x, child.y), child.weight)]
                     } else {
                         Vec::new()
                     }
                 }
             })
-            .collect::<Vec<Connection>>()
+            .collect::<Vec<Target<(f64, f64), f64>>>()
     }
 }
 
@@ -104,9 +94,79 @@ fn b(up: f64, down: f64, left: f64, right: f64) -> f64 {
     }
 }
 
-pub fn find_connections(x: f64, y: f64, cppn: &mut execute::Executor) -> Vec<Connection> {
+pub fn find_connections(
+    x: f64,
+    y: f64,
+    cppn: &mut execute::Executor,
+) -> Vec<Target<(f64, f64), f64>> {
     let mut f = |x2, y2| cppn.execute(&vec![x, y, x2, y2])[0];
     let mut root = QuadPoint::new(0.0, 0.0, 1.0, 1, &mut f);
     root.expand(&mut f);
     root.extract(&mut f)
+}
+
+pub fn explore_substrate(
+    inputs: Vec<(i64, i64)>,
+    cppn: &mut execute::Executor,
+    depth: usize,
+) -> (
+    Vec<Vec<(i64, i64)>>,
+    connection::Connections<(i64, i64), f64>,
+) {
+    let mut cppn = cppn;
+
+    let mut nodes = inputs.iter().cloned().collect::<HashSet<(i64, i64)>>();
+    let mut layers: Vec<Vec<(i64, i64)>> = vec![inputs];
+    let mut connections = connection::Connections::<(i64, i64), f64>::new();
+
+    for _ in 0..depth {
+        let mut new_connections = Vec::<Connection<(i64, i64), f64>>::new();
+        for (x, y) in layers.last().unwrap() {
+            new_connections.extend(
+                find_connections(
+                    *x as f64 / conf::ESHYPERNEAT.resolution,
+                    *y as f64 / conf::ESHYPERNEAT.resolution,
+                    &mut cppn,
+                )
+                .iter()
+                .map(|target| {
+                    Target::new(
+                        (
+                            (target.node.0 * conf::ESHYPERNEAT.resolution) as i64,
+                            (target.node.1 * conf::ESHYPERNEAT.resolution) as i64,
+                        ),
+                        target.edge,
+                    )
+                })
+                .filter(|target| !nodes.contains(&(target.node.0, target.node.1)))
+                .map(move |target| {
+                    Connection::new((*x, *y), (target.node.0, target.node.1), target.edge)
+                }),
+            );
+        }
+
+        if new_connections.len() == 0 {
+            break;
+        }
+
+        for connection in new_connections.iter() {
+            nodes.insert((connection.to.0, connection.to.1));
+            connections.add(
+                (connection.from.0, connection.from.1),
+                (connection.to.0, connection.to.1),
+                connection.edge,
+            );
+        }
+
+        layers.push(
+            new_connections
+                .iter()
+                .map(|connection| (connection.to.0, connection.to.1))
+                .collect::<HashSet<(i64, i64)>>()
+                .into_iter()
+                .collect::<Vec<(i64, i64)>>(),
+        );
+    }
+
+    (layers, connections)
 }

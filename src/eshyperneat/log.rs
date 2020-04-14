@@ -1,7 +1,7 @@
 use crate::generic_neat::evaluate;
 use crate::generic_neat::log;
 use crate::generic_neat::population::Population;
-use crate::hyperneat::img;
+use crate::eshyperneat::img;
 use crate::neat::log as neatlog;
 use crate::neat::phenotype::Developer;
 use crate::network::execute;
