@@ -71,6 +71,14 @@ impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
         }
     }
 
+    pub fn extend(&mut self, other: &Self) {
+        for source in other.get_sources() {
+            for (target, edge) in other.get_edges(source) {
+                self.add(*source, *target, *edge);
+            }
+        }
+    }
+
     pub fn set_edge<'a>(&mut self, from: &'a T, to: T, edge: U) {
         let error = "cannot set non-existent edge";
         let edges = self.connections.get_mut(from).expect(error);

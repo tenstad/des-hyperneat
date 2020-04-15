@@ -32,18 +32,34 @@ impl evaluate::Develop<P> for Developer {
         let input_nodes =
             substrate::horizontal_row(num_inputs, -conf::ESHYPERNEAT.resolution as i64);
         let output_nodes =
-            substrate::horizontal_row(num_inputs, conf::ESHYPERNEAT.resolution as i64);
+            substrate::horizontal_row(num_outputs, conf::ESHYPERNEAT.resolution as i64);
 
-        let (layers, connections) = search::explore_substrate(
+        let (mut layers, mut connections) = search::explore_substrate(
             input_nodes.iter().cloned().collect(),
             &mut neat_executor,
             depth,
+            false,
         );
 
-        /*for layer in layers.iter() {
-            println!("{:?}", layer);
+        let (output_source_nodes, output_connections) = search::explore_substrate(
+            output_nodes.iter().cloned().collect(),
+            &mut neat_executor,
+            1,
+            true,
+        );
+
+        // If not of length 2, the output nodes will not be connected to input nodes
+        if output_source_nodes.len() != 2 {
+            return execute::Executor::create(num_outputs, Vec::new(), (0..num_outputs).collect(), Vec::new());
         }
-        println!("");*/
+
+        connections.extend(&output_connections);
+        let last_index = layers.len() - 1;
+        for node in output_source_nodes[1].iter() {
+            if !layers[last_index].contains(node) {
+                layers[last_index].push(node.clone());
+            }
+        }
 
         let mut nodes = input_nodes
             .iter()
@@ -83,7 +99,9 @@ impl evaluate::Develop<P> for Developer {
                     *weight,
                 ),
                 connection::OrderedAction::Activation(node) => execute::Action::Activation(
-                    *node_mapping.get(node).unwrap(),
+                    *node_mapping
+                        .get(node)
+                        .expect("map does not contain activation node"),
                     0.0,
                     activation::Activation::ReLU,
                 ),

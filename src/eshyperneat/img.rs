@@ -12,7 +12,7 @@ pub fn plot_weights(
 ) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     let mut executor = executor;
 
-    let connection_indexes = search::find_connections(x, y, &mut executor)
+    let connection_indexes = search::find_connections(x, y, &mut executor, false)
         .iter()
         .map(|target| {
             let ix = size as f64 / 2.0 + (target.node.0 / input_scale * size as f64 / 2.0).round();

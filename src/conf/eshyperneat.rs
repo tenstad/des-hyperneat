@@ -2,13 +2,13 @@ use envconfig::Envconfig;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "VARIANCE_THRESHOLD", default = "0.01")]
+    #[envconfig(from = "VARIANCE_THRESHOLD", default = "0.03")]
     pub variance_threshold: f64,
 
-    #[envconfig(from = "DIVERSITY_THRESHOLD", default = "0.01")]
-    pub diversity_threshold: f64,
+    #[envconfig(from = "DIVISION_THRESHOLD", default = "0.03")]
+    pub division_threshold: f64,
 
-    #[envconfig(from = "BAND_THRESHOLD", default = "0.6")]
+    #[envconfig(from = "BAND_THRESHOLD", default = "0.3")]
     pub band_threshold: f64,
 
     #[envconfig(from = "INITIAL_DEPTH", default = "4")]

@@ -43,7 +43,7 @@ impl QuadPoint {
 
         if self.depth < conf::ESHYPERNEAT.initial_depth
             || (self.depth < conf::ESHYPERNEAT.max_depth
-                && self.variance() > conf::ESHYPERNEAT.diversity_threshold)
+                && self.variance() > conf::ESHYPERNEAT.division_threshold)
         {
             let mut child =
                 |x: f64, y: f64| Box::new(QuadPoint::new(self.x + x, self.y + y, width, depth, f));
@@ -73,7 +73,7 @@ impl QuadPoint {
                     let d_up = (child.weight - f(child.x, child.y - self.width)).abs();
                     let d_down = (child.weight - f(child.x, child.y + self.width)).abs();
 
-                    if b(d_up, d_down, d_left, d_right) < conf::ESHYPERNEAT.band_threshold {
+                    if b(d_up, d_down, d_left, d_right) > conf::ESHYPERNEAT.band_threshold {
                         vec![Target::new((child.x, child.y), child.weight)]
                     } else {
                         Vec::new()
@@ -98,8 +98,17 @@ pub fn find_connections(
     x: f64,
     y: f64,
     cppn: &mut execute::Executor,
+    reverse: bool,
 ) -> Vec<Target<(f64, f64), f64>> {
-    let mut f = |x2, y2| cppn.execute(&vec![x, y, x2, y2])[0];
+    let mut f = |x2, y2| {
+        cppn.execute(
+            &(if reverse {
+                vec![x2, y2, x, y]
+            } else {
+                vec![x, y, x2, y2]
+            }),
+        )[0]
+    };
     let mut root = QuadPoint::new(0.0, 0.0, 1.0, 1, &mut f);
     root.expand(&mut f);
     root.extract(&mut f)
@@ -109,6 +118,7 @@ pub fn explore_substrate(
     inputs: Vec<(i64, i64)>,
     cppn: &mut execute::Executor,
     depth: usize,
+    reverse: bool,
 ) -> (
     Vec<Vec<(i64, i64)>>,
     connection::Connections<(i64, i64), f64>,
@@ -127,6 +137,7 @@ pub fn explore_substrate(
                     *x as f64 / conf::ESHYPERNEAT.resolution,
                     *y as f64 / conf::ESHYPERNEAT.resolution,
                     &mut cppn,
+                    reverse,
                 )
                 .iter()
                 .map(|target| {
@@ -151,11 +162,19 @@ pub fn explore_substrate(
 
         for connection in new_connections.iter() {
             nodes.insert((connection.to.0, connection.to.1));
-            connections.add(
-                (connection.from.0, connection.from.1),
-                (connection.to.0, connection.to.1),
-                connection.edge,
-            );
+            if reverse {
+                connections.add(
+                    (connection.to.0, connection.to.1),
+                    (connection.from.0, connection.from.1),
+                    connection.edge,
+                );
+            } else {
+                connections.add(
+                    (connection.from.0, connection.from.1),
+                    (connection.to.0, connection.to.1),
+                    connection.edge,
+                );
+            }
         }
 
         layers.push(
