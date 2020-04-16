@@ -26,10 +26,10 @@ pub struct Figure {
 }
 
 impl Figure {
-    pub fn new() -> Self {
+    pub fn new(scale: f64) -> Self {
         Self {
             components: Vec::new(),
-            scale: 1.0,
+            scale,
         }
     }
 

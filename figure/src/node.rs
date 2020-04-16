@@ -17,6 +17,10 @@ pub struct Node {
     outline: &'static str,
     #[builder(default = "\"white\"")]
     fill: &'static str,
+    #[builder(default = "\"black\"")]
+    text_color: &'static str,
+    #[builder(default = "\"scriptsize\"")]
+    text_size: &'static str,
     #[builder(default = "0.8")]
     edge_offset: f64,
     #[builder(default = "true")]
@@ -34,16 +38,18 @@ impl Component for Node {
         if self.visible {
             format!(
 "   \\node[shape=circle, minimum size={offset}mm] at ({x}, {y}) ({id}) {{}};
-    \\node[draw, shape=circle, draw={outline}, fill={fill}, inner sep=0pt, minimum size={size}mm] at ({x}, {y}) {{{text}}};",
-            id = self.id,
-            x = self.x,
-            y = self.y,
-            size = self.size,
-            text = self.text,
-            outline = self.outline,
-            fill = self.fill,
-            offset = self.size + self.edge_offset,
-        )
+    \\node[draw, shape=circle, draw={outline}, fill={fill}, text={text_color}, inner sep=0pt, minimum size={size}mm] at ({x}, {y}) {{\\{text_size} {text}}};",
+                id = self.id,
+                x = self.x,
+                y = self.y,
+                size = self.size,
+                text = self.text,
+                outline = self.outline,
+                fill = self.fill,
+                text_color = self.text_color,
+                text_size = self.text_size,
+                offset = self.size + self.edge_offset,
+            )
         } else {
             format!(
                 "   \\node[shape=circle, minimum size={offset}mm] at ({x}, {y}) ({id}) {{}};",

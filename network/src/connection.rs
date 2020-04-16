@@ -208,7 +208,7 @@ impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
 #[allow(dead_code)]
 impl<U: Copy> Connections<(i64, i64), U> {
     pub fn save_fig_to_file<P: AsRef<Path>>(&self, fname: P, scale: f64, size: f64) {
-        let mut fig = figure::Figure::new();
+        let mut fig = figure::Figure::new(1.0);
         fig.add(
             figure::substrate::SubstrateBuilder::default()
                 .size(size)
