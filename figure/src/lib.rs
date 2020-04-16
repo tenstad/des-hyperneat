@@ -38,6 +38,37 @@ impl Figure {
         component
     }
 
+    pub fn node_builder<'a>(
+        &'a mut self,
+        default_configure: &'a dyn Fn(&mut node::NodeBuilder) -> &mut node::NodeBuilder,
+    ) -> impl FnMut(&'a dyn Fn(&mut node::NodeBuilder) -> &mut node::NodeBuilder) -> node::Node
+    {
+        move |configure| {
+            self.add(
+                configure(default_configure(&mut node::NodeBuilder::default()))
+                    .build()
+                    .unwrap(),
+            )
+        }
+    }
+
+    pub fn edge_builder<'a>(
+        &'a mut self,
+        default_configure: &'a dyn Fn(&mut edge::EdgeBuilder) -> &mut edge::EdgeBuilder,
+    ) -> impl FnMut(
+        &node::Node,
+        &node::Node,
+        &'a dyn Fn(&mut edge::EdgeBuilder) -> &mut edge::EdgeBuilder,
+    ) -> edge::Edge {
+        move |source, target, configure| {
+            self.add(
+                configure(default_configure(&mut source.connect(target)))
+                    .build()
+                    .unwrap(),
+            )
+        }
+    }
+
     pub fn save<P: AsRef<Path>>(&mut self, path: P) {
         let mut file = fs::File::create(path).expect("unable to create file");
         file.write_all(self.to_str().as_bytes())
