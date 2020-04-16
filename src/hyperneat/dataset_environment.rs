@@ -1,7 +1,7 @@
 use crate::data::dataset::Dimensions;
 use crate::generic_neat::evaluate::Environment;
 use crate::neat::dataset_environment::DatasetEnvironment as NeatDatasetEnvironment;
-use crate::network::execute;
+use network::execute;
 
 pub struct DatasetEnvironment {
     environment: NeatDatasetEnvironment,

@@ -2,7 +2,7 @@ use crate::conf;
 use crate::data::dataset::Dataset;
 use crate::data::dataset::Dimensions;
 use crate::generic_neat::evaluate::Environment;
-use crate::network::execute;
+use network::execute;
 use std::fmt;
 
 pub struct DatasetEnvironment {

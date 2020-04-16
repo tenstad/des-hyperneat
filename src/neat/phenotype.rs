@@ -2,10 +2,10 @@ use crate::generic_neat::evaluate;
 use crate::generic_neat::genome;
 use crate::generic_neat::link;
 use crate::generic_neat::node::NodeRef;
-use crate::network::activation;
-use crate::network::connection;
-use crate::network::execute;
-use crate::network::execute::Executor as P;
+use network::activation;
+use network::connection;
+use network::execute;
+use network::execute::Executor as P;
 use std::collections::HashMap;
 
 pub struct Developer;

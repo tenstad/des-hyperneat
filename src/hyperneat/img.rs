@@ -1,4 +1,4 @@
-use crate::network::execute;
+use network::execute;
 use image::ImageBuffer;
 use image::Rgb;
 

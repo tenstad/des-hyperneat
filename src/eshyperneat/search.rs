@@ -1,7 +1,7 @@
 use crate::conf;
-use crate::network::connection;
-use crate::network::connection::{Connection, Target};
-use crate::network::execute;
+use network::connection;
+use network::connection::{Connection, Target};
+use network::execute;
 use std::collections::HashSet;
 
 struct QuadPoint {

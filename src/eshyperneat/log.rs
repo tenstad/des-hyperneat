@@ -5,7 +5,7 @@ use crate::generic_neat::evaluate;
 use crate::generic_neat::log;
 use crate::generic_neat::population::Population;
 use crate::neat;
-use crate::network::execute;
+use network::execute;
 
 #[derive(Default)]
 pub struct Logger {
@@ -27,7 +27,7 @@ impl log::Log for Logger {
                 .ok();
 
             self.developer.connections(&mut phenotype).save_fig_to_file(
-                String::from("g.tex"),
+                "g.tex",
                 0.5 / conf::ESHYPERNEAT.resolution,
                 4.0,
             );

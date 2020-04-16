@@ -3,9 +3,9 @@ use crate::generic_neat::evaluate;
 use crate::generic_neat::genome;
 use crate::hyperneat::substrate;
 use crate::neat::phenotype::Developer as NeatDeveloper;
-use crate::network::activation;
-use crate::network::execute;
-use crate::network::execute::Executor as P;
+use network::activation;
+use network::execute;
+use network::execute::Executor as P;
 
 pub struct Developer {
     neat_developer: NeatDeveloper,

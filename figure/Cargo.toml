@@ -1,0 +1,9 @@
+[package]
+name = "figure"
+version = "0.1.0"
+authors = ["Amund Tenstad <github@amund.io>"]
+edition = "2018"
+
+[dependencies]
+derive_builder = "0.9.0"
+uuid = { version = "0.8", features = ["v4"] }

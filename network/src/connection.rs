@@ -1,9 +1,9 @@
-use crate::conf;
-use crate::figure;
+use figure;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt;
 use std::hash::Hash;
+use std::path::Path;
 
 #[derive(Clone)]
 pub struct Target<T, U> {
@@ -207,7 +207,7 @@ impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
 
 #[allow(dead_code)]
 impl<U: Copy> Connections<(i64, i64), U> {
-    pub fn save_fig_to_file(&self, fname: String, scale: f64, size: f64) {
+    pub fn save_fig_to_file<P: AsRef<Path>>(&self, fname: P, scale: f64, size: f64) {
         let mut fig = figure::Figure::new();
         fig.add(
             figure::substrate::SubstrateBuilder::default()
@@ -253,7 +253,7 @@ impl<U: Copy> Connections<(i64, i64), U> {
             fig.add(node.1);
         }
 
-        fig.to_file(fname);
+        fig.save(fname);
     }
 }
 

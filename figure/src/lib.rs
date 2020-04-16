@@ -1,9 +1,13 @@
+#[macro_use]
+extern crate derive_builder;
+
 pub mod edge;
 pub mod node;
 pub mod substrate;
 
 use std::fs;
 use std::io::Write;
+use std::path::Path;
 
 pub trait Component {
     fn to_str(&self) -> String;
@@ -34,8 +38,8 @@ impl Figure {
         component
     }
 
-    pub fn to_file(&mut self, fname: String) {
-        let mut file = fs::File::create(fname).expect("unable to create file");
+    pub fn save<P: AsRef<Path>>(&mut self, path: P) {
+        let mut file = fs::File::create(path).expect("unable to create file");
         file.write_all(self.to_str().as_bytes())
             .expect("unable to write file");
     }

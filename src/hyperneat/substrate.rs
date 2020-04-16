@@ -1,5 +1,5 @@
 use crate::conf;
-use crate::network::connection;
+use network::connection;
 use std::collections::HashMap;
 
 pub struct Network {

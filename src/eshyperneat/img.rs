@@ -1,6 +1,6 @@
 use crate::eshyperneat::search;
 use crate::hyperneat::img;
-use crate::network::execute;
+use network::execute;
 use image::ImageBuffer;
 use image::Rgb;
 pub fn plot_weights(

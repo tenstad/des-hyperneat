@@ -1,5 +1,4 @@
-use crate::figure;
-use crate::figure::node;
+use crate::node;
 use std::f64;
 
 #[derive(Builder, Clone)]
@@ -27,7 +26,7 @@ impl EdgeBuilder {
     }
 }
 
-impl figure::Component for Edge {
+impl crate::Component for Edge {
     fn to_str(&self) -> String {
         format!(
 "   \\draw[{style}, draw={color}, line width={width}mm, draw opacity={opacity}] ({source}.{angle1}) -- ({target}.{angle2});",

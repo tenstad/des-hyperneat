@@ -1,4 +1,4 @@
-use crate::figure;
+use crate::Component;
 
 #[derive(Builder, Clone)]
 pub struct Substrate {
@@ -14,7 +14,7 @@ pub struct Substrate {
     axis_arrow_offset: f64,
 }
 
-impl figure::Component for Substrate {
+impl Component for Substrate {
     fn to_str(&self) -> String {
         format!(
 "   \\draw[style=help lines, draw=gray!40, step={step}, xshift={x}, yshift={y}] (0, 0) grid ({size}, {size});

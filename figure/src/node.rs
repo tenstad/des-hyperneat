@@ -1,5 +1,5 @@
-use crate::figure;
-use crate::figure::edge;
+use crate::edge;
+use crate::Component;
 
 #[derive(Builder, Clone)]
 pub struct Node {
@@ -27,7 +27,7 @@ impl Node {
     }
 }
 
-impl figure::Component for Node {
+impl Component for Node {
     fn to_str(&self) -> String {
         format!(
 "   \\node[shape=circle, minimum size={offset}mm] at ({x}, {y}) ({id}) {{}};

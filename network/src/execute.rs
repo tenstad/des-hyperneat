@@ -1,5 +1,5 @@
 extern crate libc;
-use crate::network::activation::Activation;
+use crate::activation::Activation;
 use std::mem;
 
 #[derive(Clone, Debug)]

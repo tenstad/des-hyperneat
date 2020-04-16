@@ -3,7 +3,7 @@ use crate::generic_neat::log;
 use crate::generic_neat::population::Population;
 use crate::hyperneat::img;
 use crate::neat::phenotype::Developer;
-use crate::network::execute;
+use network::execute;
 
 #[derive(Default)]
 pub struct Logger {
