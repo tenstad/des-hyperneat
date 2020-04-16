@@ -19,6 +19,8 @@ pub struct Node {
     fill: &'static str,
     #[builder(default = "0.8")]
     edge_offset: f64,
+    #[builder(default = "true")]
+    visible: bool,
 }
 
 impl Node {
@@ -29,7 +31,8 @@ impl Node {
 
 impl Component for Node {
     fn to_str(&self) -> String {
-        format!(
+        if self.visible {
+            format!(
 "   \\node[shape=circle, minimum size={offset}mm] at ({x}, {y}) ({id}) {{}};
     \\node[draw, shape=circle, draw={outline}, fill={fill}, inner sep=0pt, minimum size={size}mm] at ({x}, {y}) {{{text}}};",
             id = self.id,
@@ -41,6 +44,15 @@ impl Component for Node {
             fill = self.fill,
             offset = self.size + self.edge_offset,
         )
+        } else {
+            format!(
+                "   \\node[shape=circle, minimum size={offset}mm] at ({x}, {y}) ({id}) {{}};",
+                id = self.id,
+                x = self.x,
+                y = self.y,
+                offset = self.size + self.edge_offset,
+            )
+        }
     }
 
     fn priority(&self) -> usize {
