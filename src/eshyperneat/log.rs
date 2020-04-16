@@ -1,23 +1,17 @@
+use crate::conf;
+use crate::eshyperneat::img;
+use crate::eshyperneat::phenotype;
 use crate::generic_neat::evaluate;
 use crate::generic_neat::log;
 use crate::generic_neat::population::Population;
-use crate::eshyperneat::img;
-use crate::neat::log as neatlog;
-use crate::neat::phenotype::Developer;
+use crate::neat;
 use crate::network::execute;
 
+#[derive(Default)]
 pub struct Logger {
-    developer: Developer,
-    default_logger: neatlog::Logger,
-}
-
-impl Default for Logger {
-    fn default() -> Logger {
-        Logger {
-            developer: Developer::default(),
-            default_logger: neatlog::Logger::default(),
-        }
-    }
+    neat_developer: neat::phenotype::Developer,
+    developer: phenotype::Developer,
+    default_logger: log::Logger,
 }
 
 impl log::Log for Logger {
@@ -25,17 +19,18 @@ impl log::Log for Logger {
         self.default_logger.log(iteration, population);
 
         if iteration % 20 == 0 {
-            let developer: &dyn evaluate::Develop<execute::Executor> = &self.developer;
+            let neat_developer: &dyn evaluate::Develop<execute::Executor> = &self.neat_developer;
+            let mut phenotype = neat_developer.develop(&population.best().unwrap().genome);
 
-            img::plot_weights(
-                developer.develop(&population.best().unwrap().genome),
-                0.0,
-                0.0,
-                1.0,
-                256,
-            )
-            .save("w.png")
-            .ok();
+            img::plot_weights(&mut phenotype, 0.0, 0.0, 1.0, 256)
+                .save("w.png")
+                .ok();
+
+            self.developer.connections(&mut phenotype).save_fig_to_file(
+                String::from("g.tex"),
+                0.5 / conf::ESHYPERNEAT.resolution,
+                4.0,
+            );
         }
     }
 }

@@ -4,15 +4,13 @@ use crate::network::execute;
 use image::ImageBuffer;
 use image::Rgb;
 pub fn plot_weights(
-    executor: execute::Executor,
+    executor: &mut execute::Executor,
     x: f64,
     y: f64,
     input_scale: f64,
     size: usize,
 ) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
-    let mut executor = executor;
-
-    let connection_indexes = search::find_connections(x, y, &mut executor, false)
+    let connection_indexes = search::find_connections(x, y, executor, false)
         .iter()
         .map(|target| {
             let ix = size as f64 / 2.0 + (target.node.0 / input_scale * size as f64 / 2.0).round();

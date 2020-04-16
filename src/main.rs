@@ -3,13 +3,17 @@ extern crate envconfig_derive;
 extern crate envconfig;
 
 #[macro_use]
+extern crate derive_builder;
+
+#[macro_use]
 extern crate enum_display_derive;
 
 mod conf;
 mod data;
+mod eshyperneat;
+mod figure;
 mod generic_neat;
 mod hyperneat;
-mod eshyperneat;
 mod neat;
 mod network;
 

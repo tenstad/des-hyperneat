@@ -1,3 +1,5 @@
+use crate::conf;
+use crate::figure;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt;
@@ -93,6 +95,30 @@ impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
         &edges[index].1
     }
 
+    pub fn get_all_connections(&self) -> Vec<Connection<T, U>> {
+        self.connections
+            .iter()
+            .flat_map(|(source, targets)| {
+                targets
+                    .iter()
+                    .cloned()
+                    .map(move |target| Connection::new(*source, target.0, target.1))
+            })
+            .collect()
+    }
+
+    pub fn get_all_nodes(&self) -> Vec<T> {
+        self.get_all_connections()
+            .iter()
+            .flat_map(|connection| {
+                std::iter::once(connection.from).chain(std::iter::once(connection.to))
+            })
+            .collect::<HashSet<T>>()
+            .iter()
+            .cloned()
+            .collect()
+    }
+
     pub fn get_edges<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a (T, U)> {
         self.connections.get(from).into_iter().flatten()
     }
@@ -176,6 +202,58 @@ impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
         }
 
         actions
+    }
+}
+
+#[allow(dead_code)]
+impl<U: Copy> Connections<(i64, i64), U> {
+    pub fn save_fig_to_file(&self, fname: String, scale: f64, size: f64) {
+        let mut fig = figure::Figure::new();
+        fig.add(
+            figure::substrate::SubstrateBuilder::default()
+                .size(size)
+                .cells(2)
+                .build()
+                .unwrap(),
+        );
+
+        let mut nodes: HashMap<(i64, i64), figure::node::Node> = self
+            .get_all_nodes()
+            .iter()
+            .map(|node| {
+                (
+                    (node.0, node.1),
+                    figure::node::NodeBuilder::default()
+                        .x(node.0 as f64 * scale * size + size / 2.0)
+                        .y(node.1 as f64 * scale * size + size / 2.0)
+                        .fill("black")
+                        .outline("white")
+                        .size(1.0)
+                        .edge_offset(0.0)
+                        .build()
+                        .unwrap(),
+                )
+            })
+            .collect();
+
+        for edge in self.get_all_connections().iter().map(|connection| {
+            figure::edge::EdgeBuilder::new(
+                nodes.get(&connection.from).unwrap(),
+                nodes.get(&connection.to).unwrap(),
+            )
+            .opacity(0.4)
+            .width(0.1)
+            .build()
+            .unwrap()
+        }) {
+            fig.add(edge);
+        }
+
+        for node in nodes.drain() {
+            fig.add(node.1);
+        }
+
+        fig.to_file(fname);
     }
 }
 

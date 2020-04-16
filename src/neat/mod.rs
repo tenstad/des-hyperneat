@@ -1,9 +1,7 @@
 pub mod dataset_environment;
 pub mod phenotype;
-pub mod log;
 
-use crate::generic_neat;
-use crate::generic_neat::evaluate;
+use crate::generic_neat::{self, evaluate, log};
 use crate::network::execute::Executor as P;
 
 pub fn neat<E: evaluate::Environment<P> + Default>() {

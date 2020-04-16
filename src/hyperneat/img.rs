@@ -3,14 +3,13 @@ use image::ImageBuffer;
 use image::Rgb;
 
 pub fn plot_weights(
-    executor: execute::Executor,
+    executor: &mut execute::Executor,
     x: f64,
     y: f64,
     input_scale: f64,
     size: usize,
 ) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     let mut image: Vec<f64> = vec![0.0; size * size * 3];
-    let mut executor = executor;
 
     for i in 0..size {
         for j in 0..size {
