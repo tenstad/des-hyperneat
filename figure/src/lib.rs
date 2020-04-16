@@ -69,6 +69,25 @@ impl Figure {
         }
     }
 
+    pub fn substrate_builder<'a>(
+        &'a mut self,
+        default_configure: &'a dyn Fn(
+            &mut substrate::SubstrateBuilder,
+        ) -> &mut substrate::SubstrateBuilder,
+    ) -> impl FnMut(
+        &'a dyn Fn(&mut substrate::SubstrateBuilder) -> &mut substrate::SubstrateBuilder,
+    ) -> substrate::Substrate {
+        move |configure| {
+            self.add(
+                configure(default_configure(
+                    &mut substrate::SubstrateBuilder::default(),
+                ))
+                .build()
+                .unwrap(),
+            )
+        }
+    }
+
     pub fn save<P: AsRef<Path>>(&mut self, path: P) {
         let mut file = fs::File::create(path).expect("unable to create file");
         file.write_all(self.to_str().as_bytes())
