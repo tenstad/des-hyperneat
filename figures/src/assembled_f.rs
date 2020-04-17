@@ -3,7 +3,7 @@ use figure;
 pub fn create() -> figure::Figure {
     let mut fig = figure::Figure::new(0.6);
 
-    let mut substrate = fig.substrate_builder(&|s| s.size(2.0).cells(2).axis_arrow_offset(0.15));
+    let mut substrate = fig.substrate_builder(&|s| s.size(2.0).cells(2).visible_axis(false));
     let s = substrate(&|s| s);
     let w = substrate(&|s| s.x(-2.5).y(5.0));
     let e = substrate(&|s| s.x(2.5).y(5.0));
@@ -18,14 +18,14 @@ pub fn create() -> figure::Figure {
     drop(node);
 
     let mut node = fig.node_builder(&|n| n.size(1.5).edge_offset(0.0));
-    let s10 = node(&|n| n.x(0.4).y(2.95));
+    let s10 = node(&|n| n.x(0.4).y(2.95).opacity(0.6));
     let s11 = node(&|n| n.x(0.0).y(3.55));
-    let s12 = node(&|n| n.x(-0.9).y(4.0));
+    let s12 = node(&|n| n.x(-0.9).y(4.0).opacity(0.6));
     let s13 = node(&|n| n.x(0.4).y(4.15));
 
-    let s20 = node(&|n| n.x(2.9).y(2.75));
-    let s21 = node(&|n| n.x(1.6).y(3.2));
-    let s22 = node(&|n| n.x(2.4).y(4.15));
+    let s20 = node(&|n| n.x(2.9).y(2.75).opacity(0.6));
+    let s21 = node(&|n| n.x(1.6).y(3.2).opacity(0.6));
+    let s22 = node(&|n| n.x(2.4).y(4.15).opacity(0.6));
     drop(node);
 
     let mut edge = fig.edge_builder(&|e| e.width(0.1).color("black"));

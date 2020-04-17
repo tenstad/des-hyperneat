@@ -17,6 +17,8 @@ pub struct Node {
     outline: &'static str,
     #[builder(default = "\"white\"")]
     fill: &'static str,
+    #[builder(default = "1.0")]
+    opacity: f64,
     #[builder(default = "\"black\"")]
     text_color: &'static str,
     #[builder(default = "\"scriptsize\"")]
@@ -38,7 +40,7 @@ impl Component for Node {
         if self.visible {
             format!(
 "   \\node[shape=circle, minimum size={offset}mm] at ({x}, {y}) ({id}) {{}};
-    \\node[draw, shape=circle, draw={outline}, fill={fill}, text={text_color}, inner sep=0pt, minimum size={size}mm] at ({x}, {y}) {{\\{text_size} {text}}};",
+    \\node[draw, shape=circle, draw={outline}, fill={fill}, text={text_color}, inner sep=0pt, minimum size={size}mm, draw opacity={opacity}] at ({x}, {y}) {{\\{text_size} {text}}};",
                 id = self.id,
                 x = self.x,
                 y = self.y,
@@ -46,6 +48,7 @@ impl Component for Node {
                 text = self.text,
                 outline = self.outline,
                 fill = self.fill,
+                opacity = self.opacity,
                 text_color = self.text_color,
                 text_size = self.text_size,
                 offset = self.size + self.edge_offset,

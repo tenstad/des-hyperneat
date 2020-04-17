@@ -4,7 +4,7 @@ pub fn create() -> figure::Figure {
     let mut fig = figure::Figure::new(1.0);
 
     let mut substrate = fig.substrate_builder(&|s| s.size(4.0).cells(2).axis_arrow_offset(0.15));
-    let s = substrate(&|s| s);
+    substrate(&|s| s);
     drop(substrate);
 
     let mut node = fig.node_builder(&|n| n);

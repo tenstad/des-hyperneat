@@ -3,7 +3,7 @@ use figure;
 pub fn create() -> figure::Figure {
     let mut fig = figure::Figure::new(0.6);
 
-    let mut substrate = fig.substrate_builder(&|s| s.size(2.0).cells(2).axis_arrow_offset(0.15));
+    let mut substrate = fig.substrate_builder(&|s| s.size(2.0).cells(2).visible_axis(false));
     let s = substrate(&|s| s);
     let w = substrate(&|s| s.x(-2.5).y(5.0));
     let e = substrate(&|s| s.x(2.5).y(5.0));
