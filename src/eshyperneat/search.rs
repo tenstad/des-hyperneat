@@ -116,6 +116,7 @@ pub fn find_connections(
 
 pub fn explore_substrate(
     inputs: Vec<(i64, i64)>,
+    outputs: &Vec<(i64, i64)>,
     cppn: &mut execute::Executor,
     depth: usize,
     reverse: bool,
@@ -123,20 +124,20 @@ pub fn explore_substrate(
     Vec<Vec<(i64, i64)>>,
     connection::Connections<(i64, i64), f64>,
 ) {
-    let mut cppn = cppn;
-
-    let mut nodes = inputs.iter().cloned().collect::<HashSet<(i64, i64)>>();
-    let mut layers: Vec<Vec<(i64, i64)>> = vec![inputs];
+    let outputs = outputs.iter().cloned().collect::<HashSet<(i64, i64)>>();
+    let mut visited = inputs.iter().cloned().collect::<HashSet<(i64, i64)>>();
+    let mut nodes: Vec<Vec<(i64, i64)>> = vec![inputs];
     let mut connections = connection::Connections::<(i64, i64), f64>::new();
 
-    for _ in 0..depth {
-        let mut new_connections = Vec::<Connection<(i64, i64), f64>>::new();
-        for (x, y) in layers.last().unwrap() {
-            new_connections.extend(
+    for d in 0..depth {
+        let mut discoveries = Vec::<Connection<(i64, i64), f64>>::new();
+        // Search from all nodes within final depth layer
+        for (x, y) in nodes[d].iter() {
+            discoveries.extend(
                 find_connections(
                     *x as f64 / conf::ESHYPERNEAT.resolution,
                     *y as f64 / conf::ESHYPERNEAT.resolution,
-                    &mut cppn,
+                    cppn,
                     reverse,
                 )
                 .iter()
@@ -149,43 +150,38 @@ pub fn explore_substrate(
                         target.edge,
                     )
                 })
-                .filter(|target| !nodes.contains(&(target.node.0, target.node.1)))
-                .map(move |target| {
-                    Connection::new((*x, *y), (target.node.0, target.node.1), target.edge)
-                }),
+                .filter(|target| !visited.contains(&target.node))
+                .map(|target| Connection::new((*x, *y), target.node, target.edge)),
             );
         }
 
-        if new_connections.len() == 0 {
-            break;
-        }
-
-        for connection in new_connections.iter() {
-            nodes.insert((connection.to.0, connection.to.1));
+        // Store all new connections
+        for connection in discoveries.iter() {
             if reverse {
-                connections.add(
-                    (connection.to.0, connection.to.1),
-                    (connection.from.0, connection.from.1),
-                    connection.edge,
-                );
+                connections.add(connection.to, connection.from, connection.edge);
             } else {
-                connections.add(
-                    (connection.from.0, connection.from.1),
-                    (connection.to.0, connection.to.1),
-                    connection.edge,
-                );
+                connections.add(connection.from, connection.to, connection.edge);
             }
         }
 
-        layers.push(
-            new_connections
-                .iter()
-                .map(|connection| (connection.to.0, connection.to.1))
-                .collect::<HashSet<(i64, i64)>>()
-                .into_iter()
-                .collect::<Vec<(i64, i64)>>(),
-        );
+        // Collect all unique target nodes
+        // Avoid furhter exploration from potential output nodes
+        let next_nodes = discoveries
+            .iter()
+            .map(|connection| connection.to)
+            .filter(|n| !outputs.contains(n))
+            .collect::<HashSet<(i64, i64)>>()
+            .into_iter()
+            .collect::<Vec<(i64, i64)>>();
+
+        // Stop search if there are no more nodes to search
+        if next_nodes.len() == 0 {
+            break;
+        }
+
+        visited.extend(next_nodes.iter());
+        nodes.push(next_nodes);
     }
 
-    (layers, connections)
+    (nodes, connections)
 }

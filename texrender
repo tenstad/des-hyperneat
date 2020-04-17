@@ -1,0 +1,8 @@
+while inotifywait -q -e modify g.tex; do
+	echo '\documentclass[margin=0.2in]{standalone} \usepackage{tikz} \begin{document}' > tmp.tex
+	cat g.tex >> tmp.tex
+	echo '\end{document}' >> tmp.tex
+	pdflatex tmp.tex
+	mv tmp.pdf g.pdf
+	rm tmp.tex	
+done

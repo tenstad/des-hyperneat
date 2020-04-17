@@ -7,115 +7,110 @@ use crate::neat::phenotype::Developer as NeatDeveloper;
 use network::activation;
 use network::connection;
 use network::execute;
-use network::execute::Executor as P;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub struct Developer {
     neat_developer: NeatDeveloper,
+    input_nodes: Vec<(i64, i64)>,
+    output_nodes: Vec<(i64, i64)>,
+    depth: usize,
 }
 
 impl Default for Developer {
     fn default() -> Self {
         Self {
             neat_developer: NeatDeveloper::default(),
+            input_nodes: substrate::horizontal_row(13, -conf::ESHYPERNEAT.resolution as i64),
+            output_nodes: substrate::horizontal_row(3, conf::ESHYPERNEAT.resolution as i64),
+            depth: 10,
         }
     }
 }
 
-// TEMP connnection developer, should be merged with Developer::develop !!!
 impl Developer {
+    // Creates a phenotype with all 0 outputs.
+    fn disconnected(&self) -> execute::Executor {
+        let num_outputs = self.output_nodes.len();
+        execute::Executor::create(
+            num_outputs,
+            Vec::new(),
+            (0..num_outputs).collect(),
+            Vec::new(),
+        )
+    }
+
+    // Copy of part of the evolution below. This should be avoided
+    // if there is an eqally fast option mergining the two
     pub fn connections(
         &self,
-        neat_executor: &mut execute::Executor,
+        cppn: &mut execute::Executor,
     ) -> connection::Connections<(i64, i64), f64> {
-        let mut neat_executor = neat_executor;
-        let num_inputs = 4;
-        let num_outputs = 3;
-        let depth = 10;
-        let input_nodes =
-            substrate::horizontal_row(num_inputs, -conf::ESHYPERNEAT.resolution as i64);
-        let output_nodes =
-            substrate::horizontal_row(num_outputs, conf::ESHYPERNEAT.resolution as i64);
-
-        let (mut layers, mut connections) = search::explore_substrate(
-            input_nodes.iter().cloned().collect(),
-            &mut neat_executor,
-            depth,
+        // Forward search with depth
+        let (_, mut connections) = search::explore_substrate(
+            self.input_nodes.clone(),
+            &self.output_nodes,
+            cppn,
+            self.depth,
             false,
         );
 
-        let (output_source_nodes, output_connections) = search::explore_substrate(
-            output_nodes.iter().cloned().collect(),
-            &mut neat_executor,
-            1,
-            true,
-        );
+        // Backward output-connecting search with depth 1
+        let (_, reverse_connections) =
+            search::explore_substrate(self.output_nodes.clone(), &self.input_nodes, cppn, 1, true);
 
-        connections.extend(&output_connections);
+        connections.extend(&reverse_connections);
+        connections.prune(&self.input_nodes, &self.output_nodes);
 
         connections
     }
 }
 
-impl evaluate::Develop<P> for Developer {
-    fn develop(&self, genome: &genome::Genome) -> P {
-        let mut neat_executor = self.neat_developer.develop(genome);
+impl evaluate::Develop<execute::Executor> for Developer {
+    fn develop(&self, genome: &genome::Genome) -> execute::Executor {
+        let mut cppn = self.neat_developer.develop(genome);
 
-        let num_inputs = 4;
-        let num_outputs = 3;
-        let depth = 10;
-        let input_nodes =
-            substrate::horizontal_row(num_inputs, -conf::ESHYPERNEAT.resolution as i64);
-        let output_nodes =
-            substrate::horizontal_row(num_outputs, conf::ESHYPERNEAT.resolution as i64);
-
-        let (mut layers, mut connections) = search::explore_substrate(
-            input_nodes.iter().cloned().collect(),
-            &mut neat_executor,
-            depth,
+        // Forward search with depth
+        let (layers, mut connections) = search::explore_substrate(
+            self.input_nodes.clone(),
+            &self.output_nodes,
+            &mut cppn,
+            self.depth,
             false,
         );
 
-        let (output_source_nodes, output_connections) = search::explore_substrate(
-            output_nodes.iter().cloned().collect(),
-            &mut neat_executor,
+        // Backward output-connecting search with depth 1
+        let (reverse_layers, reverse_connections) = search::explore_substrate(
+            self.output_nodes.clone(),
+            &self.input_nodes,
+            &mut cppn,
             1,
             true,
         );
 
-        // If not of length 2, the output nodes will not be connected to input nodes
-        if output_source_nodes.len() != 2 {
-            return execute::Executor::create(
-                num_outputs,
-                Vec::new(),
-                (0..num_outputs).collect(),
-                Vec::new(),
-            );
-        }
+        connections.extend(&reverse_connections);
+        connections.prune(&self.input_nodes, &self.output_nodes);
 
-        connections.extend(&output_connections);
-        let last_index = layers.len() - 1;
-        for node in output_source_nodes[1].iter() {
-            if !layers[last_index].contains(node) {
-                layers[last_index].push(node.clone());
-            }
-        }
-
-        let mut nodes = input_nodes
+        // Make sure the order is inputs - hidden - outputs
+        let nodes = self
+            .input_nodes
             .iter()
+            .cloned()
             .chain(
                 layers
                     .iter()
+                    .skip(1)
                     .flatten()
-                    .filter(|n| !output_nodes.contains(n)),
+                    .chain(reverse_layers.iter().skip(1).flatten())
+                    .cloned()
+                    .collect::<HashSet<(i64, i64)>>()
+                    .into_iter(),
             )
-            .cloned()
+            .chain(self.output_nodes.iter().cloned())
             .collect::<Vec<(i64, i64)>>();
 
-        let inputs = (0..num_inputs).collect();
-        let outputs = (nodes.len()..(nodes.len() + num_outputs)).collect();
-
-        nodes.extend(output_nodes.iter());
+        let first_output_id = nodes.len() - self.output_nodes.len();
+        let inputs = (0..self.input_nodes.len()).collect();
+        let outputs = (first_output_id..(first_output_id + self.output_nodes.len())).collect();
 
         // Create mapping from nodes to array index in Network's node vector
         let node_mapping: HashMap<(i64, i64), usize> = nodes
@@ -143,10 +138,10 @@ impl evaluate::Develop<P> for Developer {
                         .get(node)
                         .expect("map does not contain activation node"),
                     0.0,
-                    if output_nodes.contains(node) {
-                        activation::Activation::Softmax
-                    } else {
+                    if *node_mapping.get(node).unwrap() < first_output_id {
                         activation::Activation::ReLU
+                    } else {
+                        activation::Activation::Softmax
                     },
                 ),
             })

@@ -203,11 +203,76 @@ impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
 
         actions
     }
+
+    pub fn prune(&mut self, inputs: &Vec<T>, outputs: &Vec<T>) {
+        self.prune_dangling_inputs(inputs);
+        self.prune_dagnling_outputs(outputs);
+    }
+
+    pub fn prune_dangling_inputs(&mut self, inputs: &Vec<T>) {
+        let mut backward_count: HashMap<T, u64> = HashMap::new();
+        for source in self.get_sources() {
+            for target in self.get_targets(source) {
+                backward_count.insert(*target, *backward_count.get(target).unwrap_or(&0) + 1);
+            }
+        }
+
+        loop {
+            let dangling_inputs = self
+                .get_all_nodes()
+                .iter()
+                .filter(|n| !inputs.contains(n) && *backward_count.get(n).unwrap_or(&0) == 0)
+                .cloned()
+                .collect::<Vec<T>>();
+            for node in dangling_inputs.iter() {
+                backward_count.remove(node);
+                for target in self.get_targets(node) {
+                    backward_count.insert(*target, *backward_count.get(target).unwrap() - 1);
+                }
+                self.connections.remove(node);
+            }
+            if dangling_inputs.len() == 0 {
+                break;
+            }
+        }
+    }
+
+    pub fn prune_dagnling_outputs(&mut self, outputs: &Vec<T>) {
+        loop {
+            let mut deleted_node = false;
+            for source in self.get_sources().cloned().collect::<Vec<T>>().iter() {
+                let targets = self.connections.get(source).unwrap();
+                let delete_indexes = (0..targets.len())
+                    .rev()
+                    .filter(|i| {
+                        !outputs.contains(&targets[*i].0)
+                            && !self.connections.contains_key(&targets[*i].0)
+                    })
+                    .collect::<Vec<usize>>();
+                if delete_indexes.len() > 0 {
+                    deleted_node = true;
+                    let targets = self.connections.get_mut(source).unwrap();
+                    for delete_index in delete_indexes {
+                        targets.swap_remove(delete_index);
+                    }
+                }
+            }
+            if !deleted_node {
+                break;
+            }
+        }
+    }
 }
 
 #[allow(dead_code)]
-impl<U: Copy> Connections<(i64, i64), U> {
+impl Connections<(i64, i64), f64> {
     pub fn save_fig_to_file<P: AsRef<Path>>(&self, fname: P, scale: f64, size: f64) {
+        let max_weight = self
+            .get_all_connections()
+            .iter()
+            .map(|connection| connection.edge.abs())
+            .max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+
         let mut fig = figure::Figure::new(1.0);
         fig.add(
             figure::substrate::SubstrateBuilder::default()
@@ -241,7 +306,7 @@ impl<U: Copy> Connections<(i64, i64), U> {
                 nodes.get(&connection.from).unwrap(),
                 nodes.get(&connection.to).unwrap(),
             )
-            .opacity(0.4)
+            .opacity(connection.edge.abs() / max_weight)
             .width(0.1)
             .build()
             .unwrap()
