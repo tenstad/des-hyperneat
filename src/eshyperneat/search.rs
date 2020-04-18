@@ -62,25 +62,25 @@ impl QuadPoint {
         }
     }
 
-    fn extract(&self, f: &mut dyn FnMut(f64, f64) -> f64) -> Vec<Target<(f64, f64), f64>> {
-        self.children()
-            .flat_map(|child| {
-                if child.variance() > conf::ESHYPERNEAT.variance_threshold {
-                    child.extract(f)
-                } else {
-                    let d_left = (child.weight - f(child.x - self.width, child.y)).abs();
-                    let d_right = (child.weight - f(child.x + self.width, child.y)).abs();
-                    let d_up = (child.weight - f(child.x, child.y - self.width)).abs();
-                    let d_down = (child.weight - f(child.x, child.y + self.width)).abs();
+    fn extract(
+        &self,
+        f: &mut dyn FnMut(f64, f64) -> f64,
+        connections: &mut Vec<Target<(f64, f64), f64>>,
+    ) {
+        for child in self.children() {
+            if child.variance() > conf::ESHYPERNEAT.variance_threshold {
+                child.extract(f, connections);
+            } else {
+                let d_left = (child.weight - f(child.x - self.width, child.y)).abs();
+                let d_right = (child.weight - f(child.x + self.width, child.y)).abs();
+                let d_up = (child.weight - f(child.x, child.y - self.width)).abs();
+                let d_down = (child.weight - f(child.x, child.y + self.width)).abs();
 
-                    if b(d_up, d_down, d_left, d_right) > conf::ESHYPERNEAT.band_threshold {
-                        vec![Target::new((child.x, child.y), child.weight)]
-                    } else {
-                        Vec::new()
-                    }
+                if b(d_up, d_down, d_left, d_right) > conf::ESHYPERNEAT.band_threshold {
+                    connections.push(Target::new((child.x, child.y), child.weight));
                 }
-            })
-            .collect::<Vec<Target<(f64, f64), f64>>>()
+            }
+        }
     }
 }
 
@@ -110,8 +110,10 @@ pub fn find_connections(
         )[0]
     };
     let mut root = QuadPoint::new(0.0, 0.0, 1.0, 1, &mut f);
+    let mut connections = Vec::<Target<(f64, f64), f64>>::new();
     root.expand(&mut f);
-    root.extract(&mut f)
+    root.extract(&mut f, &mut connections);
+    connections
 }
 
 pub fn explore_substrate(
