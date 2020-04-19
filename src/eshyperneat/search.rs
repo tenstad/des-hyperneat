@@ -9,12 +9,12 @@ struct QuadPoint {
     y: f64,
     width: f64,
     weight: f64,
-    depth: u32,
+    depth: usize,
     children: Option<[Box<QuadPoint>; 4]>,
 }
 
 impl QuadPoint {
-    fn new(x: f64, y: f64, width: f64, depth: u32, f: &mut dyn FnMut(f64, f64) -> f64) -> Self {
+    fn new(x: f64, y: f64, width: f64, depth: usize, f: &mut dyn FnMut(f64, f64) -> f64) -> Self {
         Self {
             x,
             y,
@@ -29,6 +29,10 @@ impl QuadPoint {
         self.children.iter().flatten()
     }
 
+    fn children_mut(&mut self) -> impl Iterator<Item = &mut Box<QuadPoint>> {
+        self.children.iter_mut().flatten()
+    }
+
     fn variance(&self) -> f64 {
         let w = self.children().map(|child| child.weight).sum::<f64>() / 4.0;
         self.children()
@@ -41,24 +45,23 @@ impl QuadPoint {
         let width = self.width / 2.0;
         let depth = self.depth + 1;
 
-        if self.depth < conf::ESHYPERNEAT.initial_depth
-            || (self.depth < conf::ESHYPERNEAT.max_depth
+        let mut child =
+            |x: f64, y: f64| Box::new(QuadPoint::new(self.x + x, self.y + y, width, depth, f));
+
+        self.children = Some([
+            child(-width, -width),
+            child(-width, width),
+            child(width, width),
+            child(width, -width),
+        ]);
+
+        if self.depth + 1 < conf::ESHYPERNEAT.initial_resolution
+            || (self.depth + 1 < conf::ESHYPERNEAT.max_resolution
                 && self.variance() > conf::ESHYPERNEAT.division_threshold)
         {
-            let mut child =
-                |x: f64, y: f64| Box::new(QuadPoint::new(self.x + x, self.y + y, width, depth, f));
-            let mut children = [
-                child(-width, -width),
-                child(-width, width),
-                child(width, width),
-                child(width, -width),
-            ];
-
-            for child in children.iter_mut() {
+            for child in self.children_mut() {
                 child.expand(f);
             }
-
-            self.children = Some(children);
         }
     }
 

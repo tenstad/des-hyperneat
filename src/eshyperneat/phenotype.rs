@@ -22,7 +22,7 @@ impl Default for Developer {
             neat_developer: NeatDeveloper::default(),
             input_nodes: substrate::horizontal_row(13, -conf::ESHYPERNEAT.resolution as i64),
             output_nodes: substrate::horizontal_row(3, conf::ESHYPERNEAT.resolution as i64),
-            depth: 10,
+            depth: conf::ESHYPERNEAT.iteration_level + 1,
         }
     }
 }
@@ -137,7 +137,12 @@ impl evaluate::Develop<execute::Executor> for Developer {
                     *node_mapping
                         .get(node)
                         .expect("map does not contain activation node"),
-                    0.0,
+                    cppn.execute(&vec![
+                        0.0,
+                        0.0,
+                        node.0 as f64 / conf::ESHYPERNEAT.resolution,
+                        node.1 as f64 / conf::ESHYPERNEAT.resolution,
+                    ])[1],
                     if *node_mapping.get(node).unwrap() < first_output_id {
                         activation::Activation::ReLU
                     } else {

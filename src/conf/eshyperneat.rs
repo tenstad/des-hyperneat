@@ -11,11 +11,14 @@ pub struct Conf {
     #[envconfig(from = "BAND_THRESHOLD", default = "0.3")]
     pub band_threshold: f64,
 
-    #[envconfig(from = "INITIAL_DEPTH", default = "4")]
-    pub initial_depth: u32,
+    #[envconfig(from = "INITIAL_RESOLUTION", default = "3")]
+    pub initial_resolution: usize,
 
-    #[envconfig(from = "MAX_DEPTH", default = "8")]
-    pub max_depth: u32,
+    #[envconfig(from = "MAX_RESOLUTION", default = "4")]
+    pub max_resolution: usize,
+
+    #[envconfig(from = "ITERATION_LEVEL", default = "2")]
+    pub iteration_level: usize,
 
     #[envconfig(from = "RESOLUTION", default = "1048576.0")]
     pub resolution: f64,

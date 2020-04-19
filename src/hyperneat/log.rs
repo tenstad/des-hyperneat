@@ -19,7 +19,7 @@ impl log::Log for Logger {
             let developer: &dyn evaluate::Develop<execute::Executor> = &self.developer;
             let mut phenotype = developer.develop(&population.best().unwrap().genome);
 
-            img::plot_weights(&mut phenotype, 0.0, 0.0, 1.0, 256)
+            img::plot_weights(&mut phenotype, -1.0, -1.0, 1.0, 256)
                 .save("w.png")
                 .ok();
         }
