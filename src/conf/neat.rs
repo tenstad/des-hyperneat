@@ -1,9 +1,9 @@
-use network::activation;
 use envconfig::Envconfig;
+use network::activation;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "POPULATION_SIZE", default = "500")]
+    #[envconfig(from = "POPULATION_SIZE", default = "100")]
     pub population_size: usize,
 
     #[envconfig(from = "ITERATIONS", default = "1000000")]
@@ -72,9 +72,15 @@ pub struct Conf {
     #[envconfig(from = "ELITISM", default = "1")]
     pub elitism: usize,
 
-    #[envconfig(from = "HIDDEN_ACTIVATIONS", default = "None ReLU Sigmoid Normal Sine Square Exp")]
+    #[envconfig(
+        from = "HIDDEN_ACTIVATIONS",
+        default = "None ReLU Sigmoid Normal Sine Square Exp"
+    )]
     pub hidden_activations: activation::Activations,
 
-    #[envconfig(from = "OUTPUT_ACTIVATIONS", default = "None ReLU Sigmoid Normal Sine Square Exp")]
+    #[envconfig(
+        from = "OUTPUT_ACTIVATIONS",
+        default = "None ReLU Sigmoid Normal Sine Square Exp"
+    )]
     pub output_activations: activation::Activations,
 }

@@ -183,16 +183,16 @@ impl Genome {
         let mut rng = rand::thread_rng();
 
         // Mutate single link
-        /*if !self.links.is_empty() {
+        if !self.links.is_empty() {
             let link_index = rng.gen_range(0, self.links.len());
             if let Some(link) = self.links.values_mut().skip(link_index).next() {
                 link.weight += (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.mutate_link_weight_size;
             }
-        }*/
-
-        for link in self.links.values_mut() {
-            link.weight += (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.mutate_link_weight_size;
         }
+
+        /*for link in self.links.values_mut() {
+            link.weight += (rng.gen::<f64>() - 0.5) * 2.0 * conf::NEAT.mutate_link_weight_size;
+        }*/
     }
 
     fn mutate_hidden_bias(&mut self) {

@@ -271,7 +271,8 @@ impl Connections<(i64, i64), f64> {
             .get_all_connections()
             .iter()
             .map(|connection| connection.edge.abs())
-            .max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap_or(1.0);
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap_or(1.0);
 
         let mut fig = figure::Figure::new(1.0);
         fig.add(
@@ -306,7 +307,7 @@ impl Connections<(i64, i64), f64> {
                 nodes.get(&connection.from).unwrap(),
                 nodes.get(&connection.to).unwrap(),
             )
-            .opacity(connection.edge.abs() / max_weight)
+            .opacity((connection.edge.abs() / max_weight) * 0.8 + 0.2)
             .width(0.1)
             .build()
             .unwrap()

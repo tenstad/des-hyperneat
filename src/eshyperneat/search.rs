@@ -70,10 +70,12 @@ impl QuadPoint {
         f: &mut dyn FnMut(f64, f64) -> f64,
         connections: &mut Vec<Target<(f64, f64), f64>>,
     ) {
-        for child in self.children() {
-            if child.variance() > conf::ESHYPERNEAT.variance_threshold {
-                child.extract(f, connections);
-            } else {
+        let variances = self
+            .children()
+            .map(|child| child.variance())
+            .collect::<Vec<f64>>();
+        for (variance, child) in variances.iter().zip(self.children()) {
+            if *variance <= conf::ESHYPERNEAT.variance_threshold {
                 let d_left = (child.weight - f(child.x - self.width, child.y)).abs();
                 let d_right = (child.weight - f(child.x + self.width, child.y)).abs();
                 let d_up = (child.weight - f(child.x, child.y - self.width)).abs();
@@ -82,6 +84,14 @@ impl QuadPoint {
                 if b(d_up, d_down, d_left, d_right) > conf::ESHYPERNEAT.band_threshold {
                     connections.push(Target::new((child.x, child.y), child.weight));
                 }
+            }
+        }
+
+        for (variance, child) in variances.iter().zip(self.children()) {
+            if connections.len() >= conf::ESHYPERNEAT.max_discoveries {
+                break;
+            } else if *variance > conf::ESHYPERNEAT.variance_threshold {
+                child.extract(f, connections);
             }
         }
     }
@@ -116,6 +126,11 @@ pub fn find_connections(
     let mut connections = Vec::<Target<(f64, f64), f64>>::new();
     root.expand(&mut f);
     root.extract(&mut f, &mut connections);
+
+    if connections.len() > conf::ESHYPERNEAT.max_outgoing {
+        connections.sort_by(|a, b| b.edge.abs().partial_cmp(&a.edge.abs()).unwrap());
+        connections.truncate(conf::ESHYPERNEAT.max_outgoing);
+    }
     connections
 }
 
