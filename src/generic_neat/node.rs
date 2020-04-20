@@ -75,17 +75,7 @@ impl std::cmp::Ord for NodeRef {
 
 impl std::cmp::PartialOrd for NodeRef {
     fn partial_cmp(&self, other: &Self) -> std::option::Option<std::cmp::Ordering> {
-        match (self, other) {
-            (NodeRef::Input(a), NodeRef::Input(b)) => a.partial_cmp(b),
-            (NodeRef::Output(a), NodeRef::Output(b)) => a.partial_cmp(b),
-            (NodeRef::Hidden(a), NodeRef::Hidden(b)) => a.partial_cmp(b),
-            (NodeRef::Input(_), NodeRef::Hidden(_)) => Some(std::cmp::Ordering::Less),
-            (NodeRef::Input(_), NodeRef::Output(_)) => Some(std::cmp::Ordering::Less),
-            (NodeRef::Hidden(_), NodeRef::Output(_)) => Some(std::cmp::Ordering::Less),
-            (NodeRef::Hidden(_), NodeRef::Input(_)) => Some(std::cmp::Ordering::Greater),
-            (NodeRef::Output(_), NodeRef::Input(_)) => Some(std::cmp::Ordering::Greater),
-            (NodeRef::Output(_), NodeRef::Hidden(_)) => Some(std::cmp::Ordering::Greater),
-        }
+        Some(self.cmp(other))
     }
 }
 
