@@ -8,5 +8,5 @@ pub struct Conf {
 }
 
 lazy_static! {
-    pub static ref CONF: Conf = Conf::init().unwrap();
+    pub static ref DATA: Conf = Conf::init().unwrap();
 }

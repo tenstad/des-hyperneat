@@ -5,7 +5,6 @@ extern crate envconfig;
 #[macro_use]
 extern crate derive_new;
 
-mod data;
 mod eshyperneat;
 mod hyperneat;
 mod neat;

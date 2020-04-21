@@ -1,7 +1,9 @@
-use crate::data::accuracy;
-use crate::data::error;
+use crate::accuracy;
+use crate::conf::DATA;
+use crate::error;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error};
+use std::path::Path;
 
 #[derive(Debug)]
 pub struct Dataset {
@@ -20,8 +22,14 @@ pub struct Dimensions {
 }
 
 impl Dataset {
-    pub fn load(filename: &String) -> Result<Dataset, Error> {
-        let input = File::open(filename)?;
+    pub fn load() -> Dataset {
+        Self::load_specific(&DATA.dataset)
+            .ok()
+            .expect("unable to load dataset")
+    }
+
+    pub fn load_specific<P: AsRef<Path>>(path: P) -> Result<Dataset, Error> {
+        let input = File::open(path)?;
         let mut buffered = BufReader::new(input);
 
         let mut inputs: Vec<Vec<f64>> = Vec::new();

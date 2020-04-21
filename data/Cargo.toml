@@ -1,0 +1,14 @@
+[package]
+name = "data"
+version = "0.1.0"
+authors = ["Amund Tenstad <github@amund.io>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.6.0"
+lazy_static = "1.4.0"
+envconfig = "0.6.0"
+envconfig_derive = "0.6.0"
+
+[profile.release]
+debug = true

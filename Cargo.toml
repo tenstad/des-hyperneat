@@ -15,6 +15,7 @@ image = "0.23"
 derive-new = "0.5.8"
 network = {path = "network"}
 evolution = {path = "evolution"}
+data = {path = "data"}
 
 [workspace]
 members = [
@@ -22,6 +23,7 @@ members = [
   "figures",
   "network",
   "evolution",
+  "data",
 ]
 
 [profile.release]

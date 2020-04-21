@@ -1,5 +1,4 @@
-use crate::data::conf::CONF as DATA;
-use crate::data::dataset::Dataset;
+use data::dataset::Dataset;
 use evolution::environment::{Environment, EnvironmentDescription};
 use network::execute;
 
@@ -25,9 +24,7 @@ impl DatasetEnvironment {
 
 impl Default for DatasetEnvironment {
     fn default() -> DatasetEnvironment {
-        let dataset = Dataset::load(&DATA.dataset)
-            .ok()
-            .expect("unable to load dataset");
+        let dataset = Dataset::load();
 
         let description =
             EnvironmentDescription::new(dataset.dimensions.inputs, dataset.dimensions.outputs);
