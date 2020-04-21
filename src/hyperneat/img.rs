@@ -1,6 +1,6 @@
-use network::execute;
 use image::ImageBuffer;
 use image::Rgb;
+use network::execute;
 
 pub fn plot_weights(
     executor: &mut execute::Executor,

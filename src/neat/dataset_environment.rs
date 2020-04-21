@@ -1,13 +1,11 @@
-use crate::conf;
+use crate::data::conf::CONF as DATA;
 use crate::data::dataset::Dataset;
-use crate::data::dataset::Dimensions;
-use crate::generic_neat::evaluate::Environment;
+use evolution::environment::{Environment, EnvironmentDescription};
 use network::execute;
-use std::fmt;
 
 pub struct DatasetEnvironment {
-    name: String,
     dataset: Dataset,
+    description: EnvironmentDescription,
 }
 
 impl DatasetEnvironment {
@@ -27,18 +25,23 @@ impl DatasetEnvironment {
 
 impl Default for DatasetEnvironment {
     fn default() -> DatasetEnvironment {
+        let dataset = Dataset::load(&DATA.dataset)
+            .ok()
+            .expect("unable to load dataset");
+
+        let description =
+            EnvironmentDescription::new(dataset.dimensions.inputs, dataset.dimensions.outputs);
+
         DatasetEnvironment {
-            name: conf::GENERAL.dataset.clone(),
-            dataset: Dataset::load(&conf::GENERAL.dataset)
-                .ok()
-                .expect("unable to load dataset"),
+            dataset: dataset,
+            description: description,
         }
     }
 }
 
 impl Environment<execute::Executor> for DatasetEnvironment {
-    fn get_dimensions(&self) -> &Dimensions {
-        return &self.dataset.dimensions;
+    fn description(&self) -> EnvironmentDescription {
+        self.description.clone()
     }
 
     fn fitness(&self, executor: &mut execute::Executor) -> f64 {
@@ -48,11 +51,5 @@ impl Environment<execute::Executor> for DatasetEnvironment {
                 .iter()
                 .map(|input| executor.execute(input)),
         )
-    }
-}
-
-impl fmt::Display for DatasetEnvironment {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        return write!(f, "{}", self.name);
     }
 }

@@ -1,4 +1,4 @@
-use crate::conf;
+use crate::eshyperneat::conf::CONF as ESHYPERNEAT;
 use network::connection;
 use network::connection::{Connection, Target};
 use network::execute;
@@ -55,9 +55,9 @@ impl QuadPoint {
             child(width, -width),
         ]);
 
-        if self.depth + 1 < conf::ESHYPERNEAT.initial_resolution
-            || (self.depth + 1 < conf::ESHYPERNEAT.max_resolution
-                && self.variance() > conf::ESHYPERNEAT.division_threshold)
+        if self.depth + 1 < ESHYPERNEAT.initial_resolution
+            || (self.depth + 1 < ESHYPERNEAT.max_resolution
+                && self.variance() > ESHYPERNEAT.division_threshold)
         {
             for child in self.children_mut() {
                 child.expand(f);
@@ -75,22 +75,22 @@ impl QuadPoint {
             .map(|child| child.variance())
             .collect::<Vec<f64>>();
         for (variance, child) in variances.iter().zip(self.children()) {
-            if *variance <= conf::ESHYPERNEAT.variance_threshold {
+            if *variance <= ESHYPERNEAT.variance_threshold {
                 let d_left = (child.weight - f(child.x - self.width, child.y)).abs();
                 let d_right = (child.weight - f(child.x + self.width, child.y)).abs();
                 let d_up = (child.weight - f(child.x, child.y - self.width)).abs();
                 let d_down = (child.weight - f(child.x, child.y + self.width)).abs();
 
-                if b(d_up, d_down, d_left, d_right) > conf::ESHYPERNEAT.band_threshold {
+                if b(d_up, d_down, d_left, d_right) > ESHYPERNEAT.band_threshold {
                     connections.push(Target::new((child.x, child.y), child.weight));
                 }
             }
         }
 
         for (variance, child) in variances.iter().zip(self.children()) {
-            if connections.len() >= conf::ESHYPERNEAT.max_discoveries {
+            if connections.len() >= ESHYPERNEAT.max_discoveries {
                 break;
-            } else if *variance > conf::ESHYPERNEAT.variance_threshold {
+            } else if *variance > ESHYPERNEAT.variance_threshold {
                 child.extract(f, connections);
             }
         }
@@ -127,9 +127,9 @@ pub fn find_connections(
     root.expand(&mut f);
     root.extract(&mut f, &mut connections);
 
-    if connections.len() > conf::ESHYPERNEAT.max_outgoing {
+    if connections.len() > ESHYPERNEAT.max_outgoing {
         connections.sort_by(|a, b| b.edge.abs().partial_cmp(&a.edge.abs()).unwrap());
-        connections.truncate(conf::ESHYPERNEAT.max_outgoing);
+        connections.truncate(ESHYPERNEAT.max_outgoing);
     }
     connections
 }
@@ -155,8 +155,8 @@ pub fn explore_substrate(
         for (x, y) in nodes[d].iter() {
             discoveries.extend(
                 find_connections(
-                    *x as f64 / conf::ESHYPERNEAT.resolution,
-                    *y as f64 / conf::ESHYPERNEAT.resolution,
+                    *x as f64 / ESHYPERNEAT.resolution,
+                    *y as f64 / ESHYPERNEAT.resolution,
                     cppn,
                     reverse,
                 )
@@ -164,8 +164,8 @@ pub fn explore_substrate(
                 .map(|target| {
                     Target::new(
                         (
-                            (target.node.0 * conf::ESHYPERNEAT.resolution) as i64,
-                            (target.node.1 * conf::ESHYPERNEAT.resolution) as i64,
+                            (target.node.0 * ESHYPERNEAT.resolution) as i64,
+                            (target.node.1 * ESHYPERNEAT.resolution) as i64,
                         ),
                         target.edge,
                     )

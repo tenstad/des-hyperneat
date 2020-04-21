@@ -1,26 +1,28 @@
-use crate::data::dataset::Dimensions;
-use crate::generic_neat::evaluate::Environment;
 use crate::neat::dataset_environment::DatasetEnvironment as NeatDatasetEnvironment;
+use evolution::environment::Environment;
+use evolution::environment::EnvironmentDescription;
 use network::execute;
 
 pub struct DatasetEnvironment {
     environment: NeatDatasetEnvironment,
+    description: EnvironmentDescription,
 }
 
 impl Default for DatasetEnvironment {
     fn default() -> DatasetEnvironment {
         DatasetEnvironment {
             environment: NeatDatasetEnvironment::default(),
+            description: EnvironmentDescription {
+                inputs: 4,
+                outputs: 2,
+            },
         }
     }
 }
 
 impl Environment<execute::Executor> for DatasetEnvironment {
-    fn get_dimensions(&self) -> &Dimensions {
-        return &Dimensions {
-            inputs: 4,
-            outputs: 2,
-        };
+    fn description(&self) -> EnvironmentDescription {
+        self.description.clone()
     }
 
     fn fitness(&self, executor: &mut execute::Executor) -> f64 {

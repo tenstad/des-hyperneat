@@ -1,9 +1,19 @@
+pub mod conf;
 pub mod dataset_environment;
+pub mod dot;
+pub mod genome;
+pub mod link;
+pub mod log;
+pub mod node;
 pub mod phenotype;
+pub mod state;
 
-use crate::generic_neat::{self, evaluate, log};
-use network::execute::Executor as P;
+use evolution::{environment::Environment, evolve};
+use genome::Genome;
+use log::Logger;
+use network::execute::Executor;
+use phenotype::Developer;
 
-pub fn neat<E: evaluate::Environment<P> + Default>() {
-    generic_neat::neat::<P, E, phenotype::Developer, log::Logger>();
+pub fn neat<E: Environment<Executor> + Default>() {
+    evolve::<Genome, Executor, Developer, E, Logger>();
 }

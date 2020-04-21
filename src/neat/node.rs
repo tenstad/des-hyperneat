@@ -1,4 +1,4 @@
-use crate::conf;
+use crate::neat::conf::CONF as NEAT;
 use network::activation::Activation;
 use rand::Rng;
 use std::fmt;
@@ -17,8 +17,8 @@ impl Node {
             bias: 0.0,
             activation: match node_ref {
                 NodeRef::Input(_) => Activation::None,
-                NodeRef::Hidden(_) => conf::NEAT.hidden_activations.random(),
-                NodeRef::Output(_) => conf::NEAT.output_activations.random(),
+                NodeRef::Hidden(_) => NEAT.hidden_activations.random(),
+                NodeRef::Output(_) => NEAT.output_activations.random(),
             },
         }
     }
@@ -42,9 +42,9 @@ impl Node {
 /// The ID is separate for the three types.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum NodeRef {
-    Input(u64),
-    Hidden(u64),
-    Output(u64),
+    Input(usize),
+    Hidden(usize),
+    Output(usize),
 }
 
 impl fmt::Display for NodeRef {
@@ -80,7 +80,7 @@ impl std::cmp::PartialOrd for NodeRef {
 }
 
 impl NodeRef {
-    pub fn id(&self) -> u64 {
+    pub fn id(&self) -> usize {
         match self {
             NodeRef::Input(id) => *id,
             NodeRef::Hidden(id) => *id,

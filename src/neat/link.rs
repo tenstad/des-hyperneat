@@ -1,4 +1,4 @@
-use crate::generic_neat::node::NodeRef;
+use crate::neat::node::NodeRef;
 
 /// Link between two nodes
 #[derive(Copy, Clone, Debug)]
@@ -7,12 +7,12 @@ pub struct Link {
     pub to: NodeRef,
     pub weight: f64,
     pub enabled: bool,
-    pub split: bool,     // Link has been split
-    pub innovation: u64, // Global innovation number
+    pub split: bool,       // Link has been split
+    pub innovation: usize, // Global innovation number
 }
 
 impl Link {
-    pub fn new(from: NodeRef, to: NodeRef, weight: f64, innovation: u64) -> Link {
+    pub fn new(from: NodeRef, to: NodeRef, weight: f64, innovation: usize) -> Link {
         Link {
             from,
             to,

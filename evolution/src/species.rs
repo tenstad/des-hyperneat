@@ -1,24 +1,25 @@
-use crate::conf;
-use crate::generic_neat::organism::Organism;
+use crate::conf::CONF;
+use crate::genome::Genome;
+use crate::organism::Organism;
 use rand::Rng;
 
 /// Collection of similar organisms
 // The lock is used to add new organisms without affecting the reproduction of the previous generation.
 // It is unlocked after reproduction, which will remove the previous generation and keep the new.
-pub struct Species {
+pub struct Species<G> {
     age: u64,
     pub best_fitness: f64,
     lifetime_best_fitness: f64,
     last_improvement: u64,
     pub offsprings: f64,
-    pub organisms: Vec<Organism>,
+    pub organisms: Vec<Organism<G>>,
     locked: bool, // When locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
     locked_organisms: usize, // The number of locked organisms, this is the length and number of iterated organisms when species is locked
 }
 
-impl Species {
-    pub fn new() -> Species {
-        Species {
+impl<G: Genome> Species<G> {
+    pub fn new() -> Self {
+        Self {
             age: 0,
             best_fitness: 0.0,
             lifetime_best_fitness: 0.0,
@@ -31,16 +32,16 @@ impl Species {
     }
 
     /// Determine wether a new organism is compatible
-    pub fn is_compatible(&mut self, other: &Organism) -> bool {
+    pub fn is_compatible(&mut self, other: &Organism<G>) -> bool {
         if let Some(organism) = self.organisms.first() {
-            organism.distance(other) < conf::NEAT.speciation_threshold
+            organism.distance(other) < CONF.speciation_threshold
         } else {
             true // All organisms are compatible if the species is empty
         }
     }
 
     /// Add an organism
-    pub fn push(&mut self, individual: Organism) {
+    pub fn push(&mut self, individual: Organism<G>) {
         self.organisms.push(individual);
     }
 
@@ -54,18 +55,18 @@ impl Species {
     }
 
     /// Iterate organisms. Adheres to lock.
-    pub fn iter(&self) -> impl Iterator<Item = &Organism> {
+    pub fn iter(&self) -> impl Iterator<Item = &Organism<G>> {
         self.organisms.iter().take(self.len())
     }
 
     /// Iterate mutable organisms. Adheres to lock.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<G>> {
         let len = self.len(); // Must read len before iter_mut
         self.organisms.iter_mut().take(len)
     }
 
     /// Get a random organism. Adheres to lock.
-    pub fn random_organism(&self) -> Option<&Organism> {
+    pub fn random_organism(&self) -> Option<&Organism<G>> {
         self.iter()
             .skip(rand::thread_rng().gen_range(0, self.len()))
             .next()
@@ -75,8 +76,8 @@ impl Species {
     pub fn adjust_fitness(&mut self) {
         assert!(!self.locked);
 
-        let is_stagnent = self.age - self.last_improvement > conf::NEAT.dropoff_age;
-        let is_young = self.age < conf::NEAT.young_age_limit;
+        let is_stagnent = self.age - self.last_improvement > CONF.dropoff_age;
+        let is_young = self.age < CONF.young_age_limit;
         let size: f64 = self.organisms.len() as f64;
 
         for organism in self.organisms.iter_mut() {
@@ -84,12 +85,12 @@ impl Species {
 
             // Greatly penalize stagnent species
             if is_stagnent {
-                organism.adjusted_fitness *= conf::NEAT.stagnent_species_fitness_multiplier;
+                organism.adjusted_fitness *= CONF.stagnent_species_fitness_multiplier;
             }
 
             // Boost young species
             if is_young {
-                organism.adjusted_fitness *= conf::NEAT.young_species_fitness_multiplier;
+                organism.adjusted_fitness *= CONF.young_species_fitness_multiplier;
             }
 
             // Share fitness within species
@@ -123,7 +124,7 @@ impl Species {
 
         // Assumes the individuals are sorted in descending fitness order
         self.organisms.truncate(std::cmp::max(
-            (self.organisms.len() as f64 * conf::NEAT.survival_ratio).floor() as usize,
+            (self.organisms.len() as f64 * CONF.survival_ratio).floor() as usize,
             2, // Keep a minimum of two individuals for sexual reproduction
         ));
     }

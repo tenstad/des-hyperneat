@@ -1,5 +1,6 @@
-use network::activation;
 use envconfig::Envconfig;
+use lazy_static::lazy_static;
+use network::activation::Activation;
 
 #[derive(Envconfig)]
 pub struct Conf {
@@ -7,8 +8,12 @@ pub struct Conf {
     pub weight_threshold: f64,
 
     #[envconfig(from = "HIDDEN_ACTIVATION", default = "ReLU")]
-    pub hidden_activation: activation::Activation,
+    pub hidden_activation: Activation,
 
     #[envconfig(from = "OUTPUT_ACTIVATION", default = "Softmax")]
-    pub output_activation: activation::Activation,
+    pub output_activation: Activation,
+}
+
+lazy_static! {
+    pub static ref CONF: Conf = Conf::init().unwrap();
 }

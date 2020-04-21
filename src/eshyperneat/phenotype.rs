@@ -1,12 +1,10 @@
-use crate::conf;
+use crate::eshyperneat::conf::CONF as ESHYPERNEAT;
 use crate::eshyperneat::search;
-use crate::generic_neat::evaluate;
-use crate::generic_neat::genome;
 use crate::hyperneat::substrate;
+use crate::neat::genome::Genome;
 use crate::neat::phenotype::Developer as NeatDeveloper;
-use network::activation;
-use network::connection;
-use network::execute;
+use evolution::genome::Develop;
+use network::{activation, connection, execute};
 use std::collections::{HashMap, HashSet};
 
 pub struct Developer {
@@ -20,9 +18,9 @@ impl Default for Developer {
     fn default() -> Self {
         Self {
             neat_developer: NeatDeveloper::default(),
-            input_nodes: substrate::horizontal_row(13, -conf::ESHYPERNEAT.resolution as i64),
-            output_nodes: substrate::horizontal_row(3, conf::ESHYPERNEAT.resolution as i64),
-            depth: conf::ESHYPERNEAT.iteration_level + 1,
+            input_nodes: substrate::horizontal_row(13, -ESHYPERNEAT.resolution as i64),
+            output_nodes: substrate::horizontal_row(3, ESHYPERNEAT.resolution as i64),
+            depth: ESHYPERNEAT.iteration_level + 1,
         }
     }
 }
@@ -65,8 +63,8 @@ impl Developer {
     }
 }
 
-impl evaluate::Develop<execute::Executor> for Developer {
-    fn develop(&self, genome: &genome::Genome) -> execute::Executor {
+impl Develop<Genome, execute::Executor> for Developer {
+    fn develop(&self, genome: &Genome) -> execute::Executor {
         let mut cppn = self.neat_developer.develop(genome);
 
         // Forward search with depth
@@ -140,8 +138,8 @@ impl evaluate::Develop<execute::Executor> for Developer {
                     cppn.execute(&vec![
                         0.0,
                         0.0,
-                        node.0 as f64 / conf::ESHYPERNEAT.resolution,
-                        node.1 as f64 / conf::ESHYPERNEAT.resolution,
+                        node.0 as f64 / ESHYPERNEAT.resolution,
+                        node.1 as f64 / ESHYPERNEAT.resolution,
                     ])[1],
                     if *node_mapping.get(node).unwrap() < first_output_id {
                         activation::Activation::ReLU

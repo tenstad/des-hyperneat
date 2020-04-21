@@ -1,13 +1,16 @@
+pub mod conf;
 pub mod dataset_environment;
 pub mod img;
-mod log;
-mod phenotype;
+pub mod log;
+pub mod phenotype;
 pub mod substrate;
 
-use crate::generic_neat;
-use crate::generic_neat::evaluate;
-use network::execute;
+use crate::neat::genome::Genome;
+use evolution::{environment::Environment, evolve};
+use log::Logger;
+use network::execute::Executor;
+use phenotype::Developer;
 
-pub fn hyperneat<E: evaluate::Environment<execute::Executor> + Default>() {
-    generic_neat::neat::<execute::Executor, E, phenotype::Developer, log::Logger>();
+pub fn hyperneat<E: Environment<Executor> + Default>() {
+    evolve::<Genome, Executor, Developer, E, Logger>();
 }

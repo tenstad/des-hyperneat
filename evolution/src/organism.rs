@@ -1,24 +1,22 @@
-use crate::generic_neat::evaluate;
-use crate::generic_neat::genome::Genome;
-use crate::generic_neat::innovation::InnovationLog;
-use crate::generic_neat::innovation::InnovationTime;
+use crate::environment::Environment;
+use crate::genome::{Develop, Genome};
 use std::cmp;
 
 #[derive(Clone)]
-pub struct Organism {
-    pub genome: Genome,
+pub struct Organism<G> {
+    pub genome: G,
     pub fitness: f64,
     pub adjusted_fitness: f64,
     pub generation: u64,
 }
 
-impl Organism {
-    pub fn new(generation: u64, inputs: usize, outputs: usize) -> Organism {
-        Organism {
-            genome: Genome::new(inputs, outputs),
+impl<G: Genome> Organism<G> {
+    pub fn new(init_config: &G::InitConfig) -> Self {
+        Self {
+            genome: G::new(init_config),
             fitness: 0.0,
             adjusted_fitness: 0.0,
-            generation: generation,
+            generation: 0,
         }
     }
 
@@ -27,7 +25,7 @@ impl Organism {
         Organism {
             genome: self
                 .genome
-                .crossover(&other.genome, self.fitness > other.fitness),
+                .crossover(&other.genome, &self.fitness, &other.fitness),
             fitness: 0.0,
             adjusted_fitness: 0.0,
             generation: self.generation + 1,
@@ -42,16 +40,16 @@ impl Organism {
     /// Fitness of organism in environment
     pub fn fitness<P>(
         &mut self,
-        environment: &dyn evaluate::Environment<P>,
-        developer: &dyn evaluate::Develop<P>,
+        environment: &dyn Environment<P>,
+        developer: &dyn Develop<G, P>,
     ) -> f64 {
         let mut phenotype = developer.develop(&self.genome);
         environment.fitness(&mut phenotype)
     }
 
     /// Mutate organism
-    pub fn mutate(&mut self, log: &mut InnovationLog, global_innovation: &mut InnovationTime) {
-        self.genome.mutate(log, global_innovation);
+    pub fn mutate(&mut self, population_state: &mut G::PopulationState) {
+        self.genome.mutate(population_state);
     }
 
     /// Genetic distance to other organism

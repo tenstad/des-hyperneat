@@ -1,23 +1,9 @@
 use envconfig::Envconfig;
-use network::activation;
+use lazy_static::lazy_static;
+use network::activation::Activations;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "POPULATION_SIZE", default = "100")]
-    pub population_size: usize,
-
-    #[envconfig(from = "ITERATIONS", default = "1000000")]
-    pub iterations: u64,
-
-    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.85")]
-    pub speciation_threshold: f64,
-
-    #[envconfig(from = "INTERSPECIES_REPRODUCTION_CHANCE", default = "0.15")]
-    pub interspecies_reproduction_chance: f64,
-
-    #[envconfig(from = "INTERSPECIES_TOURNAMENT_size", default = "2")]
-    pub interspecies_tournament_size: usize,
-
     #[envconfig(from = "ADD_NODE_PROBABILITY", default = "0.05")]
     pub add_node_probability: f64,
 
@@ -54,33 +40,19 @@ pub struct Conf {
     #[envconfig(from = "MUTATE_OUTPUT_ACTIVATION_PROBABILITY", default = "0.05")]
     pub mutate_output_activation_probability: f64,
 
-    #[envconfig(from = "DROPOFF_AGE", default = "30")]
-    pub dropoff_age: u64,
-
-    #[envconfig(from = "YOUNG_SPECIES_FITNESS_MULTIPLIER", default = "1.05")]
-    pub young_species_fitness_multiplier: f64,
-
-    #[envconfig(from = "YOUNG_AGE_LIMIT", default = "20")]
-    pub young_age_limit: u64,
-
-    #[envconfig(from = "STAGNENT_SPECIES_FITNESS_MULTIPLIER", default = "0.2")]
-    pub stagnent_species_fitness_multiplier: f64,
-
-    #[envconfig(from = "SURVIVAL_RATO", default = "0.4")]
-    pub survival_ratio: f64,
-
-    #[envconfig(from = "ELITISM", default = "1")]
-    pub elitism: usize,
-
     #[envconfig(
         from = "HIDDEN_ACTIVATIONS",
         default = "None ReLU Sigmoid Normal Sine Square Exp"
     )]
-    pub hidden_activations: activation::Activations,
+    pub hidden_activations: Activations,
 
     #[envconfig(
         from = "OUTPUT_ACTIVATIONS",
         default = "None ReLU Sigmoid Normal Sine Square Exp"
     )]
-    pub output_activations: activation::Activations,
+    pub output_activations: Activations,
+}
+
+lazy_static! {
+    pub static ref CONF: Conf = Conf::init().unwrap();
 }

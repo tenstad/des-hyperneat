@@ -1,11 +1,7 @@
-use crate::generic_neat::evaluate;
-use crate::generic_neat::genome;
-use crate::generic_neat::link;
-use crate::generic_neat::node::NodeRef;
-use network::activation;
-use network::connection;
-use network::execute;
-use network::execute::Executor as P;
+use crate::neat::genome::{Genome as NeatGenome, InitConfig};
+use crate::neat::{link, node::NodeRef};
+use evolution::{evaluate, genome::Develop, genome::Genome};
+use network::{activation, connection, execute, execute::Executor};
 use std::collections::HashMap;
 
 pub struct Developer;
@@ -16,8 +12,8 @@ impl Default for Developer {
     }
 }
 
-impl evaluate::Develop<P> for Developer {
-    fn develop(&self, genome: &genome::Genome) -> P {
+impl Develop<NeatGenome, Executor> for Developer {
+    fn develop(&self, genome: &NeatGenome) -> Executor {
         // Sort genomes netowrk topologically
         let order = genome.connections.sort_topologically();
 
@@ -28,7 +24,7 @@ impl evaluate::Develop<P> for Developer {
         // Prepend input nodes to extraction of hidden nodes from topological sorting
         let mut nodes = inputs
             .iter()
-            .map(|id| NodeRef::Input(*id as u64))
+            .map(|id| NodeRef::Input(*id))
             .chain(order.iter().filter_map(|action| match action {
                 connection::OrderedAction::Activation(NodeRef::Hidden(id)) => {
                     Some(NodeRef::Hidden(*id))
@@ -44,7 +40,7 @@ impl evaluate::Develop<P> for Developer {
         // Append all output nodes. Disconnected nodes (not present in topological sorting)
         // are added to make the output vector of the correct size. If num_output_nodes grows
         // with evolution, this could use the highest known num_output_nodes of all genomes.
-        nodes.extend((0..(num_output_nodes as u64)).map(|i| NodeRef::Output(i)));
+        nodes.extend((0..(num_output_nodes)).map(|i| NodeRef::Output(i)));
 
         // Create mapping from NodeRef to array index in Network's node vector
         let node_mapping: HashMap<NodeRef, usize> = nodes
@@ -79,7 +75,7 @@ impl evaluate::Develop<P> for Developer {
             .collect();
 
         // Create neural network executor
-        execute::Executor::create(nodes.len(), inputs, outputs, actions)
+        Executor::create(nodes.len(), inputs, outputs, actions)
     }
 }
 
@@ -89,7 +85,7 @@ mod tests {
 
     #[test]
     fn test_develop() {
-        let mut genome = genome::Genome::new(4, 2);
+        let mut genome = NeatGenome::new(&InitConfig::new(4, 2));
         let link = link::Link::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
 
         genome.insert_link(link);
@@ -111,7 +107,7 @@ mod tests {
             .unwrap()
             .activation = activation::Activation::Sine;
 
-        let developer: &dyn evaluate::Develop<execute::Executor> = &Developer::default();
+        let developer: &dyn Develop<NeatGenome, Executor> = &Developer::default();
         let mut phenotype = developer.develop(&genome);
 
         let result = phenotype.execute(&vec![5.0, 7.0, -1.0, -1.0]);

@@ -1,4 +1,4 @@
-use crate::conf;
+use crate::eshyperneat::conf::CONF as ESHYPERNEAT;
 use network::connection;
 use std::collections::HashMap;
 
@@ -17,8 +17,8 @@ pub enum Action {
 }
 
 pub fn horizontal_row(n: usize, y: i64) -> Vec<(i64, i64)> {
-    let horizontal_distance = (2.0 * conf::ESHYPERNEAT.resolution / (n as f64 - 1.0)) as f64;
-    let offset = conf::ESHYPERNEAT.resolution as i64;
+    let horizontal_distance = (2.0 * ESHYPERNEAT.resolution / (n as f64 - 1.0)) as f64;
+    let offset = ESHYPERNEAT.resolution as i64;
     (0..n)
         .map(|i| ((horizontal_distance * i as f64) as i64 - offset, y))
         .collect()
@@ -26,8 +26,8 @@ pub fn horizontal_row(n: usize, y: i64) -> Vec<(i64, i64)> {
 
 pub fn horizontal_rows(layer_sizes: &Vec<usize>) -> Vec<Vec<Point>> {
     let vertical_distance =
-        (2.0 * conf::ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as f64;
-    let offset = conf::ESHYPERNEAT.resolution as i64;
+        (2.0 * ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as f64;
+    let offset = ESHYPERNEAT.resolution as i64;
     layer_sizes
         .iter()
         .enumerate()
@@ -83,16 +83,16 @@ impl Network {
             .map(|action| match action {
                 connection::OrderedAction::Activation(node) => Action::Activation(
                     *node_mapping.get(node).unwrap(),
-                    node.0 as f64 / conf::ESHYPERNEAT.resolution,
-                    node.1 as f64 / conf::ESHYPERNEAT.resolution,
+                    node.0 as f64 / ESHYPERNEAT.resolution,
+                    node.1 as f64 / ESHYPERNEAT.resolution,
                 ),
                 connection::OrderedAction::Link(from, to, _) => Action::Link(
                     *node_mapping.get(from).unwrap(),
                     *node_mapping.get(to).unwrap(),
-                    from.0 as f64 / conf::ESHYPERNEAT.resolution,
-                    from.1 as f64 / conf::ESHYPERNEAT.resolution,
-                    to.0 as f64 / conf::ESHYPERNEAT.resolution,
-                    to.1 as f64 / conf::ESHYPERNEAT.resolution,
+                    from.0 as f64 / ESHYPERNEAT.resolution,
+                    from.1 as f64 / ESHYPERNEAT.resolution,
+                    to.0 as f64 / ESHYPERNEAT.resolution,
+                    to.1 as f64 / ESHYPERNEAT.resolution,
                 ),
             })
             .collect();

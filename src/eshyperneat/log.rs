@@ -1,25 +1,34 @@
-use crate::conf;
-use crate::eshyperneat::img;
-use crate::eshyperneat::phenotype;
-use crate::generic_neat::evaluate;
-use crate::generic_neat::log;
-use crate::generic_neat::population::Population;
-use crate::neat;
+use crate::eshyperneat::conf::CONF as ESHYPERNEAT;
+use crate::eshyperneat::{img, phenotype::Developer};
+use crate::hyperneat::log::Logger as HyperneatLogger;
+use crate::neat::{genome::Genome, phenotype::Developer as NeatDeveloper};
+use evolution::{genome::Develop, log, population::Population};
 use network::execute;
 
-#[derive(Default)]
 pub struct Logger {
-    neat_developer: neat::phenotype::Developer,
-    developer: phenotype::Developer,
-    default_logger: log::Logger,
+    hyperneat_logger: HyperneatLogger,
+    neat_developer: NeatDeveloper,
+    developer: Developer,
+    log_interval: usize,
 }
 
-impl log::Log for Logger {
-    fn log(&mut self, iteration: u64, population: &Population) {
-        self.default_logger.log(iteration, population);
+impl Default for Logger {
+    fn default() -> Self {
+        Self {
+            hyperneat_logger: HyperneatLogger::default(),
+            neat_developer: NeatDeveloper::default(),
+            developer: Developer::default(),
+            log_interval: 10,
+        }
+    }
+}
 
-        if iteration % 20 == 0 {
-            let neat_developer: &dyn evaluate::Develop<execute::Executor> = &self.neat_developer;
+impl log::Log<Genome> for Logger {
+    fn log(&mut self, iteration: usize, population: &Population<Genome>) {
+        self.hyperneat_logger.log(iteration, population);
+
+        if iteration % self.log_interval == 0 {
+            let neat_developer: &dyn Develop<Genome, execute::Executor> = &self.neat_developer;
             let mut phenotype = neat_developer.develop(&population.best().unwrap().genome);
 
             img::plot_weights(&mut phenotype, 0.0, 0.0, 1.0, 256)
@@ -28,7 +37,7 @@ impl log::Log for Logger {
 
             self.developer.connections(&mut phenotype).save_fig_to_file(
                 "g.tex",
-                0.5 / conf::ESHYPERNEAT.resolution,
+                0.5 / ESHYPERNEAT.resolution,
                 4.0,
             );
         }

@@ -1,10 +1,12 @@
 use envconfig::Envconfig;
+use lazy_static::lazy_static;
 
 #[derive(Envconfig)]
 pub struct Conf {
     #[envconfig(from = "DATASET", default = "datasets/wine")]
     pub dataset: String,
+}
 
-    #[envconfig(from = "THREADS", default = "8")]
-    pub thread_count: usize,
+lazy_static! {
+    pub static ref CONF: Conf = Conf::init().unwrap();
 }

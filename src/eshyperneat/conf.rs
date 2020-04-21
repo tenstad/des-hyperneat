@@ -1,4 +1,5 @@
 use envconfig::Envconfig;
+use lazy_static::lazy_static;
 
 #[derive(Envconfig)]
 pub struct Conf {
@@ -28,4 +29,8 @@ pub struct Conf {
 
     #[envconfig(from = "MAX_OUTGOING", default = "12")]
     pub max_outgoing: usize,
+}
+
+lazy_static! {
+    pub static ref CONF: Conf = Conf::init().unwrap();
 }

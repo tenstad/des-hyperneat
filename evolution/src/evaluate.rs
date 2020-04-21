@@ -1,46 +1,25 @@
-use crate::data::dataset;
-use crate::generic_neat::genome;
+use crate::environment::Environment;
+use crate::genome::{Develop, Genome};
 use crossbeam::queue;
-use std::default::Default;
 use std::sync::Arc;
 use std::thread;
 use std::time;
 
-type Input = (usize, usize, genome::Genome);
+type Input<G> = (usize, usize, G);
 type Output = (usize, usize, f64);
 
-pub trait Environment<P> {
-    fn fitness(&self, phenotype: &mut P) -> f64;
-    fn get_dimensions(&self) -> &dataset::Dimensions;
+pub trait Evaluate<G> {
+    fn evaluate(&self, organisms: impl Iterator<Item = Input<G>>) -> Vec<Output>;
 }
 
-pub trait Develop<P> {
-    fn develop(&self, genome: &genome::Genome) -> P;
-}
-
-pub trait Evaluate {
-    fn evaluate(&self, organisms: impl Iterator<Item = Input>) -> Vec<Output>;
-}
-
-pub struct Evaluator<'a, P> {
+#[derive(new)]
+pub struct Evaluator<'a, G, P> {
     environment: &'a dyn Environment<P>,
-    developer: &'a dyn Develop<P>,
+    developer: &'a dyn Develop<G, P>,
 }
 
-impl<'a, P> Evaluator<'a, P> {
-    pub fn new(
-        environment: &'a dyn Environment<P>,
-        developer: &'a dyn Develop<P>,
-    ) -> Evaluator<'a, P> {
-        Evaluator {
-            environment: environment,
-            developer: developer,
-        }
-    }
-}
-
-impl<'a, P> Evaluate for Evaluator<'a, P> {
-    fn evaluate(&self, organisms: impl Iterator<Item = Input>) -> Vec<Output> {
+impl<'a, G: Genome, P> Evaluate<G> for Evaluator<'a, G, P> {
+    fn evaluate(&self, organisms: impl Iterator<Item = Input<G>>) -> Vec<Output> {
         organisms
             .map(|(species_index, organism_index, genome)| {
                 (
@@ -54,16 +33,16 @@ impl<'a, P> Evaluate for Evaluator<'a, P> {
     }
 }
 
-pub struct MultiEvaluator {
-    input: Arc<queue::ArrayQueue<Input>>,
+pub struct MultiEvaluator<G: Genome> {
+    input: Arc<queue::ArrayQueue<Input<G>>>,
     output: Arc<queue::ArrayQueue<Output>>,
 }
 
-impl MultiEvaluator {
-    pub fn new<P, E: Environment<P> + Default, D: Develop<P> + Default>(
+impl<G: Genome + 'static> MultiEvaluator<G> {
+    pub fn new<P, D: Develop<G, P> + Default, E: Environment<P> + Default>(
         task_count: usize,
         thread_count: usize,
-    ) -> MultiEvaluator {
+    ) -> Self {
         let input = Arc::new(queue::ArrayQueue::new(task_count));
         let output = Arc::new(queue::ArrayQueue::new(task_count));
 
@@ -98,8 +77,8 @@ impl MultiEvaluator {
     }
 }
 
-impl Evaluate for MultiEvaluator {
-    fn evaluate(&self, organisms: impl Iterator<Item = Input>) -> Vec<Output> {
+impl<G: Genome> Evaluate<G> for MultiEvaluator<G> {
+    fn evaluate(&self, organisms: impl Iterator<Item = Input<G>>) -> Vec<Output> {
         let mut count = 0;
         for mut organism in organisms {
             while let Err(queue::PushError(ret)) = self.input.push(organism) {

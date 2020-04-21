@@ -1,11 +1,10 @@
-use crate::conf;
-use crate::generic_neat::evaluate;
-use crate::generic_neat::genome;
+use crate::hyperneat::conf::CONF as HYPERNEAT;
 use crate::hyperneat::substrate;
+use crate::neat::genome::Genome;
 use crate::neat::phenotype::Developer as NeatDeveloper;
+use evolution::genome::Develop;
 use network::activation;
-use network::execute;
-use network::execute::Executor as P;
+use network::execute::{self, Executor};
 
 pub struct Developer {
     neat_developer: NeatDeveloper,
@@ -28,8 +27,9 @@ impl Default for Developer {
         Developer::create(network)
     }
 }
-impl evaluate::Develop<P> for Developer {
-    fn develop(&self, genome: &genome::Genome) -> P {
+
+impl Develop<Genome, Executor> for Developer {
+    fn develop(&self, genome: &Genome) -> Executor {
         let mut neat_executor = self.neat_developer.develop(genome);
 
         execute::Executor::create(
@@ -46,14 +46,14 @@ impl evaluate::Develop<P> for Developer {
                         if self.network.inputs.contains(node) {
                             activation::Activation::None
                         } else if self.network.outputs.contains(node) {
-                            conf::HYPERNEAT.output_activation
+                            HYPERNEAT.output_activation
                         } else {
-                            conf::HYPERNEAT.hidden_activation
+                            HYPERNEAT.hidden_activation
                         },
                     )),
                     substrate::Action::Link(from, to, x0, y0, x1, y1) => {
                         let weight = neat_executor.execute(&vec![*x0, *y0, *x1, *y1])[0];
-                        if weight.abs() > conf::HYPERNEAT.weight_threshold {
+                        if weight.abs() > HYPERNEAT.weight_threshold {
                             Some(execute::Action::Link(*from, *to, weight))
                         } else {
                             None

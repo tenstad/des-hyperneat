@@ -83,7 +83,11 @@ impl Dataset {
     }
 
     pub fn mse(&self, outputs: impl Iterator<Item = Vec<f64>>) -> f64 {
-        error::mse(&self.targets, outputs, self.is_classification && self.is_classification)
+        error::mse(
+            &self.targets,
+            outputs,
+            self.is_classification && self.is_classification,
+        )
     }
 
     pub fn acc(&self, outputs: impl Iterator<Item = Vec<f64>>) -> f64 {

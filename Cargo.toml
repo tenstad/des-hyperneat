@@ -11,15 +11,17 @@ rand = "0.6.0"
 lazy_static = "1.4.0"
 envconfig = "0.6.0"
 envconfig_derive = "0.6.0"
-crossbeam = "0.7.3"
 image = "0.23"
+derive-new = "0.5.8"
 network = {path = "network"}
+evolution = {path = "evolution"}
 
 [workspace]
 members = [
   "figure",
   "figures",
-  "network"
+  "network",
+  "evolution",
 ]
 
 [profile.release]

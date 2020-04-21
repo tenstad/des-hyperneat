@@ -1,4 +1,4 @@
-use crate::generic_neat::genome;
+use crate::neat::genome;
 use std::fs::File;
 use std::io::prelude::*;
 
