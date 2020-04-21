@@ -1,4 +1,4 @@
-use crate::eshyperneat::conf::CONF as ESHYPERNEAT;
+use crate::eshyperneat::conf::ESHYPERNEAT;
 use crate::eshyperneat::search;
 use crate::hyperneat::substrate;
 use crate::neat::genome::Genome;

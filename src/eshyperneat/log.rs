@@ -1,4 +1,4 @@
-use crate::eshyperneat::conf::CONF as ESHYPERNEAT;
+use crate::eshyperneat::conf::ESHYPERNEAT;
 use crate::eshyperneat::{img, phenotype::Developer};
 use crate::hyperneat::log::Logger as HyperneatLogger;
 use crate::neat::{genome::Genome, phenotype::Developer as NeatDeveloper};

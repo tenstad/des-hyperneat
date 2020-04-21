@@ -14,7 +14,7 @@ extern crate envconfig;
 #[macro_use]
 extern crate derive_new;
 
-use conf::CONF;
+use conf::EVOLUTION;
 
 pub fn evolve<
     G: genome::Genome + 'static,
@@ -25,16 +25,18 @@ pub fn evolve<
 >() {
     let environment = &E::default();
     let developer = &D::default();
-    let evaluator =
-        &evaluate::MultiEvaluator::<G>::new::<P, D, E>(CONF.population_size, CONF.thread_count);
+    let evaluator = &evaluate::MultiEvaluator::<G>::new::<P, D, E>(
+        EVOLUTION.population_size,
+        EVOLUTION.thread_count,
+    );
     let mut logger = L::default();
 
     let mut population = population::Population::<G>::new(
-        CONF.population_size,
+        EVOLUTION.population_size,
         &G::InitConfig::from(environment.description()),
     );
 
-    for i in 0..CONF.iterations {
+    for i in 0..EVOLUTION.iterations {
         population.evolve();
         population.evaluate(evaluator);
 

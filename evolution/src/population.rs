@@ -1,4 +1,4 @@
-use crate::conf::CONF;
+use crate::conf::EVOLUTION;
 use crate::evaluate;
 use crate::genome::Genome;
 use crate::organism::Organism;
@@ -68,7 +68,7 @@ impl<G: Genome> Population<G> {
             .iter()
             .map(|organism| organism.adjusted_fitness)
             .sum::<f64>()
-            / (CONF.population_size - 1) as f64;
+            / (EVOLUTION.population_size - 1) as f64;
 
         // Calculate number of new offsprings to produce within each new species
         for species in self.species.iter_mut() {
@@ -137,7 +137,7 @@ impl<G: Genome> Population<G> {
         let mut rng = rand::thread_rng();
         for i in 0..self.species.len() {
             let elites = std::cmp::min(
-                CONF.elitism,
+                EVOLUTION.elitism,
                 std::cmp::min(
                     self.species[i].len(),
                     self.species[i].offsprings.floor() as usize,
@@ -153,9 +153,9 @@ impl<G: Genome> Population<G> {
             // Breed new organisms
             for _ in 0..reproductions {
                 let error = "unable to gather organism";
-                let father = if rng.gen::<f64>() < CONF.interspecies_reproduction_chance {
+                let father = if rng.gen::<f64>() < EVOLUTION.interspecies_reproduction_chance {
                     // Interspecies breeding
-                    self.tournament_select(CONF.interspecies_tournament_size)
+                    self.tournament_select(EVOLUTION.interspecies_tournament_size)
                         .expect(error)
                 } else {
                     // Breeding within species
@@ -182,7 +182,7 @@ impl<G: Genome> Population<G> {
         }
 
         // Verify correct number of individuals in new population
-        assert_eq!(self.iter().count(), CONF.population_size);
+        assert_eq!(self.iter().count(), EVOLUTION.population_size);
     }
 
     /// Get random organism from population

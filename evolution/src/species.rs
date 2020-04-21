@@ -1,4 +1,4 @@
-use crate::conf::CONF;
+use crate::conf::EVOLUTION;
 use crate::genome::Genome;
 use crate::organism::Organism;
 use rand::Rng;
@@ -34,7 +34,7 @@ impl<G: Genome> Species<G> {
     /// Determine wether a new organism is compatible
     pub fn is_compatible(&mut self, other: &Organism<G>) -> bool {
         if let Some(organism) = self.organisms.first() {
-            organism.distance(other) < CONF.speciation_threshold
+            organism.distance(other) < EVOLUTION.speciation_threshold
         } else {
             true // All organisms are compatible if the species is empty
         }
@@ -76,8 +76,8 @@ impl<G: Genome> Species<G> {
     pub fn adjust_fitness(&mut self) {
         assert!(!self.locked);
 
-        let is_stagnent = self.age - self.last_improvement > CONF.dropoff_age;
-        let is_young = self.age < CONF.young_age_limit;
+        let is_stagnent = self.age - self.last_improvement > EVOLUTION.dropoff_age;
+        let is_young = self.age < EVOLUTION.young_age_limit;
         let size: f64 = self.organisms.len() as f64;
 
         for organism in self.organisms.iter_mut() {
@@ -85,12 +85,12 @@ impl<G: Genome> Species<G> {
 
             // Greatly penalize stagnent species
             if is_stagnent {
-                organism.adjusted_fitness *= CONF.stagnent_species_fitness_multiplier;
+                organism.adjusted_fitness *= EVOLUTION.stagnent_species_fitness_multiplier;
             }
 
             // Boost young species
             if is_young {
-                organism.adjusted_fitness *= CONF.young_species_fitness_multiplier;
+                organism.adjusted_fitness *= EVOLUTION.young_species_fitness_multiplier;
             }
 
             // Share fitness within species
@@ -124,7 +124,7 @@ impl<G: Genome> Species<G> {
 
         // Assumes the individuals are sorted in descending fitness order
         self.organisms.truncate(std::cmp::max(
-            (self.organisms.len() as f64 * CONF.survival_ratio).floor() as usize,
+            (self.organisms.len() as f64 * EVOLUTION.survival_ratio).floor() as usize,
             2, // Keep a minimum of two individuals for sexual reproduction
         ));
     }

@@ -1,4 +1,4 @@
-use crate::eshyperneat::conf::CONF as ESHYPERNEAT;
+use crate::eshyperneat::conf::ESHYPERNEAT;
 use network::connection;
 use network::connection::{Connection, Target};
 use network::execute;

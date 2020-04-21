@@ -1,4 +1,4 @@
-use crate::hyperneat::conf::CONF as HYPERNEAT;
+use crate::hyperneat::conf::HYPERNEAT;
 use crate::hyperneat::substrate;
 use crate::neat::genome::Genome;
 use crate::neat::phenotype::Developer as NeatDeveloper;

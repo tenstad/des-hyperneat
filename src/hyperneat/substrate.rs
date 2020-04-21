@@ -1,4 +1,4 @@
-use crate::eshyperneat::conf::CONF as ESHYPERNEAT;
+use crate::eshyperneat::conf::ESHYPERNEAT;
 use network::connection;
 use std::collections::HashMap;
 

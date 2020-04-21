@@ -1,4 +1,4 @@
-use crate::neat::conf::CONF as NEAT;
+use crate::neat::conf::NEAT;
 use network::activation::Activation;
 use rand::Rng;
 use std::fmt;

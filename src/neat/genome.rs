@@ -1,4 +1,4 @@
-use crate::neat::conf::CONF as NEAT;
+use crate::neat::conf::NEAT;
 use crate::neat::link::Link;
 use crate::neat::node::Node;
 use crate::neat::node::NodeRef;
