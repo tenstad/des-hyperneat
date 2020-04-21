@@ -6,6 +6,3 @@ edition = "2018"
 
 [dependencies]
 figure = {path = "../figure"}
-
-[profile.release]
-debug = true

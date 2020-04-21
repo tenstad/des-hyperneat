@@ -9,6 +9,3 @@ rand = "0.6.0"
 lazy_static = "1.4.0"
 envconfig = "0.6.0"
 envconfig_derive = "0.6.0"
-
-[profile.release]
-debug = true
