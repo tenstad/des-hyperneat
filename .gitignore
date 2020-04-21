@@ -1,4 +1,10 @@
 .vscode/
+.VSCodeCounter/
+.editorconfig*
+
+tmp.*
+g.*
+*.png
 flamegraph*svg
 
 /target
