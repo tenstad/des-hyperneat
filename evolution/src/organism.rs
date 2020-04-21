@@ -56,4 +56,10 @@ impl<G: Genome> Organism<G> {
     pub fn distance(&self, other: &Self) -> f64 {
         self.genome.distance(&other.genome)
     }
+
+    pub fn as_elite(&self) -> Self {
+        let mut elite = self.clone();
+        elite.generation += 1;
+        elite
+    }
 }

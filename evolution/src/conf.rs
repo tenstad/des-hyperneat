@@ -6,7 +6,7 @@ pub struct Conf {
     #[envconfig(from = "THREADS", default = "8")]
     pub thread_count: usize,
 
-    #[envconfig(from = "POPULATION_SIZE", default = "100")]
+    #[envconfig(from = "POPULATION_SIZE", default = "200")]
     pub population_size: usize,
 
     #[envconfig(from = "ITERATIONS", default = "1000000")]
@@ -36,8 +36,14 @@ pub struct Conf {
     #[envconfig(from = "SURVIVAL_RATO", default = "0.4")]
     pub survival_ratio: f64,
 
-    #[envconfig(from = "ELITISM", default = "1")]
-    pub elitism: usize,
+    #[envconfig(from = "GLOBAL_ELITES", default = "0")]
+    pub global_elites: usize,
+
+    #[envconfig(from = "GUARANTEED_ELITES", default = "0")]
+    pub guaranteed_elites: usize,
+
+    #[envconfig(from = "ELITES_FROM_OFFSPRING", default = "1")]
+    pub elites_from_offspring: usize,
 }
 
 lazy_static! {

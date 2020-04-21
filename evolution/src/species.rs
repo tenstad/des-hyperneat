@@ -12,9 +12,10 @@ pub struct Species<G> {
     lifetime_best_fitness: f64,
     last_improvement: u64,
     pub offsprings: f64,
+    pub elites: usize,
     pub organisms: Vec<Organism<G>>,
     locked: bool, // When locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
-    locked_organisms: usize, // The number of locked organisms, this is the length and number of iterated organisms when species is locked
+    locked_organisms: usize, // The number of organisms when species was locked
 }
 
 impl<G: Genome> Species<G> {
@@ -25,6 +26,7 @@ impl<G: Genome> Species<G> {
             lifetime_best_fitness: 0.0,
             last_improvement: 0,
             offsprings: 0.0,
+            elites: 0,
             locked: false,
             locked_organisms: 0,
             organisms: Vec::new(),
@@ -122,11 +124,10 @@ impl<G: Genome> Species<G> {
     pub fn retain_best(&mut self) {
         assert!(!self.locked);
 
+        let new_size = (self.organisms.len() as f64 * EVOLUTION.survival_ratio).round() as usize;
         // Assumes the individuals are sorted in descending fitness order
-        self.organisms.truncate(std::cmp::max(
-            (self.organisms.len() as f64 * EVOLUTION.survival_ratio).floor() as usize,
-            2, // Keep a minimum of two individuals for sexual reproduction
-        ));
+        // Keep a minimum of two individuals for sexual reproduction
+        self.organisms.truncate(new_size.max(self.elites).max(2));
     }
 
     /// Lock the species, so that next generation organisms are not used for reproduction
@@ -159,5 +160,6 @@ impl<G: Genome> Species<G> {
             .iter()
             .map(|organism| organism.adjusted_fitness / avg_fitness)
             .sum();
+        self.elites = EVOLUTION.guaranteed_elites;
     }
 }
