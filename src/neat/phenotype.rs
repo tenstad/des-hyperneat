@@ -1,7 +1,7 @@
-use crate::neat::genome::{Genome as NeatGenome, InitConfig};
-use crate::neat::{link, node::NodeRef};
-use evolution::{evaluate, genome::Develop, genome::Genome};
-use network::{activation, connection, execute, execute::Executor};
+use crate::neat::genome::Genome as NeatGenome;
+use crate::neat::node::NodeRef;
+use evolution::genome::Develop;
+use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
 pub struct Developer;
@@ -82,6 +82,10 @@ impl Develop<NeatGenome, Executor> for Developer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::neat::genome::{Genome as NeatGenome, InitConfig};
+    use crate::neat::{link, node::NodeRef};
+    use evolution::{genome::Develop, genome::Genome};
+    use network::{activation, execute::Executor};
 
     #[test]
     fn test_develop() {
