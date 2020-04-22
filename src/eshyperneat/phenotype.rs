@@ -65,10 +65,7 @@ impl Developer {
 }
 
 impl Develop<NeatGenome, execute::Executor> for Developer {
-    fn init_config(
-        &self,
-        description: EnvironmentDescription,
-    ) -> <NeatGenome as Genome>::InitConfig {
+    fn init_config(&self, _: EnvironmentDescription) -> <NeatGenome as Genome>::InitConfig {
         <NeatGenome as Genome>::InitConfig::new(4, 2)
     }
 
