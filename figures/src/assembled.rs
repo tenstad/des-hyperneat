@@ -3,6 +3,11 @@ use figure;
 pub fn create() -> figure::Figure {
     let mut fig = figure::Figure::new(0.9);
 
+    let mut node = fig.node_builder(&|n| n.visible(false));
+    node(&|n| n.y(7.0));
+    node(&|n| n.y(-0.2));
+    drop(node);
+
     let mut substrate = fig.substrate_builder(&|s| s.size(2.0).cells(2).axis_arrow_offset(0.15));
     let s = substrate(&|s| s);
     let w = substrate(&|s| s.x(-2.5).y(5.0));
@@ -10,21 +15,26 @@ pub fn create() -> figure::Figure {
     let n = substrate(&|s| s.y(10.0));
     drop(substrate);
 
-    let mut node = fig.label_builder(&|l| l);
-    node(&|l| l.x(2.75).y(6.3).text("I/O"));
-    node(&|l| l.x(2.75).y(6.75).text("Evolved"));
+    let mut label = fig.label_builder(&|l| l.x(2.85));
+    label(&|l| l.y(6.75).text("Output"));
+    label(&|l| l.y(6.3).text("Input"));
+    label(&|l| l.y(5.85).text("Evolved"));
+    drop(label);
+
+    let mut node = fig.node_builder(&|n| n.x(2.7));
+    node(&|n| n.y(6.75).fill("gray"));
+    node(&|n| n.y(6.3).fill("gray!40"));
+    node(&|n| n.y(5.85));
     drop(node);
 
     let mut node = fig.node_builder(&|n| n.fill("gray!40").y(1.0));
-    node(&|n| n.x(2.6).y(6.3)); // legend
     let i0 = node(&|n| n.x(1.0 / 3.0));
     let i1 = node(&|n| n.x(1.0));
     let i2 = node(&|n| n.x(5.0 / 3.0));
-    let o = node(&|n| n.x(1.0).y(6.0));
+    let o = node(&|n| n.x(1.0).y(6.0).fill("gray"));
     drop(node);
 
     let mut node = fig.node_builder(&|n| n);
-    node(&|n| n.x(2.6).y(6.75)); // legend
     let s10 = node(&|n| n.x(0.4).y(2.95));
     let s11 = node(&|n| n.x(0.0).y(3.55));
     let s12 = node(&|n| n.x(-0.9).y(4.0));

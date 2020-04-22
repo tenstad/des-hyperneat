@@ -1,4 +1,5 @@
 use crate::edge;
+use crate::gen_text;
 use crate::Component;
 
 #[derive(Builder, Clone)]
@@ -45,7 +46,7 @@ impl Component for Node {
                 x = self.x,
                 y = self.y,
                 size = self.size,
-                text = self.text,
+                text = gen_text(self.text, self.text_size),
                 outline = self.outline,
                 fill = self.fill,
                 opacity = self.opacity,

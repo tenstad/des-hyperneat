@@ -122,3 +122,11 @@ impl Figure {
         )
     }
 }
+
+pub fn gen_text(text: &'static str, size: &'static str) -> String {
+    text.replace("\\_#", "\\raisebox{0.4ex}{\\scalebox{0.65}{\\#}}")
+        .split("\\ ")
+        .map(|x| format!("\\{} {}", size, x))
+        .collect::<Vec<String>>()
+        .join("\\ ")
+}

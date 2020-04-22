@@ -14,7 +14,7 @@ pub fn create() -> figure::Figure {
     let i0 = node(&|n| n.x(1.0 / 3.0));
     let i1 = node(&|n| n.x(1.0));
     let i2 = node(&|n| n.x(5.0 / 3.0));
-    let o = node(&|n| n.x(1.0).y(6.0));
+    let o = node(&|n| n.x(1.0).y(6.0).fill("gray"));
     drop(node);
 
     let mut node = fig.node_builder(&|n| n.size(1.5).edge_offset(0.0).opacity(0.6));

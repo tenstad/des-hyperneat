@@ -1,3 +1,4 @@
+use crate::gen_text;
 use crate::node;
 use std::f64;
 
@@ -50,7 +51,7 @@ impl crate::Component for Edge {
             angle2 = self.angle + 180.0,
             width = self.width,
             style = self.style,
-            text = self.text,
+            text = gen_text(self.text, self.text_size),
             pos = self.pos,
             text_pos = self.text_pos,
             xshift = self.xshift,
