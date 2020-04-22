@@ -2,6 +2,7 @@
 extern crate derive_builder;
 
 pub mod edge;
+pub mod label;
 pub mod node;
 pub mod substrate;
 
@@ -84,6 +85,20 @@ impl Figure {
                 ))
                 .build()
                 .unwrap(),
+            )
+        }
+    }
+
+    pub fn label_builder<'a>(
+        &'a mut self,
+        default_configure: &'a dyn Fn(&mut label::LabelBuilder) -> &mut label::LabelBuilder,
+    ) -> impl FnMut(&'a dyn Fn(&mut label::LabelBuilder) -> &mut label::LabelBuilder) -> label::Label
+    {
+        move |configure| {
+            self.add(
+                configure(default_configure(&mut label::LabelBuilder::default()))
+                    .build()
+                    .unwrap(),
             )
         }
     }

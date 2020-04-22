@@ -1,7 +1,7 @@
 use figure;
 
 pub fn create() -> figure::Figure {
-    let mut fig = figure::Figure::new(1.0);
+    let mut fig = figure::Figure::new(0.9);
 
     let mut substrate = fig.substrate_builder(&|s| s.size(2.0).cells(2).axis_arrow_offset(0.15));
     let s = substrate(&|s| s);
@@ -10,7 +10,13 @@ pub fn create() -> figure::Figure {
     let n = substrate(&|s| s.y(10.0));
     drop(substrate);
 
+    let mut node = fig.label_builder(&|l| l);
+    node(&|l| l.x(2.75).y(6.3).text("I/O"));
+    node(&|l| l.x(2.75).y(6.75).text("Discovered"));
+    drop(node);
+
     let mut node = fig.node_builder(&|n| n.fill("gray!40").y(1.0));
+    node(&|n| n.x(2.6).y(6.3)); // legend
     let i0 = node(&|n| n.x(1.0 / 3.0));
     let i1 = node(&|n| n.x(1.0));
     let i2 = node(&|n| n.x(5.0 / 3.0));
@@ -18,6 +24,7 @@ pub fn create() -> figure::Figure {
     drop(node);
 
     let mut node = fig.node_builder(&|n| n);
+    node(&|n| n.x(2.6).y(6.75)); // legend
     let s10 = node(&|n| n.x(0.4).y(2.95));
     let s11 = node(&|n| n.x(0.0).y(3.55));
     let s12 = node(&|n| n.x(-0.9).y(4.0));
