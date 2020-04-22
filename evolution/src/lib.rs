@@ -19,23 +19,21 @@ use conf::EVOLUTION;
 pub fn evolve<
     G: genome::Genome + 'static,
     P, // phenotype
-    D: genome::Develop<G, P> + Default,
-    E: environment::Environment<P> + Default,
-    L: log::Log<G> + Default,
+    D: genome::Develop<G, P>,
+    E: environment::Environment<P>,
+    L: log::Log<G>,
 >() {
-    let environment = &E::default();
-    let developer = &D::default();
     let evaluator = &evaluate::MultiEvaluator::<G>::new::<P, D, E>(
         EVOLUTION.population_size,
         EVOLUTION.thread_count,
     );
-    let mut logger = L::default();
 
-    let mut population = population::Population::<G>::new(
-        EVOLUTION.population_size,
-        &developer.init_config(environment.description()),
-    );
+    let environment = &E::default();
+    let developer = &D::from(environment.description());
+    let mut population =
+        population::Population::<G>::new(EVOLUTION.population_size, &developer.init_config());
 
+    let mut logger = L::from(environment.description());
     for i in 0..EVOLUTION.iterations {
         population.evolve();
         population.evaluate(evaluator);

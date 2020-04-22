@@ -1,26 +1,34 @@
 use crate::eshyperneat::conf::ESHYPERNEAT;
 use crate::eshyperneat::search;
 use crate::hyperneat::substrate;
-use crate::neat::genome::Genome as NeatGenome;
+use crate::neat::genome::{Genome as NeatGenome, InitConfig};
 use crate::neat::phenotype::Developer as NeatDeveloper;
 use evolution::environment::EnvironmentDescription;
-use evolution::genome::{Develop, Genome};
+use evolution::genome::Develop;
 use network::{activation, connection, execute};
 use std::collections::{HashMap, HashSet};
 
 pub struct Developer {
     neat_developer: NeatDeveloper,
+    init_config: InitConfig,
     input_nodes: Vec<(i64, i64)>,
     output_nodes: Vec<(i64, i64)>,
     depth: usize,
 }
 
-impl Default for Developer {
-    fn default() -> Self {
+impl From<EnvironmentDescription> for Developer {
+    fn from(description: EnvironmentDescription) -> Self {
         Self {
-            neat_developer: NeatDeveloper::default(),
-            input_nodes: substrate::horizontal_row(13, -ESHYPERNEAT.resolution as i64),
-            output_nodes: substrate::horizontal_row(3, ESHYPERNEAT.resolution as i64),
+            init_config: InitConfig::new(4, 2),
+            input_nodes: substrate::horizontal_row(
+                description.inputs,
+                -ESHYPERNEAT.resolution as i64,
+            ),
+            output_nodes: substrate::horizontal_row(
+                description.outputs,
+                ESHYPERNEAT.resolution as i64,
+            ),
+            neat_developer: NeatDeveloper::from(description),
             depth: ESHYPERNEAT.iteration_level + 1,
         }
     }
@@ -65,8 +73,8 @@ impl Developer {
 }
 
 impl Develop<NeatGenome, execute::Executor> for Developer {
-    fn init_config(&self, _: EnvironmentDescription) -> <NeatGenome as Genome>::InitConfig {
-        <NeatGenome as Genome>::InitConfig::new(4, 2)
+    fn init_config(&self) -> &InitConfig {
+        &self.init_config
     }
 
     fn develop(&self, genome: &NeatGenome) -> execute::Executor {

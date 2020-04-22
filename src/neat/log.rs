@@ -1,5 +1,6 @@
 use crate::neat::dot::genome_to_dot;
 use crate::neat::genome::Genome;
+use evolution::environment::EnvironmentDescription;
 use evolution::log;
 use evolution::population::Population;
 
@@ -8,10 +9,10 @@ pub struct Logger {
     log_interval: usize,
 }
 
-impl Default for Logger {
-    fn default() -> Self {
+impl From<EnvironmentDescription> for Logger {
+    fn from(description: EnvironmentDescription) -> Self {
         Self {
-            default_logger: log::Logger::default(),
+            default_logger: log::Logger::from(description),
             log_interval: 10,
         }
     }

@@ -1,37 +1,31 @@
 use crate::hyperneat::conf::HYPERNEAT;
 use crate::hyperneat::substrate;
-use crate::neat::genome::Genome as NeatGenome;
+use crate::neat::genome::{Genome as NeatGenome, InitConfig};
 use crate::neat::phenotype::Developer as NeatDeveloper;
 use evolution::environment::EnvironmentDescription;
-use evolution::genome::{Develop, Genome};
+use evolution::genome::Develop;
 use network::activation;
 use network::execute::{self, Executor};
 
 pub struct Developer {
     neat_developer: NeatDeveloper,
+    init_config: InitConfig,
     network: substrate::Network,
 }
 
-impl Developer {
-    pub fn create(network: substrate::Network) -> Self {
+impl From<EnvironmentDescription> for Developer {
+    fn from(description: EnvironmentDescription) -> Self {
         Developer {
-            neat_developer: NeatDeveloper::default(),
-            network,
+            neat_developer: NeatDeveloper::from(description),
+            init_config: InitConfig::new(4, 2),
+            network: substrate::Network::layered(vec![description.inputs, 8, description.outputs]),
         }
     }
 }
 
-impl Default for Developer {
-    fn default() -> Self {
-        let network = substrate::Network::layered(vec![13, 8, 3]);
-
-        Developer::create(network)
-    }
-}
-
 impl Develop<NeatGenome, Executor> for Developer {
-    fn init_config(&self, _: EnvironmentDescription) -> <NeatGenome as Genome>::InitConfig {
-        <NeatGenome as Genome>::InitConfig::new(4, 2)
+    fn init_config(&self) -> &InitConfig {
+        &self.init_config
     }
 
     fn develop(&self, genome: &NeatGenome) -> Executor {

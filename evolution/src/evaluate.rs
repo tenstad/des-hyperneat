@@ -12,13 +12,22 @@ pub trait Evaluate<G> {
     fn evaluate(&self, organisms: impl Iterator<Item = Input<G>>) -> Vec<Output>;
 }
 
-#[derive(new)]
-pub struct Evaluator<'a, G, P> {
-    environment: &'a dyn Environment<P>,
-    developer: &'a dyn Develop<G, P>,
+/*pub struct Evaluator<G: Genome, P, D: Develop<G, P>, E: Environment<P>> {
+    environment: E,
+    developer: D,
 }
 
-impl<'a, G: Genome, P> Evaluate<G> for Evaluator<'a, G, P> {
+impl<G: Genome, P, D: Develop<G, P>, E: Environment<P>> Default for Evaluator<G, P, D, E> {
+    fn default() -> Self {
+        let environment = E::default();
+        Self {
+            environment,
+            developer: D::from(environment.description()),
+        }
+    }
+}
+
+impl<G: Genome, P, D: Develop<G, P>, E: Environment<P>> Evaluate<G> for Evaluator<G, P, D, E> {
     fn evaluate(&self, organisms: impl Iterator<Item = Input<G>>) -> Vec<Output> {
         organisms
             .map(|(species_index, organism_index, genome)| {
@@ -31,7 +40,7 @@ impl<'a, G: Genome, P> Evaluate<G> for Evaluator<'a, G, P> {
             })
             .collect()
     }
-}
+}*/
 
 pub struct MultiEvaluator<G: Genome> {
     input: Arc<queue::ArrayQueue<Input<G>>>,
@@ -39,7 +48,7 @@ pub struct MultiEvaluator<G: Genome> {
 }
 
 impl<G: Genome + 'static> MultiEvaluator<G> {
-    pub fn new<P, D: Develop<G, P> + Default, E: Environment<P> + Default>(
+    pub fn new<P, D: Develop<G, P>, E: Environment<P>>(
         task_count: usize,
         thread_count: usize,
     ) -> Self {
@@ -52,7 +61,7 @@ impl<G: Genome + 'static> MultiEvaluator<G> {
 
             thread::spawn(move || {
                 let environment = E::default();
-                let developer = D::default();
+                let developer = D::from(environment.description());
 
                 loop {
                     if let Ok((species_index, organism_index, genome)) = input.pop() {

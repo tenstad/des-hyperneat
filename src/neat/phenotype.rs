@@ -1,24 +1,25 @@
-use crate::neat::genome::Genome as NeatGenome;
+use crate::neat::genome::{Genome as NeatGenome, InitConfig};
 use crate::neat::node::NodeRef;
 use evolution::environment::EnvironmentDescription;
-use evolution::genome::{Develop, Genome};
+use evolution::genome::Develop;
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
-pub struct Developer;
+pub struct Developer {
+    init_config: InitConfig,
+}
 
-impl Default for Developer {
-    fn default() -> Developer {
-        Developer {}
+impl From<EnvironmentDescription> for Developer {
+    fn from(description: EnvironmentDescription) -> Self {
+        Developer {
+            init_config: InitConfig::new(description.inputs, description.outputs),
+        }
     }
 }
 
 impl Develop<NeatGenome, Executor> for Developer {
-    fn init_config(
-        &self,
-        description: EnvironmentDescription,
-    ) -> <NeatGenome as Genome>::InitConfig {
-        <NeatGenome as Genome>::InitConfig::new(description.inputs, description.outputs)
+    fn init_config(&self) -> &InitConfig {
+        &self.init_config
     }
 
     fn develop(&self, genome: &NeatGenome) -> Executor {
@@ -90,14 +91,17 @@ impl Develop<NeatGenome, Executor> for Developer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::neat::genome::{Genome as NeatGenome, InitConfig};
+    use crate::neat::genome::Genome as NeatGenome;
     use crate::neat::{link, node::NodeRef};
+    use evolution::environment::{DummyEnvironment, Environment};
     use evolution::{genome::Develop, genome::Genome};
-    use network::{activation, execute::Executor};
+    use network::activation;
 
     #[test]
     fn test_develop() {
-        let mut genome = NeatGenome::new(&InitConfig::new(4, 2));
+        let environment = DummyEnvironment::new(EnvironmentDescription::new(4, 2));
+        let developer = Developer::from(environment.description());
+        let mut genome = NeatGenome::new(developer.init_config());
         let link = link::Link::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
 
         genome.insert_link(link);
@@ -119,7 +123,6 @@ mod tests {
             .unwrap()
             .activation = activation::Activation::Sine;
 
-        let developer: &dyn Develop<NeatGenome, Executor> = &Developer::default();
         let mut phenotype = developer.develop(&genome);
 
         let result = phenotype.execute(&vec![5.0, 7.0, -1.0, -1.0]);

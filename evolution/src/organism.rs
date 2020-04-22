@@ -38,10 +38,10 @@ impl<G: Genome> Organism<G> {
     }
 
     /// Fitness of organism in environment
-    pub fn fitness<P>(
+    pub fn fitness<P, E: Environment<P>, D: Develop<G, P>>(
         &mut self,
-        environment: &dyn Environment<P>,
-        developer: &dyn Develop<G, P>,
+        environment: &E,
+        developer: &D,
     ) -> f64 {
         let mut phenotype = developer.develop(&self.genome);
         environment.fitness(&mut phenotype)

@@ -1,7 +1,8 @@
+use crate::environment::EnvironmentDescription;
 use crate::genome::Genome;
 use crate::population::Population;
 
-pub trait Log<G: Genome> {
+pub trait Log<G: Genome>: From<EnvironmentDescription> {
     fn log(&mut self, iteration: usize, population: &Population<G>);
 }
 
@@ -9,8 +10,8 @@ pub struct Logger {
     pub log_interval: usize,
 }
 
-impl Default for Logger {
-    fn default() -> Self {
+impl From<EnvironmentDescription> for Logger {
+    fn from(_: EnvironmentDescription) -> Self {
         Self { log_interval: 10 }
     }
 }

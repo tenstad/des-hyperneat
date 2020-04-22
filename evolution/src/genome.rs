@@ -12,7 +12,7 @@ pub trait Genome: Clone + Send {
     }
 }
 
-pub trait Develop<G: Genome, P> {
-    fn init_config(&self, decription: EnvironmentDescription) -> G::InitConfig;
+pub trait Develop<G: Genome, P>: From<EnvironmentDescription> {
+    fn init_config(&self) -> &G::InitConfig;
     fn develop(&self, genome: &G) -> P;
 }
