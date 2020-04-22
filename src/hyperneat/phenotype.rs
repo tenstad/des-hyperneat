@@ -1,8 +1,9 @@
 use crate::hyperneat::conf::HYPERNEAT;
 use crate::hyperneat::substrate;
-use crate::neat::genome::Genome;
+use crate::neat::genome::Genome as NeatGenome;
 use crate::neat::phenotype::Developer as NeatDeveloper;
-use evolution::genome::Develop;
+use evolution::environment::EnvironmentDescription;
+use evolution::genome::{Develop, Genome};
 use network::activation;
 use network::execute::{self, Executor};
 
@@ -28,8 +29,15 @@ impl Default for Developer {
     }
 }
 
-impl Develop<Genome, Executor> for Developer {
-    fn develop(&self, genome: &Genome) -> Executor {
+impl Develop<NeatGenome, Executor> for Developer {
+    fn init_config(
+        &self,
+        description: EnvironmentDescription,
+    ) -> <NeatGenome as Genome>::InitConfig {
+        <NeatGenome as Genome>::InitConfig::new(4, 2)
+    }
+
+    fn develop(&self, genome: &NeatGenome) -> Executor {
         let mut neat_executor = self.neat_developer.develop(genome);
 
         execute::Executor::create(

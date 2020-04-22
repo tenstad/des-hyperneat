@@ -11,10 +11,10 @@ mod neat;
 
 use eshyperneat::eshyperneat;
 use hyperneat::hyperneat;
-use neat::neat;
+use neat::{dataset_environment::DatasetEnvironment, neat};
 
 fn main() {
-    // neat::<neat::dataset_environment::DatasetEnvironment>();
-    // hyperneat::<hyperneat::dataset_environment::DatasetEnvironment>();
-    eshyperneat::<hyperneat::dataset_environment::DatasetEnvironment>();
+    // neat::<DatasetEnvironment>();
+    // hyperneat::<DatasetEnvironment>();
+    eshyperneat::<DatasetEnvironment>();
 }

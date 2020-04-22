@@ -1,6 +1,7 @@
 use crate::neat::genome::Genome as NeatGenome;
 use crate::neat::node::NodeRef;
-use evolution::genome::Develop;
+use evolution::environment::EnvironmentDescription;
+use evolution::genome::{Develop, Genome};
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
@@ -13,6 +14,13 @@ impl Default for Developer {
 }
 
 impl Develop<NeatGenome, Executor> for Developer {
+    fn init_config(
+        &self,
+        description: EnvironmentDescription,
+    ) -> <NeatGenome as Genome>::InitConfig {
+        <NeatGenome as Genome>::InitConfig::new(description.inputs, description.outputs)
+    }
+
     fn develop(&self, genome: &NeatGenome) -> Executor {
         // Sort genomes netowrk topologically
         let order = genome.connections.sort_topologically();

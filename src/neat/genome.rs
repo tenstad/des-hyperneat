@@ -3,7 +3,6 @@ use crate::neat::link::Link;
 use crate::neat::node::Node;
 use crate::neat::node::NodeRef;
 use crate::neat::state::{Innovation, PopulationState};
-use evolution::environment::EnvironmentDescription;
 use network::activation;
 use network::connection;
 use rand::seq::SliceRandom;
@@ -24,12 +23,6 @@ pub struct Genome {
 pub struct InitConfig {
     inputs: usize,
     outputs: usize,
-}
-
-impl From<EnvironmentDescription> for InitConfig {
-    fn from(description: EnvironmentDescription) -> Self {
-        Self::new(description.inputs, description.outputs)
-    }
 }
 
 impl Genome {

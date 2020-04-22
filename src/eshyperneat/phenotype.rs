@@ -1,9 +1,10 @@
 use crate::eshyperneat::conf::ESHYPERNEAT;
 use crate::eshyperneat::search;
 use crate::hyperneat::substrate;
-use crate::neat::genome::Genome;
+use crate::neat::genome::Genome as NeatGenome;
 use crate::neat::phenotype::Developer as NeatDeveloper;
-use evolution::genome::Develop;
+use evolution::environment::EnvironmentDescription;
+use evolution::genome::{Develop, Genome};
 use network::{activation, connection, execute};
 use std::collections::{HashMap, HashSet};
 
@@ -63,8 +64,15 @@ impl Developer {
     }
 }
 
-impl Develop<Genome, execute::Executor> for Developer {
-    fn develop(&self, genome: &Genome) -> execute::Executor {
+impl Develop<NeatGenome, execute::Executor> for Developer {
+    fn init_config(
+        &self,
+        description: EnvironmentDescription,
+    ) -> <NeatGenome as Genome>::InitConfig {
+        <NeatGenome as Genome>::InitConfig::new(4, 2)
+    }
+
+    fn develop(&self, genome: &NeatGenome) -> execute::Executor {
         let mut cppn = self.neat_developer.develop(genome);
 
         // Forward search with depth

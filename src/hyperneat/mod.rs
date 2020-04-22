@@ -1,5 +1,4 @@
 pub mod conf;
-pub mod dataset_environment;
 pub mod img;
 pub mod log;
 pub mod phenotype;

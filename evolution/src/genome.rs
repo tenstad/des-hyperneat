@@ -1,7 +1,7 @@
 use crate::environment::EnvironmentDescription;
 
 pub trait Genome: Clone + Send {
-    type InitConfig: From<EnvironmentDescription>;
+    type InitConfig;
     type PopulationState: Default;
 
     fn new(init_config: &Self::InitConfig) -> Self;
@@ -13,5 +13,6 @@ pub trait Genome: Clone + Send {
 }
 
 pub trait Develop<G: Genome, P> {
+    fn init_config(&self, decription: EnvironmentDescription) -> G::InitConfig;
     fn develop(&self, genome: &G) -> P;
 }

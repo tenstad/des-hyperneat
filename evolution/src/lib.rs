@@ -33,7 +33,7 @@ pub fn evolve<
 
     let mut population = population::Population::<G>::new(
         EVOLUTION.population_size,
-        &G::InitConfig::from(environment.description()),
+        &developer.init_config(environment.description()),
     );
 
     for i in 0..EVOLUTION.iterations {
