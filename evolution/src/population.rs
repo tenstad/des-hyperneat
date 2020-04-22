@@ -163,9 +163,9 @@ impl<G: Genome> Population<G> {
                         .expect(error)
                 } else {
                     // Breeding within species
-                    self.species[i].random_organism().expect(error)
+                    self.species[i].tournament_select(2).expect(error)
                 };
-                let mother = self.species[i].random_organism().expect(error);
+                let mother = self.species[i].tournament_select(2).expect(error);
 
                 let mut child = mother.crossover(father);
                 child.mutate(&mut self.state);

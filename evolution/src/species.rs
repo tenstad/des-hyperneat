@@ -2,6 +2,7 @@ use crate::conf::EVOLUTION;
 use crate::genome::Genome;
 use crate::organism::Organism;
 use rand::Rng;
+use std::f64;
 
 /// Collection of similar organisms
 // The lock is used to add new organisms without affecting the reproduction of the previous generation.
@@ -161,5 +162,22 @@ impl<G: Genome> Species<G> {
             .map(|organism| organism.adjusted_fitness / avg_fitness)
             .sum();
         self.elites = EVOLUTION.guaranteed_elites;
+    }
+
+    /// Use tournament selection to select an organism
+    pub fn tournament_select(&self, k: usize) -> Option<&Organism<G>> {
+        let mut best: Option<&Organism<G>> = None;
+        let mut best_fitness = f64::MIN;
+
+        for _ in 0..k {
+            if let Some(organism) = self.random_organism() {
+                if organism.fitness > best_fitness {
+                    best = Some(organism);
+                    best_fitness = organism.fitness;
+                }
+            }
+        }
+
+        return best;
     }
 }
