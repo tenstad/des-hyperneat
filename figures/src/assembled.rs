@@ -12,7 +12,7 @@ pub fn create() -> figure::Figure {
 
     let mut node = fig.label_builder(&|l| l);
     node(&|l| l.x(2.75).y(6.3).text("I/O"));
-    node(&|l| l.x(2.75).y(6.75).text("Discovered"));
+    node(&|l| l.x(2.75).y(6.75).text("Evolved"));
     drop(node);
 
     let mut node = fig.node_builder(&|n| n.fill("gray!40").y(1.0));
