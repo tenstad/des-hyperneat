@@ -18,6 +18,9 @@ pub struct Conf {
     #[envconfig(from = "INTERSPECIES_REPRODUCTION_CHANCE", default = "0.15")]
     pub interspecies_reproduction_chance: f64,
 
+    #[envconfig(from = "TOURNAMENT_SIZE", default = "2")]
+    pub tournament_size: usize,
+
     #[envconfig(from = "INTERSPECIES_TOURNAMENT_SIZE", default = "2")]
     pub interspecies_tournament_size: usize,
 
