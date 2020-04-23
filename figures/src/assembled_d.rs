@@ -26,6 +26,7 @@ pub fn create() -> figure::Figure {
     let s20 = node(&|n| n.x(2.9).y(2.75).opacity(0.6));
     let s21 = node(&|n| n.x(1.6).y(3.2).opacity(0.6));
     let s22 = node(&|n| n.x(2.4).y(4.15));
+    let s23 = node(&|n| n.x(2.3).y(2.7));
     drop(node);
 
     let mut edge = fig.edge_builder(&|e| e.width(0.1).color("black"));
@@ -36,9 +37,10 @@ pub fn create() -> figure::Figure {
     edge(&i2, &s21, &|e| e.color("gray!35"));
     edge(&i2, &s20, &|e| e.color("gray!35"));
 
+    edge(&s21, &s23, &|e| e);
     edge(&s21, &s22, &|e| e);
     edge(&s20, &s22, &|e| e);
-    /*edge(&s21, &s11, &|e| e);
+    /*edge(&s21, &s10, &|e| e);
 
     edge(&s12, &s11, &|e| e);
     edge(&s10, &s11, &|e| e);
