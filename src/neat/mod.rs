@@ -1,5 +1,4 @@
 pub mod conf;
-pub mod dataset_environment;
 pub mod dot;
 pub mod genome;
 pub mod link;
