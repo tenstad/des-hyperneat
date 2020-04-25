@@ -17,17 +17,36 @@ pub enum Action {
 }
 
 pub fn horizontal_row(n: usize, y: i64) -> Vec<(i64, i64)> {
-    let horizontal_distance = (2.0 * ESHYPERNEAT.resolution / (n as f64 - 1.0)) as f64;
-    let offset = ESHYPERNEAT.resolution as i64;
+    if n == 1 {
+        return vec![(0, y)];
+    }
+
+    let horizontal_distance = if n > 1 {
+        (2.0 * ESHYPERNEAT.resolution / (n as f64 - 1.0)) as f64
+    } else {
+        0.0
+    };
+    let offset = if n > 1 {
+        ESHYPERNEAT.resolution as i64
+    } else {
+        0
+    };
     (0..n)
         .map(|i| ((horizontal_distance * i as f64) as i64 - offset, y))
         .collect()
 }
 
 pub fn horizontal_rows(layer_sizes: &Vec<usize>) -> Vec<Vec<Point>> {
-    let vertical_distance =
-        (2.0 * ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as f64;
-    let offset = ESHYPERNEAT.resolution as i64;
+    let vertical_distance = if layer_sizes.len() > 1 {
+        (2.0 * ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as f64
+    } else {
+        0.0
+    };
+    let offset = if layer_sizes.len() > 1 {
+        ESHYPERNEAT.resolution as i64
+    } else {
+        0
+    };
     layer_sizes
         .iter()
         .enumerate()
