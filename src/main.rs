@@ -6,19 +6,21 @@ extern crate envconfig;
 extern crate derive_new;
 
 mod conf;
+mod cppn;
 mod dataset_environment;
 mod eshyperneat;
 mod hyperneat;
-mod neat;
 
+use cppn::cppn;
 use dataset_environment::DatasetEnvironment;
 use eshyperneat::eshyperneat;
+use evolution::neat::neat;
 use hyperneat::hyperneat;
-use neat::neat;
 
 fn main() {
     match &conf::CONF.method[..] {
         "NEAT" => neat::<DatasetEnvironment>(),
+        "CPPN" => cppn::<DatasetEnvironment>(),
         "HyperNEAT" => hyperneat::<DatasetEnvironment>(),
         "ES-HyperNEAT" => eshyperneat::<DatasetEnvironment>(),
         _ => println!("Unknown method method"),

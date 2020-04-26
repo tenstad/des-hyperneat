@@ -1,39 +1,44 @@
-use crate::neat::conf::NEAT;
-use network::activation::Activation;
-use rand::Rng;
+use crate::genome::Evolvable;
+use crate::neat::genome::{GenomeComponent, NeatCore};
+use crate::neat::state::PopulationState;
 use std::fmt;
 
 #[derive(Copy, Clone)]
-pub struct Node {
+pub struct NodeCore {
     pub node_ref: NodeRef,
-    pub bias: f64,
-    pub activation: Activation,
 }
 
-impl Node {
-    pub fn new(node_ref: NodeRef) -> Node {
-        Node {
-            node_ref: node_ref,
-            bias: 0.0,
-            activation: match node_ref {
-                NodeRef::Input(_) => Activation::None,
-                NodeRef::Hidden(_) => NEAT.hidden_activations.random(),
-                NodeRef::Output(_) => NEAT.output_activations.random(),
-            },
-        }
+impl NodeCore {
+    pub fn new(node_ref: NodeRef) -> Self {
+        Self { node_ref }
+    }
+}
+
+impl NeatCore<NodeCore> for NodeCore {
+    fn get_neat(&self) -> &Self {
+        self
     }
 
-    pub fn crossover(&self, other: &Self) -> Self {
-        assert_eq!(self.node_ref, other.node_ref);
+    fn get_neat_mut(&mut self) -> &mut Self {
+        self
+    }
+}
 
-        Node {
+impl GenomeComponent<NodeCore> for NodeCore {
+    fn new(node: Self) -> Self {
+        node
+    }
+}
+
+impl Evolvable for NodeCore {
+    type PopulationState = PopulationState;
+
+    fn mutate(&mut self, population_state: &mut Self::PopulationState) {}
+
+    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+        assert_eq!(self.node_ref, other.node_ref);
+        NodeCore {
             node_ref: self.node_ref,
-            bias: (self.bias + other.bias) / 2.0,
-            activation: if rand::thread_rng().gen::<bool>() {
-                self.activation
-            } else {
-                other.activation
-            },
         }
     }
 }
@@ -45,6 +50,16 @@ pub enum NodeRef {
     Input(usize),
     Hidden(usize),
     Output(usize),
+}
+
+impl NodeRef {
+    pub fn id(&self) -> usize {
+        match self {
+            NodeRef::Input(id) => *id,
+            NodeRef::Hidden(id) => *id,
+            NodeRef::Output(id) => *id,
+        }
+    }
 }
 
 impl fmt::Display for NodeRef {
@@ -76,15 +91,5 @@ impl std::cmp::Ord for NodeRef {
 impl std::cmp::PartialOrd for NodeRef {
     fn partial_cmp(&self, other: &Self) -> std::option::Option<std::cmp::Ordering> {
         Some(self.cmp(other))
-    }
-}
-
-impl NodeRef {
-    pub fn id(&self) -> usize {
-        match self {
-            NodeRef::Input(id) => *id,
-            NodeRef::Hidden(id) => *id,
-            NodeRef::Output(id) => *id,
-        }
     }
 }

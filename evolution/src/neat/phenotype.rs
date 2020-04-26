@@ -1,7 +1,8 @@
-use crate::neat::genome::{Genome as NeatGenome, InitConfig};
-use crate::neat::node::NodeRef;
-use evolution::environment::EnvironmentDescription;
-use evolution::genome::Develop;
+use crate::environment::EnvironmentDescription;
+use crate::genome::Develop;
+use crate::neat::{
+    genome::DefaultNeatGenome as NeatGenome, genome_core::InitConfig, node::NodeRef,
+};
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
@@ -77,62 +78,13 @@ impl Develop<NeatGenome, Executor> for Developer {
                 }
                 connection::OrderedAction::Activation(node) => Some(execute::Action::Activation(
                     *node_mapping.get(node).unwrap(),
-                    genome.get_bias(node),
-                    genome.get_activation(node),
+                    0.0,
+                    network::activation::Activation::Sigmoid,
                 )),
             })
             .collect();
 
         // Create neural network executor
         Executor::create(nodes.len(), inputs, outputs, actions)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::neat::genome::Genome as NeatGenome;
-    use crate::neat::{link, node::NodeRef};
-    use evolution::environment::{DummyEnvironment, Environment};
-    use evolution::{genome::Develop, genome::Genome};
-    use network::activation;
-
-    #[test]
-    fn test_develop() {
-        let environment = DummyEnvironment::new(EnvironmentDescription::new(4, 2));
-        let developer = Developer::from(environment.description());
-        let mut genome = NeatGenome::new(developer.init_config());
-        let link = link::Link::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
-
-        genome.insert_link(link);
-        genome.split_link(link, 0, 1);
-
-        genome
-            .inputs
-            .get_mut(&NodeRef::Input(1))
-            .unwrap()
-            .activation = activation::Activation::None;
-        genome
-            .hidden_nodes
-            .get_mut(&NodeRef::Hidden(0))
-            .unwrap()
-            .activation = activation::Activation::Exp;
-        genome
-            .outputs
-            .get_mut(&NodeRef::Output(1))
-            .unwrap()
-            .activation = activation::Activation::Sine;
-
-        let mut phenotype = developer.develop(&genome);
-
-        let result = phenotype.execute(&vec![5.0, 7.0, -1.0, -1.0]);
-        assert_eq!(
-            result,
-            vec![
-                0.0,
-                activation::Activation::Sine
-                    .activate(3.0 * activation::Activation::Exp.activate(7.0))
-            ]
-        );
     }
 }

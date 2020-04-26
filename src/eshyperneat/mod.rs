@@ -4,8 +4,8 @@ pub mod log;
 pub mod phenotype;
 pub mod search;
 
+use crate::cppn::genome::Genome;
 use crate::eshyperneat::{log::Logger, phenotype::Developer};
-use crate::neat::genome::Genome;
 use evolution::{environment::Environment, evolve};
 use network::execute::Executor;
 

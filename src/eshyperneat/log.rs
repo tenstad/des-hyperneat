@@ -1,13 +1,13 @@
-use crate::eshyperneat::conf::ESHYPERNEAT;
-use crate::eshyperneat::{img, phenotype::Developer};
+use crate::cppn::{genome::Genome, phenotype::Developer as CppnDeveloper};
+use crate::eshyperneat::{conf::ESHYPERNEAT, img, phenotype::Developer};
 use crate::hyperneat::log::Logger as HyperneatLogger;
-use crate::neat::{genome::Genome, phenotype::Developer as NeatDeveloper};
-use evolution::environment::EnvironmentDescription;
-use evolution::{genome::Develop, log, population::Population};
+use evolution::{
+    environment::EnvironmentDescription, genome::Develop, log, population::Population,
+};
 
 pub struct Logger {
     hyperneat_logger: HyperneatLogger,
-    neat_developer: NeatDeveloper,
+    neat_developer: CppnDeveloper,
     developer: Developer,
     log_interval: usize,
 }
@@ -16,7 +16,7 @@ impl From<EnvironmentDescription> for Logger {
     fn from(description: EnvironmentDescription) -> Self {
         Self {
             hyperneat_logger: HyperneatLogger::from(description),
-            neat_developer: NeatDeveloper::from(description),
+            neat_developer: CppnDeveloper::from(description),
             developer: Developer::from(description),
             log_interval: 10,
         }

@@ -1,8 +1,5 @@
-use crate::neat::dot::genome_to_dot;
-use crate::neat::genome::Genome;
-use evolution::environment::EnvironmentDescription;
-use evolution::log;
-use evolution::population::Population;
+use crate::cppn::{dot::genome_to_dot, genome::Genome};
+use evolution::{environment::EnvironmentDescription, log, population::Population};
 
 pub struct Logger {
     default_logger: log::Logger,

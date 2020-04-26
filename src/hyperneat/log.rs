@@ -1,14 +1,11 @@
+use crate::cppn::{genome::Genome, log::Logger as CppnLogger, phenotype::Developer};
 use crate::hyperneat::img;
-use crate::neat::genome::Genome as NeatGenome;
-use crate::neat::log::Logger as NeatLogger;
-use crate::neat::phenotype::Developer;
-use evolution::environment::EnvironmentDescription;
-use evolution::genome::Develop;
-use evolution::log::Log;
-use evolution::population::Population;
+use evolution::{
+    environment::EnvironmentDescription, genome::Develop, log, population::Population,
+};
 
 pub struct Logger {
-    neat_logger: NeatLogger,
+    cppn_logger: CppnLogger,
     developer: Developer,
     log_interval: usize,
 }
@@ -16,16 +13,16 @@ pub struct Logger {
 impl From<EnvironmentDescription> for Logger {
     fn from(description: EnvironmentDescription) -> Self {
         Self {
-            neat_logger: NeatLogger::from(description),
+            cppn_logger: CppnLogger::from(description),
             developer: Developer::from(description),
             log_interval: 10,
         }
     }
 }
 
-impl Log<NeatGenome> for Logger {
-    fn log(&mut self, iteration: usize, population: &Population<NeatGenome>) {
-        self.neat_logger.log(iteration, population);
+impl log::Log<Genome> for Logger {
+    fn log(&mut self, iteration: usize, population: &Population<Genome>) {
+        self.cppn_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {
             let mut phenotype = self.developer.develop(&population.best().unwrap().genome);

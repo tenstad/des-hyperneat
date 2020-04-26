@@ -1,15 +1,17 @@
-use crate::eshyperneat::conf::ESHYPERNEAT;
-use crate::eshyperneat::search;
+use crate::cppn::{genome::Genome, phenotype::Developer as CppnDeveloper};
+use crate::eshyperneat::{conf::ESHYPERNEAT, search};
 use crate::hyperneat::substrate;
-use crate::neat::genome::{Genome as NeatGenome, InitConfig};
-use crate::neat::phenotype::Developer as NeatDeveloper;
-use evolution::environment::EnvironmentDescription;
-use evolution::genome::Develop;
-use network::{activation, connection, execute};
+use evolution::{
+    environment::EnvironmentDescription, genome::Develop, neat::genome_core::InitConfig,
+};
+use network::{
+    activation, connection,
+    execute::{Action, Executor},
+};
 use std::collections::{HashMap, HashSet};
 
 pub struct Developer {
-    neat_developer: NeatDeveloper,
+    neat_developer: CppnDeveloper,
     init_config: InitConfig,
     input_nodes: Vec<(i64, i64)>,
     output_nodes: Vec<(i64, i64)>,
@@ -28,7 +30,7 @@ impl From<EnvironmentDescription> for Developer {
                 description.outputs,
                 ESHYPERNEAT.resolution as i64,
             ),
-            neat_developer: NeatDeveloper::from(description),
+            neat_developer: CppnDeveloper::from(description),
             depth: ESHYPERNEAT.iteration_level + 1,
         }
     }
@@ -36,9 +38,9 @@ impl From<EnvironmentDescription> for Developer {
 
 impl Developer {
     // Creates a phenotype with all 0 outputs.
-    fn disconnected(&self) -> execute::Executor {
+    fn disconnected(&self) -> Executor {
         let num_outputs = self.output_nodes.len();
-        execute::Executor::create(
+        Executor::create(
             num_outputs,
             Vec::new(),
             (0..num_outputs).collect(),
@@ -48,10 +50,7 @@ impl Developer {
 
     // Copy of part of the evolution below. This should be avoided
     // if there is an eqally fast option mergining the two
-    pub fn connections(
-        &self,
-        cppn: &mut execute::Executor,
-    ) -> connection::Connections<(i64, i64), f64> {
+    pub fn connections(&self, cppn: &mut Executor) -> connection::Connections<(i64, i64), f64> {
         // Forward search with depth
         let (_, mut connections) = search::explore_substrate(
             self.input_nodes.clone(),
@@ -72,12 +71,12 @@ impl Developer {
     }
 }
 
-impl Develop<NeatGenome, execute::Executor> for Developer {
+impl Develop<Genome, Executor> for Developer {
     fn init_config(&self) -> &InitConfig {
         &self.init_config
     }
 
-    fn develop(&self, genome: &NeatGenome) -> execute::Executor {
+    fn develop(&self, genome: &Genome) -> Executor {
         let mut cppn = self.neat_developer.develop(genome);
 
         // Forward search with depth
@@ -135,7 +134,7 @@ impl Develop<NeatGenome, execute::Executor> for Developer {
             .sort_topologically()
             .iter()
             .map(|action| match action {
-                connection::OrderedAction::Link(from, to, weight) => execute::Action::Link(
+                connection::OrderedAction::Link(from, to, weight) => Action::Link(
                     *node_mapping
                         .get(from)
                         .expect("map does not contain source node"),
@@ -144,7 +143,7 @@ impl Develop<NeatGenome, execute::Executor> for Developer {
                         .expect("map does not contain target node"),
                     *weight,
                 ),
-                connection::OrderedAction::Activation(node) => execute::Action::Activation(
+                connection::OrderedAction::Activation(node) => Action::Activation(
                     *node_mapping
                         .get(node)
                         .expect("map does not contain activation node"),
@@ -164,6 +163,6 @@ impl Develop<NeatGenome, execute::Executor> for Developer {
             .collect();
 
         // Create neural network executor
-        execute::Executor::create(nodes.len(), inputs, outputs, actions)
+        Executor::create(nodes.len(), inputs, outputs, actions)
     }
 }

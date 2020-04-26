@@ -3,6 +3,7 @@ pub mod environment;
 pub mod evaluate;
 pub mod genome;
 pub mod log;
+pub mod neat;
 pub mod organism;
 pub mod population;
 pub mod species;
