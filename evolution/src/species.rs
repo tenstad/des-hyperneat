@@ -15,6 +15,7 @@ pub struct Species<G> {
     pub offsprings: f64,
     pub elites: usize,
     pub organisms: Vec<Organism<G>>,
+    pub extinct: bool,
     locked: bool, // When locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
     locked_organisms: usize, // The number of organisms when species was locked
 }
@@ -28,6 +29,7 @@ impl<G: Genome> Species<G> {
             last_improvement: 0,
             offsprings: 0.0,
             elites: 0,
+            extinct: false,
             locked: false,
             locked_organisms: 0,
             organisms: Vec::new(),
@@ -148,8 +150,15 @@ impl<G: Genome> Species<G> {
     /// Remove all the locked organisms (the old generation), and retain the organisms pushed after lock (next generation)
     pub fn remove_old(&mut self) {
         assert!(self.locked);
-        self.organisms = self.organisms.split_off(self.locked_organisms);
         self.locked = false;
+
+        if self.locked_organisms < self.organisms.len() {
+            self.organisms = self.organisms.split_off(self.locked_organisms);
+        } else {
+            // No new individuals were added, species is now extinct
+            self.organisms.truncate(1);
+            self.extinct = true;
+        }
     }
 
     /// Calculate number of offsprings based on adjusted fitness of organisms

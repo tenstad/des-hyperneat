@@ -4,12 +4,14 @@ use crate::genome::Genome;
 use crate::organism::Organism;
 use crate::species::Species;
 use rand::Rng;
-use std::f64;
-use std::fmt;
+use std::collections::HashMap;
+use std::{f64, fmt};
 
 pub struct Population<G: Genome> {
     population_size: usize,
-    species: Vec<Species<G>>,
+    next_id: usize,
+    species: HashMap<usize, Species<G>>,
+    extinct_species: HashMap<usize, Species<G>>,
     state: G::PopulationState,
 }
 
@@ -17,7 +19,9 @@ impl<G: Genome> Population<G> {
     pub fn new(population_size: usize, init_config: &G::InitConfig) -> Self {
         let mut population = Population {
             population_size,
-            species: Vec::new(),
+            next_id: 0,
+            species: HashMap::new(),
+            extinct_species: HashMap::new(),
             state: G::PopulationState::default(),
         };
 
@@ -40,13 +44,14 @@ impl<G: Genome> Population<G> {
                 species.lock();
             }
             species.push(organism);
-            self.species.push(species);
+            self.species.insert(self.next_id, species);
+            self.next_id += 1;
         }
     }
 
     /// Find first species compatible with organism
     fn compatible_species(&mut self, organism: &Organism<G>) -> Option<&mut Species<G>> {
-        for species in self.species.iter_mut() {
+        for species in self.species.values_mut() {
             if species.is_compatible(&organism) {
                 return Some(species);
             }
@@ -59,7 +64,7 @@ impl<G: Genome> Population<G> {
     pub fn evolve(&mut self) {
         // Adjust fitnesses based on age, stagnation and apply fitness sharing
         // Also sorts organisms by descending fitness
-        for species in self.species.iter_mut() {
+        for species in self.species.values_mut() {
             species.adjust_fitness();
         }
 
@@ -73,30 +78,32 @@ impl<G: Genome> Population<G> {
             / (EVOLUTION.population_size - elites) as f64;
 
         // Calculate number of new offsprings to produce within each new species
-        for species in self.species.iter_mut() {
+        for species in self.species.values_mut() {
             species.calculate_offsprings(avg_fitness);
         }
 
         // The total size of the next population before making up for floting point precicsion
         let mut new_population_size = self
             .species
-            .iter()
+            .values()
             .map(|species| species.offsprings.floor() as usize)
             .sum::<usize>()
             + elites;
 
+        let mut species_ids = self.species.keys().cloned().collect::<Vec<usize>>();
+
         // Sort species based on closeness to additional offspring
-        self.species.sort_by(|a, b| {
-            (1.0 - a.offsprings % 1.0)
-                .partial_cmp(&(1.0 - b.offsprings % 1.0))
+        species_ids.sort_by(|a, b| {
+            (1.0 - self.species[a].offsprings % 1.0)
+                .partial_cmp(&(1.0 - self.species[b].offsprings % 1.0))
                 .unwrap()
         });
 
         // Distribute missing offsprings amongs species
         // in order of floating distance from additional offspring
         while new_population_size < self.population_size {
-            for species in self.species.iter_mut() {
-                species.offsprings += 1.0;
+            for species_id in species_ids.iter() {
+                self.species.get_mut(species_id).unwrap().offsprings += 1.0;
                 new_population_size += 1;
 
                 if new_population_size == self.population_size {
@@ -106,13 +113,18 @@ impl<G: Genome> Population<G> {
         }
 
         // Sort species based on best_fitness (best first)
-        self.species
-            .sort_by(|a, b| b.best_fitness.partial_cmp(&a.best_fitness).unwrap());
+        species_ids.sort_by(|a, b| {
+            self.species[b]
+                .best_fitness
+                .partial_cmp(&self.species[a].best_fitness)
+                .unwrap()
+        });
         let mut elites_distributed = 0;
 
         // Distribute elites
         while elites_distributed < EVOLUTION.global_elites {
-            for species in self.species.iter_mut() {
+            for species_id in species_ids.iter() {
+                let mut species = self.species.get_mut(species_id).unwrap();
                 if species.elites < species.len() {
                     species.elites += 1;
                     elites_distributed += 1;
@@ -124,24 +136,35 @@ impl<G: Genome> Population<G> {
             }
         }
 
+        assert_eq!(
+            self.species
+                .values()
+                .map(|s| s.offsprings.floor() as usize + s.elites)
+                .sum::<usize>(),
+            EVOLUTION.population_size,
+            "wrong number of planned individuals in next population"
+        );
+
         // Kill individuals of low performance, not allowed to reproduce
-        for species in self.species.iter_mut() {
+        for species in self.species.values_mut() {
             species.retain_best();
         }
 
         // Increase the age of and lock all species, making current organisms old
-        for species in self.species.iter_mut() {
+        for species in self.species.values_mut() {
             species.age();
         }
 
-        for i in 0..self.species.len() {
+        for i in species_ids.iter() {
+            let mut species = self.species.get_mut(i).unwrap();
             // Steal elites from number of offsprings
             let elites_taken_from_offspring = EVOLUTION
                 .elites_from_offspring
-                .min(self.species[i].offsprings.floor() as usize)
-                .min(self.species[i].len());
-            self.species[i].elites += elites_taken_from_offspring;
-            self.species[i].offsprings -= elites_taken_from_offspring as f64;
+                .min(species.offsprings.floor() as usize)
+                .min(species.len());
+            species.elites += elites_taken_from_offspring;
+            species.offsprings -= elites_taken_from_offspring as f64;
+            drop(species);
 
             // Directly copy elites, without crossover or mutation
             for j in 0..self.species[i].elites {
@@ -151,7 +174,7 @@ impl<G: Genome> Population<G> {
 
         // Evolve spiecies
         let mut rng = rand::thread_rng();
-        for i in 0..self.species.len() {
+        for i in species_ids.iter() {
             let reproductions = self.species[i].offsprings.floor() as usize;
 
             // Breed new organisms
@@ -178,19 +201,24 @@ impl<G: Genome> Population<G> {
         }
 
         // Kill old population
-        for species in self.species.iter_mut() {
+        for species in self.species.values_mut() {
             species.remove_old();
         }
 
-        // Remove empty species
-        for i in (0..self.species.len()).rev() {
-            if self.species[i].len() == 0 {
-                self.species.swap_remove(i);
+        // Remove extinct species
+        for i in species_ids.iter() {
+            if self.species[i].extinct {
+                self.extinct_species
+                    .insert(*i, self.species.remove(i).unwrap());
             }
         }
 
         // Verify correct number of individuals in new population
-        assert_eq!(self.iter().count(), EVOLUTION.population_size);
+        assert_eq!(
+            self.iter().count(),
+            EVOLUTION.population_size,
+            "wrong number of individuals in population"
+        );
     }
 
     /// Get random organism from population
@@ -234,19 +262,23 @@ impl<G: Genome> Population<G> {
             )
             .iter()
         {
-            self.species[*species_index].organisms[*organism_index].fitness = *fitness;
+            self.species.get_mut(species_index).unwrap().organisms[*organism_index].fitness =
+                *fitness;
         }
     }
 
     /// Iterate organisms
     fn iter(&self) -> impl Iterator<Item = &Organism<G>> {
-        self.species.iter().map(|species| species.iter()).flatten()
+        self.species
+            .values()
+            .map(|species| species.iter())
+            .flatten()
     }
 
     /// Iterate organisms
     fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<G>> {
         self.species
-            .iter_mut()
+            .values_mut()
             .map(|species| species.iter_mut())
             .flatten()
     }
@@ -255,12 +287,11 @@ impl<G: Genome> Population<G> {
     fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &Organism<G>)> {
         self.species
             .iter()
-            .enumerate()
             .map(|(species_index, species)| {
                 species
                     .iter()
                     .enumerate()
-                    .map(move |(genome_index, genome)| (species_index, genome_index, genome))
+                    .map(move |(genome_index, genome)| (*species_index, genome_index, genome))
             })
             .flatten()
     }
@@ -273,8 +304,13 @@ impl<G: Genome> Population<G> {
 
 impl<G: Genome> fmt::Display for Population<G> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Population(species: {}): ", self.species.len())?;
-        for species in self.species.iter() {
+        write!(
+            f,
+            "Population(species: {}, extinct: {}): ",
+            self.species.len(),
+            self.extinct_species.len()
+        )?;
+        for species in self.species.values() {
             write!(f, "{} ", species.organisms.len())?;
         }
         Ok(())
