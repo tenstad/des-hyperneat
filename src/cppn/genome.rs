@@ -58,7 +58,7 @@ impl NeatGenome for Genome {
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
         Self {
-            neat_genome: other
+            neat_genome: self
                 .get_neat()
                 .crossover(other.get_neat(), fitness, other_fitness),
         }
