@@ -1,8 +1,6 @@
-use crate::cppn::{genome::Genome, phenotype::Developer as CppnDeveloper};
+use crate::cppn::{developer::Developer as CppnDeveloper, genome::Genome};
 use crate::hyperneat::{conf::HYPERNEAT, substrate};
-use evolution::{
-    environment::EnvironmentDescription, genome::Develop, neat::genome_core::InitConfig,
-};
+use evolution::{develop::Develop, environment::EnvironmentDescription};
 use network::{
     activation,
     execute::{Action, Executor},
@@ -10,7 +8,6 @@ use network::{
 
 pub struct Developer {
     neat_developer: CppnDeveloper,
-    init_config: InitConfig,
     network: substrate::Network,
 }
 
@@ -18,17 +15,12 @@ impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
         Developer {
             neat_developer: CppnDeveloper::from(description),
-            init_config: InitConfig::new(4, 2),
             network: substrate::Network::layered(vec![description.inputs, 8, description.outputs]),
         }
     }
 }
 
 impl Develop<Genome, Executor> for Developer {
-    fn init_config(&self) -> &InitConfig {
-        &self.init_config
-    }
-
     fn develop(&self, genome: &Genome) -> Executor {
         let mut neat_executor = self.neat_developer.develop(genome);
 

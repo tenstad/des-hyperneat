@@ -1,5 +1,3 @@
-use crate::environment::EnvironmentDescription;
-
 pub trait Evolvable: Clone + Send {
     type PopulationState: Default;
 
@@ -14,9 +12,4 @@ pub trait Genome: Evolvable {
     type InitConfig;
 
     fn new(init_config: &Self::InitConfig) -> Self;
-}
-
-pub trait Develop<G: Genome, P>: From<EnvironmentDescription> {
-    fn init_config(&self) -> &G::InitConfig;
-    fn develop(&self, genome: &G) -> P;
 }

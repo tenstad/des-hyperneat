@@ -1,4 +1,6 @@
+pub mod algorithm;
 pub mod conf;
+pub mod develop;
 pub mod environment;
 pub mod evaluate;
 pub mod genome;
@@ -15,30 +17,29 @@ extern crate envconfig;
 #[macro_use]
 extern crate derive_new;
 
+use algorithm::Algorithm;
 use conf::EVOLUTION;
+use environment::Environment;
+use evaluate::MultiEvaluator;
+use log::Log;
+use population::Population;
 
-pub fn evolve<
-    G: genome::Genome + 'static,
-    P, // phenotype
-    D: genome::Develop<G, P>,
-    E: environment::Environment<P>,
-    L: log::Log<G>,
->() {
-    let evaluator = &evaluate::MultiEvaluator::<G>::new::<P, D, E>(
+pub fn evolve<A: Algorithm, E: Environment<A::Phenotype>>() {
+    let environment = &E::default();
+
+    let init_config = A::genome_init_config(&environment.description());
+    let mut population = Population::<A::Genome>::new(EVOLUTION.population_size, &init_config);
+
+    let evaluator = MultiEvaluator::<A::Genome>::new::<A::Phenotype, A::Developer, E>(
         EVOLUTION.population_size,
         EVOLUTION.thread_count,
     );
+    let mut logger = A::Logger::from(environment.description());
 
-    let environment = &E::default();
-    let developer = &D::from(environment.description());
-    let mut population =
-        population::Population::<G>::new(EVOLUTION.population_size, &developer.init_config());
-
-    let mut logger = L::from(environment.description());
-    for i in 0..EVOLUTION.iterations {
+    for i in 1..EVOLUTION.iterations {
         population.evolve();
-        population.evaluate(evaluator);
+        population.evaluate(&evaluator);
 
-        logger.log(i + 1, &population);
+        logger.log(i, &population);
     }
 }

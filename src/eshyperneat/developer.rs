@@ -1,9 +1,7 @@
-use crate::cppn::{genome::Genome, phenotype::Developer as CppnDeveloper};
+use crate::cppn::{developer::Developer as CppnDeveloper, genome::Genome};
 use crate::eshyperneat::{conf::ESHYPERNEAT, search};
 use crate::hyperneat::substrate;
-use evolution::{
-    environment::EnvironmentDescription, genome::Develop, neat::genome_core::InitConfig,
-};
+use evolution::{develop::Develop, environment::EnvironmentDescription};
 use network::{
     activation, connection,
     execute::{Action, Executor},
@@ -12,7 +10,6 @@ use std::collections::{HashMap, HashSet};
 
 pub struct Developer {
     neat_developer: CppnDeveloper,
-    init_config: InitConfig,
     input_nodes: Vec<(i64, i64)>,
     output_nodes: Vec<(i64, i64)>,
     depth: usize,
@@ -21,7 +18,6 @@ pub struct Developer {
 impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
         Self {
-            init_config: InitConfig::new(4, 2),
             input_nodes: substrate::horizontal_row(
                 description.inputs,
                 -ESHYPERNEAT.resolution as i64,
@@ -72,10 +68,6 @@ impl Developer {
 }
 
 impl Develop<Genome, Executor> for Developer {
-    fn init_config(&self) -> &InitConfig {
-        &self.init_config
-    }
-
     fn develop(&self, genome: &Genome) -> Executor {
         let mut cppn = self.neat_developer.develop(genome);
 

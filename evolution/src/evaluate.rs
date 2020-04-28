@@ -1,5 +1,5 @@
+use crate::develop::Develop;
 use crate::environment::Environment;
-use crate::genome::{Develop, Genome};
 use crossbeam::queue;
 use std::sync::Arc;
 use std::thread;
@@ -42,12 +42,12 @@ impl<G: Genome, P, D: Develop<G, P>, E: Environment<P>> Evaluate<G> for Evaluato
     }
 }*/
 
-pub struct MultiEvaluator<G: Genome> {
+pub struct MultiEvaluator<G> {
     input: Arc<queue::ArrayQueue<Input<G>>>,
     output: Arc<queue::ArrayQueue<Output>>,
 }
 
-impl<G: Genome + 'static> MultiEvaluator<G> {
+impl<G: Send + 'static> MultiEvaluator<G> {
     pub fn new<P, D: Develop<G, P>, E: Environment<P>>(
         task_count: usize,
         thread_count: usize,
@@ -86,7 +86,7 @@ impl<G: Genome + 'static> MultiEvaluator<G> {
     }
 }
 
-impl<G: Genome> Evaluate<G> for MultiEvaluator<G> {
+impl<G> Evaluate<G> for MultiEvaluator<G> {
     fn evaluate(&self, organisms: impl Iterator<Item = Input<G>>) -> Vec<Output> {
         let mut count = 0;
         for mut organism in organisms {

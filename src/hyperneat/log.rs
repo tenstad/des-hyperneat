@@ -1,7 +1,7 @@
-use crate::cppn::{genome::Genome, log::Logger as CppnLogger, phenotype::Developer};
+use crate::cppn::{developer::Developer, genome::Genome, log::Logger as CppnLogger};
 use crate::hyperneat::img;
 use evolution::{
-    environment::EnvironmentDescription, genome::Develop, log, population::Population,
+    develop::Develop, environment::EnvironmentDescription, log, population::Population,
 };
 
 pub struct Logger {

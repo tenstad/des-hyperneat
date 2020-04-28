@@ -1,28 +1,18 @@
+use crate::develop::Develop;
 use crate::environment::EnvironmentDescription;
-use crate::genome::Develop;
-use crate::neat::{
-    genome::DefaultNeatGenome as NeatGenome, genome_core::InitConfig, node::NodeRef,
-};
+use crate::neat::{genome::DefaultNeatGenome as NeatGenome, node::NodeRef};
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
-pub struct Developer {
-    init_config: InitConfig,
-}
+pub struct Developer;
 
 impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
-        Developer {
-            init_config: InitConfig::new(description.inputs, description.outputs),
-        }
+        Developer {}
     }
 }
 
 impl Develop<NeatGenome, Executor> for Developer {
-    fn init_config(&self) -> &InitConfig {
-        &self.init_config
-    }
-
     fn develop(&self, genome: &NeatGenome) -> Executor {
         // Sort genomes netowrk topologically
         let order = genome.connections.sort_topologically();

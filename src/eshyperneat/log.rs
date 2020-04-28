@@ -1,8 +1,8 @@
-use crate::cppn::{genome::Genome, phenotype::Developer as CppnDeveloper};
-use crate::eshyperneat::{conf::ESHYPERNEAT, img, phenotype::Developer};
+use crate::cppn::{developer::Developer as CppnDeveloper, genome::Genome};
+use crate::eshyperneat::{conf::ESHYPERNEAT, developer::Developer, img};
 use crate::hyperneat::log::Logger as HyperneatLogger;
 use evolution::{
-    environment::EnvironmentDescription, genome::Develop, log, population::Population,
+    develop::Develop, environment::EnvironmentDescription, log, population::Population,
 };
 
 pub struct Logger {

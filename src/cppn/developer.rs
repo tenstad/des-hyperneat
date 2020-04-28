@@ -1,29 +1,21 @@
 use crate::cppn::genome::Genome;
 use evolution::{
+    develop::Develop,
     environment::EnvironmentDescription,
-    genome::Develop,
-    neat::{genome::NeatCore, genome_core::InitConfig, node::NodeRef},
+    neat::{genome::NeatCore, node::NodeRef},
 };
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
-pub struct Developer {
-    init_config: InitConfig,
-}
+pub struct Developer;
 
 impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
-        Developer {
-            init_config: InitConfig::new(description.inputs, description.outputs),
-        }
+        Developer {}
     }
 }
 
 impl Develop<Genome, Executor> for Developer {
-    fn init_config(&self) -> &InitConfig {
-        &self.init_config
-    }
-
     fn develop(&self, genome: &Genome) -> Executor {
         // Sort genomes netowrk topologically
         let order = genome.get_neat().connections.sort_topologically();
@@ -107,18 +99,19 @@ impl Develop<Genome, Executor> for Developer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cppn::genome::Genome as CppnGenome;
-    use evolution::environment::{DummyEnvironment, Environment};
-    use evolution::genome::Develop;
-    use evolution::neat::genome::Genome;
-    use evolution::neat::{link, node::NodeRef};
+    use crate::cppn::{genome::Genome as CppnGenome, Cppn};
+    use evolution::{
+        algorithm::Algorithm,
+        environment::{DummyEnvironment, Environment},
+        neat::{genome::Genome, link},
+    };
     use network::activation;
 
     #[test]
     fn test_develop() {
         let environment = DummyEnvironment::new(EnvironmentDescription::new(4, 2));
         let developer = Developer::from(environment.description());
-        let mut genome = CppnGenome::new(&developer.init_config());
+        let mut genome = CppnGenome::new(&Cppn::genome_init_config(&environment.description()));
         let link = link::LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
 
         let neat_genome = genome.get_neat_mut();

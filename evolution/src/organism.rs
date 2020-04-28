@@ -1,5 +1,6 @@
+use crate::develop::Develop;
 use crate::environment::Environment;
-use crate::genome::{Develop, Genome};
+use crate::genome::Genome;
 use std::cmp;
 
 #[derive(Clone)]
@@ -57,6 +58,7 @@ impl<G: Genome> Organism<G> {
         self.genome.distance(&other.genome)
     }
 
+    /// Produce an elite for the next generation
     pub fn as_elite(&self) -> Self {
         let mut elite = self.clone();
         elite.generation += 1;
