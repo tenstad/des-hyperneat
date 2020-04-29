@@ -1,5 +1,5 @@
 use crate::cppn::{developer::Developer as CppnDeveloper, genome::Genome};
-use crate::eshyperneat::{conf::ESHYPERNEAT, developer::Developer, img};
+use crate::eshyperneat::{conf::ESHYPERNEAT, developer::Developer, figure::save_fig_to_file, img};
 use crate::hyperneat::log::Logger as HyperneatLogger;
 use evolution::{
     develop::Develop, environment::EnvironmentDescription, log, population::Population,
@@ -36,7 +36,8 @@ impl log::Log<Genome> for Logger {
                 .save("w.png")
                 .ok();
 
-            self.developer.connections(&mut phenotype).save_fig_to_file(
+            save_fig_to_file(
+                self.developer.connections(&mut phenotype),
                 "g.tex",
                 0.5 / ESHYPERNEAT.resolution,
                 4.0,

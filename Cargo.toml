@@ -16,6 +16,7 @@ derive-new = "0.5.8"
 network = {path = "network"}
 evolution = {path = "evolution"}
 data = {path = "data"}
+figure = {path = "figure"}
 
 [workspace]
 members = [
