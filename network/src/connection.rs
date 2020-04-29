@@ -3,38 +3,26 @@ use std::collections::HashSet;
 use std::fmt;
 use std::hash::Hash;
 
-#[derive(Clone)]
-pub struct Target<T, U> {
-    pub node: T,
-    pub edge: U,
+#[derive(Clone, Debug, new)]
+pub struct Target<N, E> {
+    pub node: N,
+    pub edge: E,
 }
 
-impl<T, U> Target<T, U> {
-    pub fn new(node: T, edge: U) -> Self {
-        Self { node, edge }
-    }
-}
-
-#[derive(Clone)]
-pub struct Connection<T, U> {
-    pub from: T,
-    pub to: T,
-    pub edge: U,
-}
-
-impl<T, U> Connection<T, U> {
-    pub fn new(from: T, to: T, edge: U) -> Self {
-        Self { from, to, edge }
-    }
+#[derive(Clone, Debug, new)]
+pub struct Connection<N, E> {
+    pub from: N,
+    pub to: N,
+    pub edge: E,
 }
 
 #[derive(PartialEq)]
-pub enum OrderedAction<T, U> {
-    Link(T, T, U),
-    Activation(T),
+pub enum OrderedAction<N, E> {
+    Link(N, N, E),
+    Activation(N),
 }
 
-impl<T: fmt::Display, U: fmt::Display> fmt::Display for OrderedAction<T, U> {
+impl<N: fmt::Display, E: fmt::Display> fmt::Display for OrderedAction<N, E> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             OrderedAction::Link(from, to, edge) => write!(f, "{}-({})>{}", from, edge, to),
@@ -45,19 +33,19 @@ impl<T: fmt::Display, U: fmt::Display> fmt::Display for OrderedAction<T, U> {
 
 /// Fast non-cyclic graph structure
 #[derive(Clone)]
-pub struct Connections<T: Hash, U> {
-    connections: HashMap<T, Vec<(T, U)>>,
+pub struct Connections<N: Hash, E> {
+    connections: HashMap<N, Vec<Target<N, E>>>,
 }
 
 #[allow(dead_code)]
-impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
+impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
     pub fn new() -> Self {
         Self {
-            connections: HashMap::<T, Vec<(T, U)>>::new(),
+            connections: HashMap::<N, Vec<Target<N, E>>>::new(),
         }
     }
 
-    pub fn add(&mut self, from: T, to: T, edge: U) {
+    pub fn add(&mut self, from: N, to: N, edge: E) {
         assert!(
             !self.creates_cycle(from, to),
             "cannot add link that creates cycle"
@@ -65,87 +53,88 @@ impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
         assert!(!self.contains(&from, to), "cannot add existing connection");
 
         if let Some(vec) = self.connections.get_mut(&from) {
-            vec.push((to, edge));
+            vec.push(Target::<N, E>::new(to, edge));
         } else {
-            self.connections.insert(from, vec![(to, edge)]);
+            self.connections
+                .insert(from, vec![Target::<N, E>::new(to, edge)]);
         }
     }
 
     pub fn extend(&mut self, other: &Self) {
         for source in other.get_sources() {
-            for (target, edge) in other.get_edges(source) {
-                self.add(*source, *target, *edge);
+            for target in other.get_edges(source) {
+                self.add(*source, target.node, target.edge);
             }
         }
     }
 
-    pub fn set_edge<'a>(&mut self, from: &'a T, to: T, edge: U) {
+    pub fn set_edge<'a>(&mut self, from: &'a N, to: N, edge: E) {
         let error = "cannot set non-existent edge";
         let edges = self.connections.get_mut(from).expect(error);
-        let index = edges.iter().position(|(n, _)| *n == to).expect(error);
-        edges[index].1 = edge;
+        let index = edges.iter().position(|t| t.node == to).expect(error);
+        edges[index].edge = edge;
     }
 
-    pub fn get_edge<'a>(&'a self, from: &'a T, to: T) -> &'a U {
+    pub fn get_edge<'a>(&'a self, from: &'a N, to: N) -> &'a E {
         let error = "cannot get non-existent edge";
         let edges = self.connections.get(from).expect(error);
-        let index = edges.iter().position(|(n, _)| *n == to).expect(error);
-        &edges[index].1
+        let index = edges.iter().position(|t| t.node == to).expect(error);
+        &edges[index].edge
     }
 
-    pub fn get_all_connections(&self) -> Vec<Connection<T, U>> {
+    pub fn get_all_connections(&self) -> Vec<Connection<N, E>> {
         self.connections
             .iter()
             .flat_map(|(source, targets)| {
                 targets
                     .iter()
                     .cloned()
-                    .map(move |target| Connection::new(*source, target.0, target.1))
+                    .map(move |target| Connection::new(*source, target.node, target.edge))
             })
             .collect()
     }
 
-    pub fn get_all_nodes(&self) -> Vec<T> {
+    pub fn get_all_nodes(&self) -> Vec<N> {
         self.get_all_connections()
             .iter()
             .flat_map(|connection| {
                 std::iter::once(connection.from).chain(std::iter::once(connection.to))
             })
-            .collect::<HashSet<T>>()
+            .collect::<HashSet<N>>()
             .iter()
             .cloned()
             .collect()
     }
 
-    pub fn get_edges<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a (T, U)> {
+    pub fn get_edges<'a>(&'a self, from: &'a N) -> impl Iterator<Item = &'a Target<N, E>> {
         self.connections.get(from).into_iter().flatten()
     }
 
-    pub fn get_targets<'a>(&'a self, from: &'a T) -> impl Iterator<Item = &'a T> {
-        self.get_edges(from).map(|(n, _)| n)
+    pub fn get_targets<'a>(&'a self, from: &'a N) -> impl Iterator<Item = &'a N> {
+        self.get_edges(from).map(|t| &t.node)
     }
 
-    pub fn get_sources<'a>(&'a self) -> impl Iterator<Item = &'a T> {
+    pub fn get_sources<'a>(&'a self) -> impl Iterator<Item = &'a N> {
         self.connections.keys()
     }
 
-    pub fn contains(&self, from: &T, to: T) -> bool {
-        !self.get_edges(from).position(|(x, _)| *x == to).is_none()
+    pub fn contains(&self, from: &N, to: N) -> bool {
+        !self.get_edges(from).position(|t| t.node == to).is_none()
     }
 
-    pub fn remove(&mut self, from: &T, to: T) -> U {
+    pub fn remove(&mut self, from: &N, to: N) -> E {
         let error = "cannot remove non-existent connection";
         let vec = self.connections.get_mut(from).expect(error);
-        let index = vec.iter().position(|(x, _)| *x == to).expect(error);
-        vec.swap_remove(index).1
+        let index = vec.iter().position(|t| t.node == to).expect(error);
+        vec.swap_remove(index).edge
     }
 
     /// DFS search to check for cycles.
     ///
     /// If 'from' is reachable from 'to', then addition will cause cycle
-    pub fn creates_cycle(&self, from: T, to: T) -> bool {
-        let mut visited: HashSet<T> = [to].iter().cloned().collect();
-        let mut stack: Vec<T> = vec![to];
+    pub fn creates_cycle(&self, from: N, to: N) -> bool {
+        let mut visited: HashSet<N> = [to].iter().cloned().collect();
+        let mut stack: Vec<N> = vec![to];
 
         while let Some(node) = stack.pop() {
             if node == from {
@@ -159,42 +148,46 @@ impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
             }
         }
 
-        return false; // Unable to reach from when starting at to, addition will not cause cycle
+        return false; // Enable to reach from when starting at to, addition will not cause cycle
     }
 
     /// Determine order of nodes and links to actiave in forward pass
-    pub fn sort_topologically(&self) -> Vec<OrderedAction<T, U>> {
+    pub fn sort_topologically(&self) -> Vec<OrderedAction<N, E>> {
         // Store number of incoming connections for all nodes
-        let mut backward_count: HashMap<T, u64> = HashMap::new();
-        for source in self.get_sources() {
-            for target in self.get_targets(source) {
-                backward_count.insert(*target, *backward_count.get(target).unwrap_or(&0) + 1);
+        let mut backward_count: HashMap<N, u64> = HashMap::new();
+        for (_, targets) in self.connections.iter() {
+            for target in targets.iter() {
+                backward_count.insert(
+                    target.node,
+                    *backward_count.get(&target.node).unwrap_or(&0) + 1,
+                );
             }
         }
 
         // Start search from all nodes without incoming connections
-        let mut stack: Vec<T> = self
-            .get_sources()
+        let mut stack: Vec<N> = self
+            .connections
+            .keys()
             .filter(|node| *backward_count.get(node).unwrap_or(&0) == 0)
             .cloned()
             .collect();
 
-        let mut actions = Vec::<OrderedAction<T, U>>::new();
+        let mut actions = Vec::<OrderedAction<N, E>>::new();
 
         // Create topological order
         while let Some(node) = stack.pop() {
             actions.push(OrderedAction::Activation(node));
 
             // Process all outgoing connections from the current node
-            for (to, edge) in self.get_edges(&node) {
-                actions.push(OrderedAction::Link(node, *to, *edge));
+            for target in self.get_edges(&node) {
+                actions.push(OrderedAction::Link(node, target.node, target.edge));
 
                 // Reduce backward count by 1
-                backward_count.insert(*to, *backward_count.get(to).unwrap() - 1);
+                backward_count.insert(target.node, *backward_count.get(&target.node).unwrap() - 1);
 
                 // Add nodes with no incoming connections to the stack
-                if *backward_count.get(to).unwrap() == 0 {
-                    stack.push(*to);
+                if *backward_count.get(&target.node).unwrap() == 0 {
+                    stack.push(target.node);
                 }
             }
         }
@@ -202,56 +195,64 @@ impl<T: Hash + Eq + Copy, U: Copy> Connections<T, U> {
         actions
     }
 
-    pub fn prune(&mut self, inputs: &Vec<T>, outputs: &Vec<T>) {
+    pub fn prune(&mut self, inputs: &Vec<N>, outputs: &Vec<N>) {
         self.prune_dangling_inputs(inputs);
-        self.prune_dagnling_outputs(outputs);
+        self.prune_dangling_outputs(outputs);
     }
 
-    pub fn prune_dangling_inputs(&mut self, inputs: &Vec<T>) {
-        let mut backward_count: HashMap<T, u64> = HashMap::new();
-        for source in self.get_sources() {
-            for target in self.get_targets(source) {
-                backward_count.insert(*target, *backward_count.get(target).unwrap_or(&0) + 1);
+    pub fn prune_dangling_inputs(&mut self, inputs: &Vec<N>) {
+        let mut backward_count: HashMap<N, u64> = HashMap::new();
+        for (_, targets) in self.connections.iter() {
+            for target in targets.iter() {
+                backward_count.insert(
+                    target.node,
+                    *backward_count.get(&target.node).unwrap_or(&0) + 1,
+                );
             }
         }
 
         loop {
             let dangling_inputs = self
-                .get_all_nodes()
-                .iter()
+                .connections
+                .keys()
                 .filter(|n| !inputs.contains(n) && *backward_count.get(n).unwrap_or(&0) == 0)
                 .cloned()
-                .collect::<Vec<T>>();
-            for node in dangling_inputs.iter() {
-                backward_count.remove(node);
-                for target in self.get_targets(node) {
-                    backward_count.insert(*target, *backward_count.get(target).unwrap() - 1);
-                }
-                self.connections.remove(node);
-            }
+                .collect::<Vec<N>>();
             if dangling_inputs.len() == 0 {
                 break;
+            }
+            for node in dangling_inputs.iter() {
+                backward_count.remove(node);
+                for target in self.connections.get(node).unwrap().iter() {
+                    backward_count
+                        .insert(target.node, *backward_count.get(&target.node).unwrap() - 1);
+                }
+                self.connections.remove(node);
             }
         }
     }
 
-    pub fn prune_dagnling_outputs(&mut self, outputs: &Vec<T>) {
+    pub fn prune_dangling_outputs(&mut self, outputs: &Vec<N>) {
         loop {
             let mut deleted_node = false;
-            for source in self.get_sources().cloned().collect::<Vec<T>>().iter() {
+            for source in self.get_sources().cloned().collect::<Vec<N>>().iter() {
                 let targets = self.connections.get(source).unwrap();
                 let delete_indexes = (0..targets.len())
                     .rev()
                     .filter(|i| {
-                        !outputs.contains(&targets[*i].0)
-                            && !self.connections.contains_key(&targets[*i].0)
+                        !outputs.contains(&targets[*i].node)
+                            && !self.connections.contains_key(&targets[*i].node)
                     })
                     .collect::<Vec<usize>>();
                 if delete_indexes.len() > 0 {
                     deleted_node = true;
-                    let targets = self.connections.get_mut(source).unwrap();
-                    for delete_index in delete_indexes {
-                        targets.swap_remove(delete_index);
+                    if delete_indexes.len() == targets.len() {
+                        self.connections.remove(source);
+                    } else {
+                        let targets = self.connections.get_mut(source).unwrap();
+                        for delete_index in delete_indexes.iter() {
+                            targets.swap_remove(*delete_index);
+                        }
                     }
                 }
             }
@@ -291,12 +292,12 @@ mod tests {
 
         let mut targets = connections
             .get_edges(&0)
-            .cloned()
+            .map(|t| (t.node, t.edge))
             .collect::<Vec<(u8, u8)>>();
         targets.sort();
 
         assert_eq!(targets, vec![(1, 5), (2, 6), (3, 7)]);
-        assert_eq!(connections.get_edges(&5).next(), None);
+        assert_eq!(connections.get_edges(&5).count(), 0);
     }
 
     #[test]
@@ -389,5 +390,77 @@ mod tests {
         assert!(pos(0) < pos(2));
         assert!(pos(2) < pos(3));
         assert!(pos(2) < pos(1));
+    }
+
+    #[test]
+    fn test_dangeling_inputs() {
+        let mut connections = Connections::<u8, ()>::new();
+
+        connections.add(5, 10, ());
+        connections.add(6, 10, ());
+        connections.add(7, 10, ());
+        connections.add(0, 5, ());
+        connections.add(1, 5, ());
+        connections.add(2, 6, ());
+        connections.add(3, 10, ());
+        connections.add(4, 0, ());
+        connections.add(4, 1, ());
+        connections.add(10, 11, ());
+        connections.add(10, 12, ());
+        connections.add(10, 13, ());
+        connections.add(11, 12, ());
+        connections.add(14, 12, ());
+
+        connections.prune_dangling_inputs(&vec![3]);
+        assert!(!connections.contains(&5, 10));
+        assert!(!connections.contains(&6, 10));
+        assert!(!connections.contains(&7, 10));
+        assert!(!connections.contains(&0, 5));
+        assert!(!connections.contains(&1, 5));
+        assert!(!connections.contains(&2, 6));
+        assert!(connections.contains(&3, 10));
+        assert!(!connections.contains(&4, 0));
+        assert!(!connections.contains(&4, 1));
+        assert!(connections.contains(&10, 11));
+        assert!(connections.contains(&10, 12));
+        assert!(connections.contains(&10, 13));
+        assert!(connections.contains(&11, 12));
+        assert!(!connections.contains(&14, 12));
+    }
+
+    #[test]
+    fn test_dangeling_outputs() {
+        let mut connections = Connections::<u8, ()>::new();
+
+        connections.add(10, 5, ());
+        connections.add(10, 6, ());
+        connections.add(10, 7, ());
+        connections.add(5, 0, ());
+        connections.add(5, 1, ());
+        connections.add(6, 2, ());
+        connections.add(10, 3, ());
+        connections.add(0, 4, ());
+        connections.add(1, 4, ());
+        connections.add(11, 10, ());
+        connections.add(12, 10, ());
+        connections.add(13, 10, ());
+        connections.add(12, 11, ());
+        connections.add(12, 14, ());
+
+        connections.prune_dangling_outputs(&vec![3]);
+        assert!(!connections.contains(&10, 5));
+        assert!(!connections.contains(&10, 6));
+        assert!(!connections.contains(&10, 7));
+        assert!(!connections.contains(&5, 0));
+        assert!(!connections.contains(&5, 1));
+        assert!(!connections.contains(&6, 2));
+        assert!(connections.contains(&10, 3));
+        assert!(!connections.contains(&0, 4));
+        assert!(!connections.contains(&1, 4));
+        assert!(connections.contains(&11, 10));
+        assert!(connections.contains(&12, 10));
+        assert!(connections.contains(&13, 10));
+        assert!(connections.contains(&12, 11));
+        assert!(!connections.contains(&12, 14));
     }
 }

@@ -1,15 +1,9 @@
 use crate::neat::genome::GenomeComponent;
 use std::fmt;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, new)]
 pub struct NodeCore {
     pub node_ref: NodeRef,
-}
-
-impl NodeCore {
-    pub fn new(node_ref: NodeRef) -> Self {
-        Self { node_ref }
-    }
 }
 
 impl GenomeComponent<NodeCore> for NodeCore {
