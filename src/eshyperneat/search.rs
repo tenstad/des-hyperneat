@@ -74,6 +74,7 @@ impl QuadPoint {
             .children()
             .map(|child| child.variance())
             .collect::<Vec<f64>>();
+
         for (variance, child) in variances.iter().zip(self.children()) {
             if *variance <= ESHYPERNEAT.variance_threshold {
                 let d_left = (child.weight - f(child.x - self.width, child.y)).abs();
@@ -88,10 +89,12 @@ impl QuadPoint {
         }
 
         for (variance, child) in variances.iter().zip(self.children()) {
-            if connections.len() >= ESHYPERNEAT.max_discoveries {
-                break;
-            } else if *variance > ESHYPERNEAT.variance_threshold {
-                child.extract(f, connections);
+            if *variance > ESHYPERNEAT.variance_threshold {
+                if connections.len() >= ESHYPERNEAT.max_discoveries {
+                    connections.push(Target::new((child.x, child.y), child.weight));
+                } else {
+                    child.extract(f, connections);
+                }
             }
         }
     }
