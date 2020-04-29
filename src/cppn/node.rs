@@ -1,7 +1,8 @@
 use crate::cppn::conf::CPPN;
 use evolution::neat::{
-    genome::{GenomeComponent, NeatCore},
+    genome::GenomeComponent,
     node::{NodeCore, NodeRef},
+    state::PopulationState,
 };
 use network::activation::Activation;
 use rand::Rng;
@@ -13,17 +14,7 @@ pub struct Node {
     pub bias: f64,
 }
 
-impl NeatCore<NodeCore> for Node {
-    fn get_neat(&self) -> &NodeCore {
-        &self.neat_node
-    }
-
-    fn get_neat_mut(&mut self) -> &mut NodeCore {
-        &mut self.neat_node
-    }
-}
-
-impl GenomeComponent<NodeCore> for Node {
+impl GenomeComponent<NodeCore, PopulationState> for Node {
     fn new(neat_node: NodeCore) -> Self {
         Self {
             neat_node: neat_node,
@@ -34,6 +25,14 @@ impl GenomeComponent<NodeCore> for Node {
                 NodeRef::Output(_) => CPPN.output_activations.random(),
             },
         }
+    }
+
+    fn get_neat(&self) -> &NodeCore {
+        &self.neat_node
+    }
+
+    fn get_neat_mut(&mut self) -> &mut NodeCore {
+        &mut self.neat_node
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
@@ -48,5 +47,13 @@ impl GenomeComponent<NodeCore> for Node {
                 other.activation
             },
         }
+    }
+
+    fn mutate(&mut self, state: &mut PopulationState) {
+        self.neat_node.mutate(state)
+    }
+
+    fn distance(&self, other: &Self) -> f64 {
+        self.neat_node.distance(&other.neat_node)
     }
 }

@@ -1,6 +1,6 @@
 use crate::neat::{
     conf::NEAT,
-    genome::{Genome, GenomeComponent, NeatCore},
+    genome::{Genome, GenomeComponent},
     link::LinkCore,
     node::{NodeCore, NodeRef},
     state::{Innovation, PopulationState},
@@ -16,7 +16,7 @@ pub struct InitConfig {
 }
 
 #[derive(Clone)]
-pub struct GenomeCore<N: GenomeComponent<NodeCore>, L: GenomeComponent<LinkCore>> {
+pub struct GenomeCore<N, L> {
     pub inputs: HashMap<NodeRef, N>,
     pub hidden_nodes: HashMap<NodeRef, N>,
     pub outputs: HashMap<NodeRef, N>,
@@ -25,9 +25,16 @@ pub struct GenomeCore<N: GenomeComponent<NodeCore>, L: GenomeComponent<LinkCore>
     pub connections: connection::Connections<NodeRef, ()>, // Fast connection lookup
 }
 
-impl<N: GenomeComponent<NodeCore>, L: GenomeComponent<LinkCore>> NeatCore<GenomeCore<N, L>>
-    for GenomeCore<N, L>
+impl<N, L> Genome for GenomeCore<N, L>
+where
+    N: GenomeComponent<NodeCore, PopulationState>,
+    L: GenomeComponent<LinkCore, PopulationState>,
 {
+    type Node = N;
+    type Link = L;
+    type Init = InitConfig;
+    type State = PopulationState;
+
     fn get_neat(&self) -> &Self {
         self
     }
@@ -85,11 +92,6 @@ impl<N: GenomeComponent<NodeCore>, L: GenomeComponent<LinkCore>> NeatCore<Genome
 
         return dist;
     }
-}
-
-impl<N: GenomeComponent<NodeCore>, L: GenomeComponent<LinkCore>> Genome for GenomeCore<N, L> {
-    type Node = N;
-    type Link = L;
 
     /// Generate genome with default activation and no connections
     fn new(init_config: &InitConfig) -> Self {
@@ -174,7 +176,11 @@ impl<N: GenomeComponent<NodeCore>, L: GenomeComponent<LinkCore>> Genome for Geno
     }
 }
 
-impl<N: GenomeComponent<NodeCore>, L: GenomeComponent<LinkCore>> GenomeCore<N, L> {
+impl<N, L> GenomeCore<N, L>
+where
+    N: GenomeComponent<NodeCore, PopulationState>,
+    L: GenomeComponent<LinkCore, PopulationState>,
+{
     pub fn empty() -> Self {
         Self {
             inputs: HashMap::new(),

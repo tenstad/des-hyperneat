@@ -1,8 +1,5 @@
-use crate::genome::Evolvable;
-use crate::neat::genome::{GenomeComponent, NeatCore};
-use crate::neat::state::PopulationState;
+use crate::neat::{genome::GenomeComponent, state::PopulationState};
 use std::fmt;
-
 #[derive(Copy, Clone)]
 pub struct NodeCore {
     pub node_ref: NodeRef,
@@ -14,7 +11,11 @@ impl NodeCore {
     }
 }
 
-impl NeatCore<NodeCore> for NodeCore {
+impl GenomeComponent<NodeCore, PopulationState> for NodeCore {
+    fn new(node: Self) -> Self {
+        node
+    }
+
     fn get_neat(&self) -> &Self {
         self
     }
@@ -22,24 +23,18 @@ impl NeatCore<NodeCore> for NodeCore {
     fn get_neat_mut(&mut self) -> &mut Self {
         self
     }
-}
-
-impl GenomeComponent<NodeCore> for NodeCore {
-    fn new(node: Self) -> Self {
-        node
-    }
-}
-
-impl Evolvable for NodeCore {
-    type PopulationState = PopulationState;
-
-    fn mutate(&mut self, population_state: &mut Self::PopulationState) {}
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
         assert_eq!(self.node_ref, other.node_ref);
         NodeCore {
             node_ref: self.node_ref,
         }
+    }
+
+    fn mutate(&mut self, population_state: &mut PopulationState) {}
+
+    fn distance(&self, other: &Self) -> f64 {
+        0.0
     }
 }
 

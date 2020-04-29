@@ -1,6 +1,6 @@
 use crate::cppn::{conf::CPPN, node::Node};
 use evolution::neat::{
-    genome::{Genome as NeatGenome, NeatCore},
+    genome::Genome as NeatGenome,
     genome_core::{GenomeCore, InitConfig},
     link::LinkCore,
     node::NodeRef,
@@ -14,7 +14,18 @@ pub struct Genome {
     pub neat_genome: GenomeCore<Node, LinkCore>,
 }
 
-impl NeatCore<GenomeCore<Node, LinkCore>> for Genome {
+impl NeatGenome for Genome {
+    type Init = InitConfig;
+    type State = PopulationState;
+    type Node = Node;
+    type Link = LinkCore;
+
+    fn new(init_config: &Self::Init) -> Self {
+        Self {
+            neat_genome: GenomeCore::<Self::Node, Self::Link>::new(init_config),
+        }
+    }
+
     fn get_neat(&self) -> &GenomeCore<Node, LinkCore> {
         &self.neat_genome
     }
@@ -23,7 +34,15 @@ impl NeatCore<GenomeCore<Node, LinkCore>> for Genome {
         &mut self.neat_genome
     }
 
-    fn mutate(&mut self, population_state: &mut PopulationState) {
+    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+        Self {
+            neat_genome: self
+                .neat_genome
+                .crossover(&other.neat_genome, fitness, other_fitness),
+        }
+    }
+
+    fn mutate(&mut self, population_state: &mut Self::State) {
         self.neat_genome.mutate(population_state);
 
         let mut rng = rand::thread_rng();
@@ -44,24 +63,9 @@ impl NeatCore<GenomeCore<Node, LinkCore>> for Genome {
             self.mutate_output_activation();
         }
     }
-}
 
-impl NeatGenome for Genome {
-    type Node = Node;
-    type Link = LinkCore;
-
-    fn new(init_config: &InitConfig) -> Self {
-        Self {
-            neat_genome: GenomeCore::<Self::Node, Self::Link>::new(init_config),
-        }
-    }
-
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
-        Self {
-            neat_genome: self
-                .get_neat()
-                .crossover(other.get_neat(), fitness, other_fitness),
-        }
+    fn distance(&self, other: &Self) -> f64 {
+        self.get_neat().distance(other.get_neat())
     }
 }
 

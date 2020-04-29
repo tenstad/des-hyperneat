@@ -1,9 +1,7 @@
 #[macro_use]
 extern crate envconfig_derive;
-extern crate envconfig;
-
-#[macro_use]
 extern crate derive_new;
+extern crate envconfig;
 
 mod conf;
 mod cppn;
