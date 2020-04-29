@@ -1,5 +1,6 @@
-use crate::neat::{genome::GenomeComponent, state::PopulationState};
+use crate::neat::genome::GenomeComponent;
 use std::fmt;
+
 #[derive(Copy, Clone)]
 pub struct NodeCore {
     pub node_ref: NodeRef,
@@ -11,7 +12,7 @@ impl NodeCore {
     }
 }
 
-impl GenomeComponent<NodeCore, PopulationState> for NodeCore {
+impl GenomeComponent<NodeCore> for NodeCore {
     fn new(node: Self) -> Self {
         node
     }
@@ -24,16 +25,14 @@ impl GenomeComponent<NodeCore, PopulationState> for NodeCore {
         self
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(&self, other: &Self, _fitness: &f64, _other_fitness: &f64) -> Self {
         assert_eq!(self.node_ref, other.node_ref);
         NodeCore {
             node_ref: self.node_ref,
         }
     }
 
-    fn mutate(&mut self, population_state: &mut PopulationState) {}
-
-    fn distance(&self, other: &Self) -> f64 {
+    fn distance(&self, _other: &Self) -> f64 {
         0.0
     }
 }

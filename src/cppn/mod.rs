@@ -1,7 +1,7 @@
 use developer::Developer;
 use evolution::{
     algorithm::Algorithm, environment::Environment, environment::EnvironmentDescription, evolve,
-    neat::genome_core::InitConfig,
+    neat::state::InitConfig,
 };
 use genome::Genome;
 use log::Logger;

@@ -3,20 +3,18 @@ use crate::neat::{
     genome::{Genome, GenomeComponent},
     link::LinkCore,
     node::{NodeCore, NodeRef},
-    state::{Innovation, PopulationState},
+    state::{InitConfig, Innovation, NeatStateProvider, PopulationState},
 };
 use network::connection;
 use rand::{seq::SliceRandom, Rng};
 use std::collections::HashMap;
 
-#[derive(new)]
-pub struct InitConfig {
-    pub inputs: usize,
-    pub outputs: usize,
-}
-
 #[derive(Clone)]
-pub struct GenomeCore<N, L> {
+pub struct GenomeCore<N, L>
+where
+    N: GenomeComponent<NodeCore>,
+    L: GenomeComponent<LinkCore>,
+{
     pub inputs: HashMap<NodeRef, N>,
     pub hidden_nodes: HashMap<NodeRef, N>,
     pub outputs: HashMap<NodeRef, N>,
@@ -27,8 +25,8 @@ pub struct GenomeCore<N, L> {
 
 impl<N, L> Genome for GenomeCore<N, L>
 where
-    N: GenomeComponent<NodeCore, PopulationState>,
-    L: GenomeComponent<LinkCore, PopulationState>,
+    N: GenomeComponent<NodeCore>,
+    L: GenomeComponent<LinkCore>,
 {
     type Node = N;
     type Link = L;
@@ -43,7 +41,7 @@ where
         self
     }
 
-    fn mutate(&mut self, population_state: &mut PopulationState) {
+    fn mutate(&mut self, population_state: &mut Self::State) {
         let mut rng = rand::thread_rng();
 
         if rng.gen::<f64>() < NEAT.add_node_probability {
@@ -178,8 +176,8 @@ where
 
 impl<N, L> GenomeCore<N, L>
 where
-    N: GenomeComponent<NodeCore, PopulationState>,
-    L: GenomeComponent<LinkCore, PopulationState>,
+    N: GenomeComponent<NodeCore>,
+    L: GenomeComponent<LinkCore>,
 {
     pub fn empty() -> Self {
         Self {

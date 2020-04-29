@@ -1,4 +1,5 @@
-use crate::neat::{genome::GenomeComponent, node::NodeRef, state::PopulationState};
+use crate::neat::{genome::GenomeComponent, node::NodeRef};
+
 /// Link between two nodes
 #[derive(Copy, Clone, Debug)]
 pub struct LinkCore {
@@ -23,7 +24,7 @@ impl LinkCore {
     }
 }
 
-impl GenomeComponent<LinkCore, PopulationState> for LinkCore {
+impl GenomeComponent<LinkCore> for LinkCore {
     fn new(link: Self) -> Self {
         link
     }
@@ -36,7 +37,7 @@ impl GenomeComponent<LinkCore, PopulationState> for LinkCore {
         self
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(&self, other: &Self, _fitness: &f64, _other_fitness: &f64) -> Self {
         assert_eq!(self.from, other.from);
         assert_eq!(self.to, other.to);
         assert_eq!(self.innovation, other.innovation);
@@ -49,8 +50,6 @@ impl GenomeComponent<LinkCore, PopulationState> for LinkCore {
             innovation: self.innovation,
         }
     }
-
-    fn mutate(&mut self, population_state: &mut PopulationState) {}
 
     fn distance(&self, other: &Self) -> f64 {
         0.5 * (self.weight - other.weight).tanh().abs()

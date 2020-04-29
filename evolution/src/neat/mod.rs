@@ -22,8 +22,8 @@ impl Algorithm for Neat {
     type Developer = Developer;
     type Logger = Logger;
 
-    fn genome_init_config(e: &EnvironmentDescription) -> genome_core::InitConfig {
-        genome_core::InitConfig::new(e.inputs, e.outputs)
+    fn genome_init_config(e: &EnvironmentDescription) -> state::InitConfig {
+        state::InitConfig::new(e.inputs, e.outputs)
     }
 }
 

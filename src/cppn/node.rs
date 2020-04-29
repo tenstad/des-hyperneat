@@ -14,7 +14,7 @@ pub struct Node {
     pub bias: f64,
 }
 
-impl GenomeComponent<NodeCore, PopulationState> for Node {
+impl GenomeComponent<NodeCore> for Node {
     fn new(neat_node: NodeCore) -> Self {
         Self {
             neat_node: neat_node,
@@ -47,10 +47,6 @@ impl GenomeComponent<NodeCore, PopulationState> for Node {
                 other.activation
             },
         }
-    }
-
-    fn mutate(&mut self, state: &mut PopulationState) {
-        self.neat_node.mutate(state)
     }
 
     fn distance(&self, other: &Self) -> f64 {

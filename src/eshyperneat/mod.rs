@@ -8,7 +8,7 @@ use crate::cppn::genome::Genome;
 use crate::eshyperneat::{developer::Developer, log::Logger};
 use evolution::{
     algorithm::Algorithm, environment::Environment, environment::EnvironmentDescription, evolve,
-    neat::genome_core::InitConfig,
+    neat::state::InitConfig,
 };
 use network::execute::Executor;
 

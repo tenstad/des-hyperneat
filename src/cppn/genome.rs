@@ -1,17 +1,24 @@
 use crate::cppn::{conf::CPPN, node::Node};
 use evolution::neat::{
     genome::Genome as NeatGenome,
-    genome_core::{GenomeCore, InitConfig},
+    genome_core::GenomeCore,
     link::LinkCore,
     node::NodeRef,
-    state::PopulationState,
+    state::{InitConfig, PopulationState},
 };
 use network::activation;
 use rand::Rng;
 
+type NeatGenomeType = GenomeCore<Node, LinkCore>;
+
+impl evolution::genome::Genome for Genome {
+    type InitConfig = InitConfig;
+    type PopulationState = PopulationState;
+}
+
 #[derive(Clone)]
 pub struct Genome {
-    pub neat_genome: GenomeCore<Node, LinkCore>,
+    pub neat_genome: NeatGenomeType,
 }
 
 impl NeatGenome for Genome {
@@ -22,15 +29,15 @@ impl NeatGenome for Genome {
 
     fn new(init_config: &Self::Init) -> Self {
         Self {
-            neat_genome: GenomeCore::<Self::Node, Self::Link>::new(init_config),
+            neat_genome: NeatGenomeType::new(init_config),
         }
     }
 
-    fn get_neat(&self) -> &GenomeCore<Node, LinkCore> {
+    fn get_neat(&self) -> &NeatGenomeType {
         &self.neat_genome
     }
 
-    fn get_neat_mut(&mut self) -> &mut GenomeCore<Node, LinkCore> {
+    fn get_neat_mut(&mut self) -> &mut NeatGenomeType {
         &mut self.neat_genome
     }
 
@@ -42,7 +49,7 @@ impl NeatGenome for Genome {
         }
     }
 
-    fn mutate(&mut self, population_state: &mut Self::State) {
+    fn mutate(&mut self, population_state: &mut PopulationState) {
         self.neat_genome.mutate(population_state);
 
         let mut rng = rand::thread_rng();
