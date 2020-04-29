@@ -1,25 +1,25 @@
 use crate::neat::node;
 use std::collections::HashMap;
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct InnovationLog {
     pub node_additions: HashMap<usize, Innovation>,
     pub edge_additions: HashMap<(node::NodeRef, node::NodeRef), usize>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct Innovation {
     pub node_number: usize,
     pub innovation_number: usize,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct PopulationState {
     pub innovation_log: InnovationLog,
     pub next_innovation: Innovation,
 }
 
-pub trait NeatStateProvider: Default + Send + Clone {
+pub trait NeatStateProvider: Default {
     fn get_neat(&mut self) -> &mut PopulationState;
 }
 
