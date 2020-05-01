@@ -146,9 +146,9 @@ impl Develop<Genome, Executor> for Developer {
                         node.1 as f64 / ESHYPERNEAT.resolution,
                     ])[1],
                     if *node_mapping.get(node).unwrap() < first_output_id {
-                        activation::Activation::ReLU
+                        ESHYPERNEAT.hidden_activation
                     } else {
-                        activation::Activation::Softmax
+                        ESHYPERNEAT.output_activation
                     },
                 ),
             })

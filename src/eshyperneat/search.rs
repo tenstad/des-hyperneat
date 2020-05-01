@@ -90,7 +90,9 @@ impl QuadPoint {
 
         for (variance, child) in variances.iter().zip(self.children()) {
             if *variance > ESHYPERNEAT.variance_threshold {
-                if connections.len() >= ESHYPERNEAT.max_discoveries {
+                if ESHYPERNEAT.max_discoveries > 0
+                    && connections.len() >= ESHYPERNEAT.max_discoveries
+                {
                     connections.push(Target::new((child.x, child.y), child.weight));
                 } else {
                     child.extract(f, connections);
@@ -130,7 +132,7 @@ pub fn find_connections(
     root.expand(&mut f);
     root.extract(&mut f, &mut connections);
 
-    if connections.len() > ESHYPERNEAT.max_outgoing {
+    if ESHYPERNEAT.max_outgoing > 0 && connections.len() > ESHYPERNEAT.max_outgoing {
         connections.sort_by(|a, b| b.edge.abs().partial_cmp(&a.edge.abs()).unwrap());
         connections.truncate(ESHYPERNEAT.max_outgoing);
     }
