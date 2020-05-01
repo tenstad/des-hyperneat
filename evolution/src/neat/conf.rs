@@ -20,6 +20,12 @@ pub struct Conf {
 
     #[envconfig(from = "DISABLE_CONNECTION_PROBABILITY", default = "0.05")]
     pub disable_connection_probability: f64,
+
+    #[envconfig(from = "ONLY_HIDDEN_NODE_DISTANCE", default = "true")]
+    pub only_hidden_node_distance: bool,
+
+    #[envconfig(from = "LINK_DISTANCE_WEIGHT", default = "0.5")]
+    pub link_distance_weight: f64,
 }
 
 lazy_static! {

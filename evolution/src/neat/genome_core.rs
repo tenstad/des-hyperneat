@@ -63,13 +63,13 @@ where
 
     // Genetic distance between two genomes
     fn distance(&self, other: &Self) -> f64 {
-        let mut link_differences: u64 = 0; // Number of links present in only one of the genomes
+        let mut link_differences: f64 = 0.0; // Number of links present in only one of the genomes
         let mut link_distance: f64 = 0.0; // Total distance between links present in both genomes
-        let mut link_count = self.links.len() as u64; // Number of unique links between the two genomes
+        let mut link_count = self.links.len() as f64; // Number of unique links between the two genomes
 
         for link_ref in other.links.keys() {
             if !self.links.contains_key(link_ref) {
-                link_differences += 1;
+                link_differences += 1.0;
             }
         }
         link_count += link_differences; // Count is number of links in A + links in B that are not in A
@@ -78,17 +78,74 @@ where
             if let Some(link2) = other.links.get(link_ref) {
                 link_distance += link.distance(link2); // Distance normalized between 0 and 1
             } else {
-                link_differences += 1;
+                link_differences += 1.0;
             }
         }
 
-        let dist = if link_count == 0 {
+        let link_dist = if link_count == 0.0 {
             0.0
         } else {
-            ((link_differences as f64) + link_distance) / (link_count as f64)
+            (link_differences + link_distance) / link_count
         };
 
-        return dist;
+        // Same process for nodes
+        let mut node_differences = 0.0;
+        let mut node_distance = 0.0;
+        let mut node_count = self.hidden_nodes.len() as f64;
+
+        if !NEAT.only_hidden_node_distance {
+            node_count += (self.inputs.len() + self.outputs.len()) as f64;
+        }
+        for node_ref in other.hidden_nodes.keys() {
+            if !self.hidden_nodes.contains_key(node_ref) {
+                node_differences += 1.0;
+            }
+        }
+        if !NEAT.only_hidden_node_distance {
+            for node_ref in other.inputs.keys() {
+                if !self.inputs.contains_key(node_ref) {
+                    node_differences += 1.0;
+                }
+            }
+            for node_ref in other.outputs.keys() {
+                if !self.outputs.contains_key(node_ref) {
+                    node_differences += 1.0;
+                }
+            }
+        }
+        node_count += node_differences;
+
+        for (node_ref, node) in self.hidden_nodes.iter() {
+            if let Some(node2) = other.hidden_nodes.get(node_ref) {
+                node_distance += node.distance(node2);
+            } else {
+                node_differences += 1.0;
+            }
+        }
+        if !NEAT.only_hidden_node_distance {
+            for (node_ref, node) in self.inputs.iter() {
+                if let Some(node2) = other.inputs.get(node_ref) {
+                    node_distance += node.distance(node2);
+                } else {
+                    node_differences += 1.0;
+                }
+            }
+            for (node_ref, node) in self.outputs.iter() {
+                if let Some(node2) = other.outputs.get(node_ref) {
+                    node_distance += node.distance(node2);
+                } else {
+                    node_differences += 1.0;
+                }
+            }
+        }
+
+        let node_dist = if node_count == 0.0 {
+            0.0
+        } else {
+            (node_differences + node_distance) / node_count
+        };
+
+        NEAT.link_distance_weight * link_dist + (1.0 - NEAT.link_distance_weight) * node_dist
     }
 
     /// Generate genome with default activation and no connections
