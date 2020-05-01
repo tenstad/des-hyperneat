@@ -6,17 +6,20 @@ pub struct Conf {
     #[envconfig(from = "THREADS", default = "8")]
     pub thread_count: usize,
 
-    #[envconfig(from = "POPULATION_SIZE", default = "200")]
-    pub population_size: usize,
-
     #[envconfig(from = "ITERATIONS", default = "1000000")]
     pub iterations: usize,
+
+    #[envconfig(from = "POPULATION_SIZE", default = "200")]
+    pub population_size: usize,
 
     #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.85")]
     pub speciation_threshold: f64,
 
-    #[envconfig(from = "INTERSPECIES_REPRODUCTION_CHANCE", default = "0.15")]
-    pub interspecies_reproduction_chance: f64,
+    #[envconfig(from = "ASEXUAL_REPRODUCTION_PROBABILITY", default = "0.2")]
+    pub asexual_reproduction_probability: f64,
+
+    #[envconfig(from = "INTERSPECIES_REPRODUCTION_PROBABILITY", default = "0.15")]
+    pub interspecies_reproduction_probability: f64,
 
     #[envconfig(from = "TOURNAMENT_SIZE", default = "2")]
     pub tournament_size: usize,

@@ -180,7 +180,7 @@ impl<G: Genome> Population<G> {
             // Breed new organisms
             for _ in 0..reproductions {
                 let error = "unable to gather organism";
-                let father = if rng.gen::<f64>() < EVOLUTION.interspecies_reproduction_chance {
+                let father = if rng.gen::<f64>() < EVOLUTION.interspecies_reproduction_probability {
                     // Interspecies breeding
                     self.tournament_select(EVOLUTION.interspecies_tournament_size)
                         .expect(error)
@@ -190,11 +190,16 @@ impl<G: Genome> Population<G> {
                         .tournament_select(EVOLUTION.tournament_size)
                         .expect(error)
                 };
-                let mother = self.species[i]
-                    .tournament_select(EVOLUTION.tournament_size)
-                    .expect(error);
 
-                let mut child = mother.crossover(father);
+                let mut child = if rng.gen::<f64>() < EVOLUTION.asexual_reproduction_probability {
+                    father.as_elite()
+                } else {
+                    let mother = self.species[i]
+                        .tournament_select(EVOLUTION.tournament_size)
+                        .expect(error);
+                    mother.crossover(father)
+                };
+
                 child.mutate(&mut self.state);
                 self.push(child, true);
             }
