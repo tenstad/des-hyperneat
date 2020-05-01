@@ -3,7 +3,7 @@ use crate::neat::{
     genome::{Genome, GenomeComponent},
     link::LinkCore,
     node::{NodeCore, NodeRef},
-    state::{InitConfig, Innovation, NeatStateProvider, PopulationState},
+    state::{InitConfig, Innovation, PopulationState},
 };
 use network::connection;
 use rand::{seq::SliceRandom, Rng};

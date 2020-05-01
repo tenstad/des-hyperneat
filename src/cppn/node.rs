@@ -6,7 +6,7 @@ use evolution::neat::{
 use network::activation::Activation;
 use rand::Rng;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Node {
     pub neat_node: NodeCore,
     pub activation: Activation,

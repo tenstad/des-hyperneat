@@ -1,7 +1,7 @@
 use crate::neat::{genome::GenomeComponent, node::NodeRef};
 
 /// Link between two nodes
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct LinkCore {
     pub from: NodeRef,
     pub to: NodeRef,

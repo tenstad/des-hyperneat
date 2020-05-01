@@ -115,7 +115,7 @@ mod tests {
         let link = link::LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
 
         let neat_genome = genome.get_neat_mut();
-        neat_genome.insert_link(link);
+        neat_genome.insert_link(link.clone());
         neat_genome.split_link(link.from, link.to, 0, 1);
 
         neat_genome
