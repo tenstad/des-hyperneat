@@ -22,16 +22,10 @@ pub struct Conf {
     #[envconfig(from = "MUTATE_OUTPUT_ACTIVATION_PROBABILITY", default = "0.05")]
     pub mutate_output_activation_probability: f64,
 
-    #[envconfig(
-        from = "HIDDEN_ACTIVATIONS",
-        default = "None ReLU Sigmoid Normal Sine Square Exp"
-    )]
+    #[envconfig(from = "HIDDEN_ACTIVATIONS", default = "All")]
     pub hidden_activations: Activations,
 
-    #[envconfig(
-        from = "OUTPUT_ACTIVATIONS",
-        default = "None ReLU Sigmoid Normal Sine Square Exp"
-    )]
+    #[envconfig(from = "OUTPUT_ACTIVATIONS", default = "All")]
     pub output_activations: Activations,
 }
 
