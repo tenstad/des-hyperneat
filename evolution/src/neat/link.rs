@@ -52,7 +52,7 @@ impl GenomeComponent<LinkCore> for LinkCore {
     }
 
     fn distance(&self, other: &Self) -> f64 {
-        0.5 * (self.weight - other.weight).tanh().abs()
-            + 0.5 * ((self.enabled == other.enabled) as u64) as f64
+        0.5 * (self.weight - other.weight).abs().tanh()
+            + 0.5 * ((self.enabled != other.enabled) as u8) as f64
     }
 }

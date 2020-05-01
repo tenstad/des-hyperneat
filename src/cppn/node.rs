@@ -49,6 +49,9 @@ impl GenomeComponent<NodeCore> for Node {
     }
 
     fn distance(&self, other: &Self) -> f64 {
-        self.neat_node.distance(&other.neat_node)
+        let mut distance = self.neat_node.distance(&other.neat_node);
+        distance += 0.5 * ((self.activation != other.activation) as u8) as f64;
+        distance += 0.5 * (self.bias - other.bias).abs().tanh();
+        distance
     }
 }
