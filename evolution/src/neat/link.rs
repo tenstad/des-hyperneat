@@ -24,8 +24,8 @@ impl LinkCore {
     }
 }
 
-impl GenomeComponent<LinkCore> for LinkCore {
-    fn new(link: Self) -> Self {
+impl<S> GenomeComponent<LinkCore, S> for LinkCore {
+    fn new(link: Self, _: &mut S) -> Self {
         link
     }
 

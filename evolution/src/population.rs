@@ -8,15 +8,17 @@ use std::collections::HashMap;
 use std::{f64, fmt};
 
 pub struct Population<G: Genome> {
-    population_size: usize,
-    next_id: usize,
-    species: HashMap<usize, Species<G>>,
-    extinct_species: HashMap<usize, Species<G>>,
-    state: G::PopulationState,
+    pub population_size: usize,
+    pub next_id: usize,
+    pub species: HashMap<usize, Species<G>>,
+    pub extinct_species: HashMap<usize, Species<G>>,
+    pub state: G::PopulationState,
 }
 
 impl<G: Genome> Population<G> {
     pub fn new(population_size: usize, init_config: &G::InitConfig) -> Self {
+        let mut state = G::PopulationState::default();
+
         let mut population = Population {
             population_size,
             next_id: 0,
@@ -26,8 +28,10 @@ impl<G: Genome> Population<G> {
         };
 
         for _ in 0..population_size {
-            population.push(Organism::<G>::new(&init_config), false);
+            population.push(Organism::<G>::new(&init_config, &mut state), false);
         }
+
+        population.state = state;
 
         return population;
     }
@@ -103,7 +107,8 @@ impl<G: Genome> Population<G> {
         // in order of floating distance from additional offspring
         while new_population_size < self.population_size {
             for species_id in species_ids.iter() {
-                self.species.get_mut(species_id).unwrap().offsprings += 1.0;
+                let mut species = self.species.get_mut(species_id).unwrap();
+                species.offsprings = species.offsprings.floor() + 1.0;
                 new_population_size += 1;
 
                 if new_population_size == self.population_size {
@@ -273,7 +278,7 @@ impl<G: Genome> Population<G> {
     }
 
     /// Iterate organisms
-    fn iter(&self) -> impl Iterator<Item = &Organism<G>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Organism<G>> {
         self.species
             .values()
             .map(|species| species.iter())
@@ -281,7 +286,7 @@ impl<G: Genome> Population<G> {
     }
 
     /// Iterate organisms
-    fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<G>> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<G>> {
         self.species
             .values_mut()
             .map(|species| species.iter_mut())
@@ -289,7 +294,7 @@ impl<G: Genome> Population<G> {
     }
 
     /// Enumerate organisms
-    fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &Organism<G>)> {
+    pub fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &Organism<G>)> {
         self.species
             .iter()
             .map(|(species_index, species)| {

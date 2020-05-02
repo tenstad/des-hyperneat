@@ -101,7 +101,7 @@ mod tests {
     use evolution::{
         algorithm::Algorithm,
         environment::{DummyEnvironment, Environment},
-        neat::{genome::Genome, link},
+        neat::{genome::Genome, link, state::PopulationState},
     };
     use network::activation;
 
@@ -109,12 +109,16 @@ mod tests {
     fn test_develop() {
         let environment = DummyEnvironment::new(EnvironmentDescription::new(4, 2));
         let developer = Developer::from(environment.description());
-        let mut genome = CppnGenome::new(&Cppn::genome_init_config(&environment.description()));
+        let mut state = PopulationState::default();
+        let mut genome = CppnGenome::new(
+            &Cppn::genome_init_config(&environment.description()),
+            &mut state,
+        );
         let link = link::LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
 
         let neat_genome = genome.get_neat_mut();
         neat_genome.insert_link(link.clone());
-        neat_genome.split_link(link.from, link.to, 0, 1);
+        neat_genome.split_link(link.from, link.to, 0, 1, &mut state);
 
         neat_genome
             .inputs

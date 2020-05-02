@@ -3,17 +3,18 @@ use crate::neat::{
     genome::{Genome, GenomeComponent},
     link::LinkCore,
     node::{NodeCore, NodeRef},
-    state::{InitConfig, Innovation, PopulationState},
+    state::{InitConfig, Innovation, NeatStateProvider},
 };
 use network::connection;
 use rand::{seq::SliceRandom, Rng};
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 #[derive(Clone)]
-pub struct GenomeCore<N, L>
+pub struct GenomeCore<N, L, S>
 where
-    N: GenomeComponent<NodeCore>,
-    L: GenomeComponent<LinkCore>,
+    N: GenomeComponent<NodeCore, S>,
+    L: GenomeComponent<LinkCore, S>,
 {
     pub inputs: HashMap<NodeRef, N>,
     pub hidden_nodes: HashMap<NodeRef, N>,
@@ -21,17 +22,19 @@ where
     pub links: HashMap<(NodeRef, NodeRef), L>, // Links between nodes
 
     pub connections: connection::Connections<NodeRef, ()>, // Fast connection lookup
+    phantom: PhantomData<S>,
 }
 
-impl<N, L> Genome for GenomeCore<N, L>
+impl<N, L, S: NeatStateProvider> Genome for GenomeCore<N, L, S>
 where
-    N: GenomeComponent<NodeCore>,
-    L: GenomeComponent<LinkCore>,
+    N: GenomeComponent<NodeCore, S>,
+    L: GenomeComponent<LinkCore, S>,
+    S: NeatStateProvider,
 {
     type Node = N;
     type Link = L;
     type Init = InitConfig;
-    type State = PopulationState;
+    type State = S;
 
     fn get_neat(&self) -> &Self {
         self
@@ -149,16 +152,21 @@ where
     }
 
     /// Generate genome with default activation and no connections
-    fn new(init_config: &InitConfig) -> Self {
+    fn new(init_config: &InitConfig, population_state: &mut Self::State) -> Self {
         let inputs: HashMap<NodeRef, N> = (0..init_config.inputs)
-            .map(|i| (NodeRef::Input(i), N::new(NodeCore::new(NodeRef::Input(i)))))
+            .map(|i| {
+                (
+                    NodeRef::Input(i),
+                    N::new(NodeCore::new(NodeRef::Input(i)), population_state),
+                )
+            })
             .collect();
 
         let outputs: HashMap<NodeRef, N> = (0..init_config.outputs)
             .map(|i| {
                 (
                     NodeRef::Output(i),
-                    N::new(NodeCore::new(NodeRef::Output(i))),
+                    N::new(NodeCore::new(NodeRef::Output(i)), population_state),
                 )
             })
             .collect();
@@ -169,6 +177,7 @@ where
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
             connections: connection::Connections::<NodeRef, ()>::new(),
+            phantom: PhantomData,
         }
     }
 
@@ -231,10 +240,8 @@ where
     }
 }
 
-impl<N, L> GenomeCore<N, L>
-where
-    N: GenomeComponent<NodeCore>,
-    L: GenomeComponent<LinkCore>,
+impl<N: GenomeComponent<NodeCore, S>, L: GenomeComponent<LinkCore, S>, S: NeatStateProvider>
+    GenomeCore<N, L, S>
 {
     pub fn empty() -> Self {
         Self {
@@ -243,6 +250,15 @@ where
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
             connections: connection::Connections::<NodeRef, ()>::new(),
+            phantom: PhantomData,
+        }
+    }
+
+    pub fn get_node<'a>(&'a self, node_ref: &'a NodeRef) -> Option<&'a N> {
+        match node_ref {
+            NodeRef::Input(_) => self.inputs.get(node_ref),
+            NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref),
+            NodeRef::Output(_) => self.outputs.get(node_ref),
         }
     }
 
@@ -252,6 +268,7 @@ where
         to: NodeRef,
         new_node_id: usize,
         innovation_number: usize,
+        population_state: &mut S,
     ) {
         // Disable link
         let link = self
@@ -276,16 +293,20 @@ where
 
         self.hidden_nodes.insert(
             new_node_ref,
-            N::new(NodeCore::new(NodeRef::Hidden(new_node_id))),
+            N::new(
+                NodeCore::new(NodeRef::Hidden(new_node_id)),
+                population_state,
+            ),
         );
 
-        let link1 = L::new(LinkCore::new(from, new_node_ref, 1.0, innovation_number));
-        let link2 = L::new(LinkCore::new(
-            new_node_ref,
-            to,
-            link.weight,
-            innovation_number + 1,
-        ));
+        let link1 = L::new(
+            LinkCore::new(from, new_node_ref, 1.0, innovation_number),
+            population_state,
+        );
+        let link2 = L::new(
+            LinkCore::new(new_node_ref, to, link.weight, innovation_number + 1),
+            population_state,
+        );
 
         assert!(!self
             .links
@@ -325,7 +346,7 @@ where
         }*/
     }
 
-    fn mutation_add_node(&mut self, population_state: &mut PopulationState) {
+    fn mutation_add_node(&mut self, population_state: &mut S) {
         // Select random enabled link
         if let Some(index) = self
             .links
@@ -341,39 +362,51 @@ where
 
             // Check if this link has been split by another individual
             if let Some(addition) = population_state
+                .get_neat()
                 .innovation_log
                 .node_additions
                 .get(&link.get_neat().innovation)
             {
                 // Split the link
-                self.split_link(from, to, addition.node_number, addition.innovation_number);
-            } else {
-                // Split the link
                 self.split_link(
                     from,
                     to,
-                    population_state.next_innovation.node_number,
-                    population_state.next_innovation.innovation_number,
+                    addition.node_number,
+                    addition.innovation_number,
+                    population_state,
                 );
+            } else {
+                let (node_number, innovation_number) = {
+                    let neat_state = population_state.get_neat();
+                    (
+                        neat_state.next_innovation.node_number,
+                        neat_state.next_innovation.innovation_number,
+                    )
+                };
+
+                // Split the link
+                self.split_link(from, to, node_number, innovation_number, population_state);
+
+                let mut neat_state = population_state.get_neat_mut();
 
                 // Add this mutation to log
-                population_state.innovation_log.node_additions.insert(
+                neat_state.innovation_log.node_additions.insert(
                     link.get_neat().innovation,
                     Innovation {
-                        node_number: population_state.next_innovation.node_number,
-                        innovation_number: population_state.next_innovation.innovation_number,
+                        node_number: neat_state.next_innovation.node_number,
+                        innovation_number: neat_state.next_innovation.innovation_number,
                     },
                 );
 
                 // Increase global node count and innovation number
-                population_state.next_innovation.node_number += 1;
-                population_state.next_innovation.innovation_number += 2;
+                neat_state.next_innovation.node_number += 1;
+                neat_state.next_innovation.innovation_number += 2;
             }
         }
     }
 
     // TODO: avoid retries
-    fn mutation_add_connection(&mut self, population_state: &mut PopulationState) {
+    fn mutation_add_connection(&mut self, population_state: &mut S) {
         let mut rng = rand::thread_rng();
 
         // Retry 50 times
@@ -406,28 +439,33 @@ where
                 {
                     // Check if this link has been added by another individual
                     let innovation = match population_state
+                        .get_neat()
                         .innovation_log
                         .edge_additions
                         .get(&(from, to))
                     {
                         Some(innovation_number) => *innovation_number,
                         None => {
-                            population_state.innovation_log.edge_additions.insert(
-                                (from, to),
-                                population_state.next_innovation.innovation_number,
-                            );
-                            population_state.next_innovation.innovation_number += 1;
+                            let mut neat_state = population_state.get_neat_mut();
+                            neat_state
+                                .innovation_log
+                                .edge_additions
+                                .insert((from, to), neat_state.next_innovation.innovation_number);
+                            neat_state.next_innovation.innovation_number += 1;
 
-                            population_state.next_innovation.innovation_number - 1
+                            neat_state.next_innovation.innovation_number - 1
                         }
                     };
 
-                    self.insert_link(L::new(LinkCore::new(
-                        from,
-                        to,
-                        (rng.gen::<f64>() - 0.5) * 2.0 * NEAT.initial_link_weight_size,
-                        innovation,
-                    )));
+                    self.insert_link(L::new(
+                        LinkCore::new(
+                            from,
+                            to,
+                            (rng.gen::<f64>() - 0.5) * 2.0 * NEAT.initial_link_weight_size,
+                            innovation,
+                        ),
+                        population_state,
+                    ));
                     break;
                 }
             } else {

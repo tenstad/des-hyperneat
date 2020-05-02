@@ -12,9 +12,9 @@ pub struct Organism<G> {
 }
 
 impl<G: Genome> Organism<G> {
-    pub fn new(init_config: &G::InitConfig) -> Self {
+    pub fn new(init_config: &G::InitConfig, population_state: &mut G::PopulationState) -> Self {
         Self {
-            genome: G::new(init_config),
+            genome: G::new(init_config, population_state),
             fitness: 0.0,
             adjusted_fitness: 0.0,
             generation: 0,

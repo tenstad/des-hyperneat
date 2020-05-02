@@ -6,8 +6,8 @@ pub struct NodeCore {
     pub node_ref: NodeRef,
 }
 
-impl GenomeComponent<NodeCore> for NodeCore {
-    fn new(node: Self) -> Self {
+impl<S> GenomeComponent<NodeCore, S> for NodeCore {
+    fn new(node: Self, _: &mut S) -> Self {
         node
     }
 
