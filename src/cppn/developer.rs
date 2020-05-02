@@ -100,47 +100,43 @@ mod tests {
     use crate::cppn::{genome::Genome as CppnGenome, Cppn};
     use evolution::{
         algorithm::Algorithm,
-        environment::{DummyEnvironment, Environment},
-        neat::{genome::Genome, link, state::StateCore},
+        neat::{
+            genome::Genome,
+            link::{DefaultLink, LinkCore},
+            state::StateCore,
+        },
     };
-    use network::activation;
+    use network::activation::Activation;
 
     #[test]
     fn test_develop() {
-        let environment = DummyEnvironment::new(EnvironmentDescription::new(4, 2));
-        let developer = Developer::from(environment.description());
+        let description = EnvironmentDescription::new(4, 2);
         let mut state = StateCore::default();
-        let mut genome = CppnGenome::new(
-            &Cppn::genome_init_config(&environment.description()),
-            &mut state,
-        );
-        let link = link::DefaultLink {
-            core: link::LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0),
-        };
+        let mut genome = CppnGenome::new(&Cppn::genome_init_config(&description), &mut state);
+        let link = DefaultLink::new(LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0));
 
         let core = genome.get_core_mut();
         core.insert_link(link.clone());
         core.split_link(link.core.from, link.core.to, 0, 1, &mut state);
 
-        core.inputs.get_mut(&NodeRef::Input(1)).unwrap().activation = activation::Activation::None;
+        core.inputs.get_mut(&NodeRef::Input(1)).unwrap().activation = Activation::None;
         core.hidden_nodes
             .get_mut(&NodeRef::Hidden(0))
             .unwrap()
-            .activation = activation::Activation::Exp;
+            .activation = Activation::Exp;
         core.outputs
             .get_mut(&NodeRef::Output(1))
             .unwrap()
-            .activation = activation::Activation::Sine;
+            .activation = Activation::Sine;
 
-        let mut phenotype = developer.develop(&genome);
+        let mut phenotype = Developer::from(description.clone()).develop(&genome);
 
         let result = phenotype.execute(&vec![5.0, 7.0, -1.0, -1.0]);
         assert_eq!(
             result,
             vec![
                 0.0,
-                activation::Activation::Sine
-                    .activate(3.0 * activation::Activation::Exp.activate(7.0))
+                Activation::Sine.activate(3.0 * Activation::Exp.activate(7.0))
             ]
         );
     }

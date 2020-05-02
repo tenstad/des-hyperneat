@@ -43,7 +43,7 @@ impl LinkCore {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, new)]
 pub struct DefaultLink {
     pub core: LinkCore,
 }
