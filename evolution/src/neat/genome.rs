@@ -1,14 +1,14 @@
 use crate::neat::{
     genome_core::GenomeCore,
-    link::LinkCore,
-    node::NodeCore,
-    state::{InitConfig, NeatStateProvider, PopulationState},
+    link::{DefaultLink, LinkCore},
+    node::{DefaultNode, NodeCore},
+    state::{InitConfig, NeatStateProvider, StateCore},
 };
 
-pub type DefaultNeatGenome = GenomeCore<NodeCore, LinkCore, PopulationState>;
-impl crate::genome::Genome for GenomeCore<NodeCore, LinkCore, PopulationState> {
+pub type DefaultNeatGenome = GenomeCore<DefaultNode, DefaultLink, StateCore>;
+impl crate::genome::Genome for DefaultNeatGenome {
     type InitConfig = InitConfig;
-    type PopulationState = PopulationState;
+    type State = StateCore;
 }
 
 pub trait Genome: Clone + Send {
@@ -18,8 +18,8 @@ pub trait Genome: Clone + Send {
     type Link: GenomeComponent<LinkCore, Self::State>;
 
     fn new(init_config: &Self::Init, state: &mut Self::State) -> Self;
-    fn get_neat(&self) -> &GenomeCore<Self::Node, Self::Link, Self::State>;
-    fn get_neat_mut(&mut self) -> &mut GenomeCore<Self::Node, Self::Link, Self::State>;
+    fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link, Self::State>;
+    fn get_core_mut(&mut self) -> &mut GenomeCore<Self::Node, Self::Link, Self::State>;
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
     fn mutate(&mut self, state: &mut Self::State);
     fn distance(&self, other: &Self) -> f64;
@@ -27,8 +27,8 @@ pub trait Genome: Clone + Send {
 
 pub trait GenomeComponent<T, S>: Clone + Send {
     fn new(core_component: T, state: &mut S) -> Self;
-    fn get_neat(&self) -> &T;
-    fn get_neat_mut(&mut self) -> &mut T;
+    fn get_core(&self) -> &T;
+    fn get_core_mut(&mut self) -> &mut T;
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
     fn distance(&self, other: &Self) -> f64;
 }
@@ -39,8 +39,8 @@ impl<
         G: Genome<Node = N, Link = L>,
     > crate::genome::GenericGenome<G::State, G::Init> for G
 {
-    fn new(init_config: &G::Init, population_state: &mut G::State) -> Self {
-        G::new(init_config, population_state)
+    fn new(init_config: &G::Init, state: &mut G::State) -> Self {
+        G::new(init_config, state)
     }
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
         G::crossover(self, other, fitness, other_fitness)

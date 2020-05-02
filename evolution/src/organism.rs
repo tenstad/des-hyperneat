@@ -12,9 +12,9 @@ pub struct Organism<G> {
 }
 
 impl<G: Genome> Organism<G> {
-    pub fn new(init_config: &G::InitConfig, population_state: &mut G::PopulationState) -> Self {
+    pub fn new(init_config: &G::InitConfig, state: &mut G::State) -> Self {
         Self {
-            genome: G::new(init_config, population_state),
+            genome: G::new(init_config, state),
             fitness: 0.0,
             adjusted_fitness: 0.0,
             generation: 0,
@@ -49,8 +49,8 @@ impl<G: Genome> Organism<G> {
     }
 
     /// Mutate organism
-    pub fn mutate(&mut self, population_state: &mut G::PopulationState) {
-        self.genome.mutate(population_state);
+    pub fn mutate(&mut self, state: &mut G::State) {
+        self.genome.mutate(state);
     }
 
     /// Genetic distance to other organism

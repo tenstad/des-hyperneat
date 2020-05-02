@@ -54,11 +54,11 @@ impl Develop<NeatGenome, Executor> for Developer {
             .filter_map(|action| match action {
                 connection::OrderedAction::Edge(from, to, _) => {
                     let link = genome.links.get(&(*from, *to)).unwrap();
-                    if link.enabled {
+                    if link.core.enabled {
                         Some(execute::Action::Link(
                             *node_mapping.get(from).unwrap(),
                             *node_mapping.get(to).unwrap(),
-                            link.weight,
+                            link.core.weight,
                         ))
                     } else {
                         None

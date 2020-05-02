@@ -2,55 +2,53 @@ use crate::cppn::{conf::CPPN, node::Node};
 use evolution::neat::{
     genome::Genome as NeatGenome,
     genome_core::GenomeCore,
-    link::LinkCore,
+    link::DefaultLink,
     node::NodeRef,
-    state::{InitConfig, PopulationState},
+    state::{InitConfig, StateCore},
 };
 use network::activation;
 use rand::Rng;
 
-type NeatGenomeType = GenomeCore<Node, LinkCore, PopulationState>;
+type NeatCore = GenomeCore<Node, DefaultLink, StateCore>;
 
 impl evolution::genome::Genome for Genome {
     type InitConfig = InitConfig;
-    type PopulationState = PopulationState;
+    type State = StateCore;
 }
 
 #[derive(Clone)]
 pub struct Genome {
-    pub neat_genome: NeatGenomeType,
+    pub core: NeatCore,
 }
 
 impl NeatGenome for Genome {
     type Init = InitConfig;
-    type State = PopulationState;
+    type State = StateCore;
     type Node = Node;
-    type Link = LinkCore;
+    type Link = DefaultLink;
 
-    fn new(init_config: &Self::Init, population_state: &mut Self::State) -> Self {
+    fn new(init_config: &Self::Init, state: &mut Self::State) -> Self {
         Self {
-            neat_genome: NeatGenomeType::new(init_config, population_state),
+            core: NeatCore::new(init_config, state),
         }
     }
 
-    fn get_neat(&self) -> &NeatGenomeType {
-        &self.neat_genome
+    fn get_core(&self) -> &NeatCore {
+        &self.core
     }
 
-    fn get_neat_mut(&mut self) -> &mut NeatGenomeType {
-        &mut self.neat_genome
+    fn get_core_mut(&mut self) -> &mut NeatCore {
+        &mut self.core
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
         Self {
-            neat_genome: self
-                .neat_genome
-                .crossover(&other.neat_genome, fitness, other_fitness),
+            core: self.core.crossover(&other.core, fitness, other_fitness),
         }
     }
 
-    fn mutate(&mut self, population_state: &mut PopulationState) {
-        self.neat_genome.mutate(population_state);
+    fn mutate(&mut self, state: &mut StateCore) {
+        self.core.mutate(state);
 
         let mut rng = rand::thread_rng();
 
@@ -72,45 +70,33 @@ impl NeatGenome for Genome {
     }
 
     fn distance(&self, other: &Self) -> f64 {
-        self.get_neat().distance(other.get_neat())
+        self.get_core().distance(other.get_core())
     }
 }
 
 impl Genome {
     pub fn get_activation(&self, node_ref: &NodeRef) -> activation::Activation {
         match node_ref {
-            NodeRef::Input(_) => self.neat_genome.inputs.get(node_ref).unwrap().activation,
-            NodeRef::Hidden(_) => {
-                self.neat_genome
-                    .hidden_nodes
-                    .get(node_ref)
-                    .unwrap()
-                    .activation
-            }
-            NodeRef::Output(_) => self.neat_genome.outputs.get(node_ref).unwrap().activation,
+            NodeRef::Input(_) => self.core.inputs.get(node_ref).unwrap().activation,
+            NodeRef::Hidden(_) => self.core.hidden_nodes.get(node_ref).unwrap().activation,
+            NodeRef::Output(_) => self.core.outputs.get(node_ref).unwrap().activation,
         }
     }
 
     pub fn get_bias(&self, node_ref: &NodeRef) -> f64 {
         match node_ref {
-            NodeRef::Input(_) => self.neat_genome.inputs.get(node_ref).unwrap().bias,
-            NodeRef::Hidden(_) => self.neat_genome.hidden_nodes.get(node_ref).unwrap().bias,
-            NodeRef::Output(_) => self.neat_genome.outputs.get(node_ref).unwrap().bias,
+            NodeRef::Input(_) => self.core.inputs.get(node_ref).unwrap().bias,
+            NodeRef::Hidden(_) => self.core.hidden_nodes.get(node_ref).unwrap().bias,
+            NodeRef::Output(_) => self.core.outputs.get(node_ref).unwrap().bias,
         }
     }
 
     fn mutate_hidden_bias(&mut self) {
         let mut rng = rand::thread_rng();
 
-        if !self.neat_genome.hidden_nodes.is_empty() {
-            let link_index = rng.gen_range(0, self.neat_genome.hidden_nodes.len());
-            if let Some(node) = self
-                .neat_genome
-                .hidden_nodes
-                .values_mut()
-                .skip(link_index)
-                .next()
-            {
+        if !self.core.hidden_nodes.is_empty() {
+            let link_index = rng.gen_range(0, self.core.hidden_nodes.len());
+            if let Some(node) = self.core.hidden_nodes.values_mut().skip(link_index).next() {
                 node.bias += (rng.gen::<f64>() - 0.5) * 2.0 * CPPN.mutate_hidden_bias_size;
             }
         }
@@ -119,15 +105,9 @@ impl Genome {
     fn mutate_hidden_activation(&mut self) {
         let mut rng = rand::thread_rng();
 
-        if !self.neat_genome.hidden_nodes.is_empty() {
-            let link_index = rng.gen_range(0, self.neat_genome.hidden_nodes.len());
-            if let Some(node) = self
-                .neat_genome
-                .hidden_nodes
-                .values_mut()
-                .skip(link_index)
-                .next()
-            {
+        if !self.core.hidden_nodes.is_empty() {
+            let link_index = rng.gen_range(0, self.core.hidden_nodes.len());
+            if let Some(node) = self.core.hidden_nodes.values_mut().skip(link_index).next() {
                 node.activation = CPPN.hidden_activations.random();
             }
         }
@@ -136,15 +116,9 @@ impl Genome {
     fn mutate_output_bias(&mut self) {
         let mut rng = rand::thread_rng();
 
-        if !self.neat_genome.outputs.is_empty() {
-            let link_index = rng.gen_range(0, self.neat_genome.outputs.len());
-            if let Some(node) = self
-                .neat_genome
-                .outputs
-                .values_mut()
-                .skip(link_index)
-                .next()
-            {
+        if !self.core.outputs.is_empty() {
+            let link_index = rng.gen_range(0, self.core.outputs.len());
+            if let Some(node) = self.core.outputs.values_mut().skip(link_index).next() {
                 node.bias += (rng.gen::<f64>() - 0.5) * 2.0 * CPPN.mutate_output_bias_size;
             }
         }
@@ -153,15 +127,9 @@ impl Genome {
     fn mutate_output_activation(&mut self) {
         let mut rng = rand::thread_rng();
 
-        if !self.neat_genome.outputs.is_empty() {
-            let link_index = rng.gen_range(0, self.neat_genome.outputs.len());
-            if let Some(node) = self
-                .neat_genome
-                .outputs
-                .values_mut()
-                .skip(link_index)
-                .next()
-            {
+        if !self.core.outputs.is_empty() {
+            let link_index = rng.gen_range(0, self.core.outputs.len());
+            if let Some(node) = self.core.outputs.values_mut().skip(link_index).next() {
                 node.activation = CPPN.output_activations.random();
             }
         }

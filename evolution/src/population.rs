@@ -12,19 +12,19 @@ pub struct Population<G: Genome> {
     pub next_id: usize,
     pub species: HashMap<usize, Species<G>>,
     pub extinct_species: HashMap<usize, Species<G>>,
-    pub state: G::PopulationState,
+    pub state: G::State,
 }
 
 impl<G: Genome> Population<G> {
     pub fn new(population_size: usize, init_config: &G::InitConfig) -> Self {
-        let mut state = G::PopulationState::default();
+        let mut state = G::State::default();
 
         let mut population = Population {
             population_size,
             next_id: 0,
             species: HashMap::new(),
             extinct_species: HashMap::new(),
-            state: G::PopulationState::default(),
+            state: G::State::default(),
         };
 
         for _ in 0..population_size {

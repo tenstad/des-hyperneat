@@ -6,28 +6,45 @@ pub struct NodeCore {
     pub node_ref: NodeRef,
 }
 
-impl<S> GenomeComponent<NodeCore, S> for NodeCore {
-    fn new(node: Self, _: &mut S) -> Self {
-        node
-    }
-
-    fn get_neat(&self) -> &Self {
-        self
-    }
-
-    fn get_neat_mut(&mut self) -> &mut Self {
-        self
-    }
-
-    fn crossover(&self, other: &Self, _fitness: &f64, _other_fitness: &f64) -> Self {
+impl NodeCore {
+    pub fn crossover(&self, other: &Self, _fitness: &f64, _other_fitness: &f64) -> Self {
         assert_eq!(self.node_ref, other.node_ref);
         NodeCore {
             node_ref: self.node_ref,
         }
     }
 
-    fn distance(&self, _other: &Self) -> f64 {
+    pub fn distance(&self, _other: &Self) -> f64 {
         0.0
+    }
+}
+
+#[derive(Clone)]
+pub struct DefaultNode {
+    pub core: NodeCore,
+}
+
+impl<S> GenomeComponent<NodeCore, S> for DefaultNode {
+    fn new(core: NodeCore, _: &mut S) -> Self {
+        Self { core }
+    }
+
+    fn get_core(&self) -> &NodeCore {
+        &self.core
+    }
+
+    fn get_core_mut(&mut self) -> &mut NodeCore {
+        &mut self.core
+    }
+
+    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+        Self {
+            core: self.core.crossover(&other.core, fitness, other_fitness),
+        }
+    }
+
+    fn distance(&self, other: &Self) -> f64 {
+        self.core.distance(&other.core)
     }
 }
 

@@ -18,11 +18,11 @@ impl From<EnvironmentDescription> for Developer {
 impl Develop<Genome, Executor> for Developer {
     fn develop(&self, genome: &Genome) -> Executor {
         // Sort genomes netowrk topologically
-        let order = genome.get_neat().connections.sort_topologically();
+        let order = genome.get_core().connections.sort_topologically();
 
         // Create vector of all input node indexes, for insertion of nerual network inputs
         let num_input_nodes = genome
-            .get_neat()
+            .get_core()
             .inputs
             .keys()
             .map(|n| n.id())
@@ -43,7 +43,7 @@ impl Develop<Genome, Executor> for Developer {
 
         // Create vector of all output node indexes, for extraction of nerual network execution result
         let num_output_nodes = genome
-            .get_neat()
+            .get_core()
             .outputs
             .keys()
             .map(|n| n.id())
@@ -70,12 +70,12 @@ impl Develop<Genome, Executor> for Developer {
             .iter()
             .filter_map(|action| match action {
                 connection::OrderedAction::Edge(from, to, _) => {
-                    let link = genome.get_neat().links.get(&(*from, *to)).unwrap();
-                    if link.enabled {
+                    let link = genome.get_core().links.get(&(*from, *to)).unwrap();
+                    if link.core.enabled {
                         Some(execute::Action::Link(
                             *node_mapping.get(from).unwrap(),
                             *node_mapping.get(to).unwrap(),
-                            link.weight,
+                            link.core.weight,
                         ))
                     } else {
                         None
@@ -101,7 +101,7 @@ mod tests {
     use evolution::{
         algorithm::Algorithm,
         environment::{DummyEnvironment, Environment},
-        neat::{genome::Genome, link, state::PopulationState},
+        neat::{genome::Genome, link, state::StateCore},
     };
     use network::activation;
 
@@ -109,29 +109,25 @@ mod tests {
     fn test_develop() {
         let environment = DummyEnvironment::new(EnvironmentDescription::new(4, 2));
         let developer = Developer::from(environment.description());
-        let mut state = PopulationState::default();
+        let mut state = StateCore::default();
         let mut genome = CppnGenome::new(
             &Cppn::genome_init_config(&environment.description()),
             &mut state,
         );
-        let link = link::LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
+        let link = link::DefaultLink {
+            core: link::LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0),
+        };
 
-        let neat_genome = genome.get_neat_mut();
-        neat_genome.insert_link(link.clone());
-        neat_genome.split_link(link.from, link.to, 0, 1, &mut state);
+        let core = genome.get_core_mut();
+        core.insert_link(link.clone());
+        core.split_link(link.core.from, link.core.to, 0, 1, &mut state);
 
-        neat_genome
-            .inputs
-            .get_mut(&NodeRef::Input(1))
-            .unwrap()
-            .activation = activation::Activation::None;
-        neat_genome
-            .hidden_nodes
+        core.inputs.get_mut(&NodeRef::Input(1)).unwrap().activation = activation::Activation::None;
+        core.hidden_nodes
             .get_mut(&NodeRef::Hidden(0))
             .unwrap()
             .activation = activation::Activation::Exp;
-        neat_genome
-            .outputs
+        core.outputs
             .get_mut(&NodeRef::Output(1))
             .unwrap()
             .activation = activation::Activation::Sine;

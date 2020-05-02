@@ -14,21 +14,21 @@ pub struct Innovation {
 }
 
 #[derive(Default, Clone)]
-pub struct PopulationState {
+pub struct StateCore {
     pub innovation_log: InnovationLog,
     pub next_innovation: Innovation,
 }
 
 pub trait NeatStateProvider: Default + Clone + Send {
-    fn get_neat(&self) -> &PopulationState;
-    fn get_neat_mut(&mut self) -> &mut PopulationState;
+    fn get_core(&self) -> &StateCore;
+    fn get_core_mut(&mut self) -> &mut StateCore;
 }
 
-impl NeatStateProvider for PopulationState {
-    fn get_neat(&self) -> &PopulationState {
+impl NeatStateProvider for StateCore {
+    fn get_core(&self) -> &StateCore {
         self
     }
-    fn get_neat_mut(&mut self) -> &mut PopulationState {
+    fn get_core_mut(&mut self) -> &mut StateCore {
         self
     }
 }

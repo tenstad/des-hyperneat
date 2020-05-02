@@ -22,22 +22,8 @@ impl LinkCore {
             innovation,
         }
     }
-}
 
-impl<S> GenomeComponent<LinkCore, S> for LinkCore {
-    fn new(link: Self, _: &mut S) -> Self {
-        link
-    }
-
-    fn get_neat(&self) -> &Self {
-        self
-    }
-
-    fn get_neat_mut(&mut self) -> &mut Self {
-        self
-    }
-
-    fn crossover(&self, other: &Self, _fitness: &f64, _other_fitness: &f64) -> Self {
+    pub fn crossover(&self, other: &Self, _fitness: &f64, _other_fitness: &f64) -> Self {
         assert_eq!(self.from, other.from);
         assert_eq!(self.to, other.to);
         assert_eq!(self.innovation, other.innovation);
@@ -51,8 +37,37 @@ impl<S> GenomeComponent<LinkCore, S> for LinkCore {
         }
     }
 
-    fn distance(&self, other: &Self) -> f64 {
+    pub fn distance(&self, other: &Self) -> f64 {
         0.5 * (self.weight - other.weight).abs().tanh()
             + 0.5 * ((self.enabled != other.enabled) as u8) as f64
+    }
+}
+
+#[derive(Clone)]
+pub struct DefaultLink {
+    pub core: LinkCore,
+}
+
+impl<S> GenomeComponent<LinkCore, S> for DefaultLink {
+    fn new(core: LinkCore, _: &mut S) -> Self {
+        Self { core }
+    }
+
+    fn get_core(&self) -> &LinkCore {
+        &self.core
+    }
+
+    fn get_core_mut(&mut self) -> &mut LinkCore {
+        &mut self.core
+    }
+
+    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+        Self {
+            core: self.core.crossover(&other.core, fitness, other_fitness),
+        }
+    }
+
+    fn distance(&self, other: &Self) -> f64 {
+        self.core.distance(&other.core)
     }
 }
