@@ -18,15 +18,15 @@ pub struct Connection<N, E> {
 
 #[derive(PartialEq)]
 pub enum OrderedAction<N, E> {
-    Link(N, N, E),
-    Activation(N),
+    Edge(N, N, E),
+    Node(N),
 }
 
 impl<N: fmt::Display, E: fmt::Display> fmt::Display for OrderedAction<N, E> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            OrderedAction::Link(from, to, edge) => write!(f, "{}-({})>{}", from, edge, to),
-            OrderedAction::Activation(id) => write!(f, "{}", id),
+            OrderedAction::Edge(from, to, edge) => write!(f, "{}-({})>{}", from, edge, to),
+            OrderedAction::Node(id) => write!(f, "{}", id),
         }
     }
 }
@@ -176,11 +176,11 @@ impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
 
         // Create topological order
         while let Some(node) = stack.pop() {
-            actions.push(OrderedAction::Activation(node));
+            actions.push(OrderedAction::Node(node));
 
             // Process all outgoing connections from the current node
             for target in self.get_edges(&node) {
-                actions.push(OrderedAction::Link(node, target.node, target.edge));
+                actions.push(OrderedAction::Edge(node, target.node, target.edge));
 
                 // Reduce backward count by 1
                 backward_count.insert(target.node, *backward_count.get(&target.node).unwrap() - 1);
@@ -381,7 +381,7 @@ mod tests {
         let pos = |x: u8| {
             order
                 .iter()
-                .position(|y| *y == OrderedAction::Activation(x))
+                .position(|y| *y == OrderedAction::Node(x))
                 .unwrap()
         };
 

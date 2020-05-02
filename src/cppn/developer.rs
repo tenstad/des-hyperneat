@@ -36,9 +36,7 @@ impl Develop<Genome, Executor> for Developer {
             .iter()
             .map(|id| NodeRef::Input(*id))
             .chain(order.iter().filter_map(|action| match action {
-                connection::OrderedAction::Activation(NodeRef::Hidden(id)) => {
-                    Some(NodeRef::Hidden(*id))
-                }
+                connection::OrderedAction::Node(NodeRef::Hidden(id)) => Some(NodeRef::Hidden(*id)),
                 _ => None,
             }))
             .collect::<Vec<NodeRef>>();
@@ -71,7 +69,7 @@ impl Develop<Genome, Executor> for Developer {
         let actions = order
             .iter()
             .filter_map(|action| match action {
-                connection::OrderedAction::Link(from, to, _) => {
+                connection::OrderedAction::Edge(from, to, _) => {
                     let link = genome.get_neat().links.get(&(*from, *to)).unwrap();
                     if link.enabled {
                         Some(execute::Action::Link(
@@ -83,7 +81,7 @@ impl Develop<Genome, Executor> for Developer {
                         None
                     }
                 }
-                connection::OrderedAction::Activation(node) => Some(execute::Action::Activation(
+                connection::OrderedAction::Node(node) => Some(execute::Action::Activation(
                     *node_mapping.get(node).unwrap(),
                     genome.get_bias(node),
                     genome.get_activation(node),

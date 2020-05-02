@@ -100,12 +100,12 @@ impl Network {
             .sort_topologically()
             .iter()
             .map(|action| match action {
-                connection::OrderedAction::Activation(node) => Action::Activation(
+                connection::OrderedAction::Node(node) => Action::Activation(
                     *node_mapping.get(node).unwrap(),
                     node.0 as f64 / ESHYPERNEAT.resolution,
                     node.1 as f64 / ESHYPERNEAT.resolution,
                 ),
-                connection::OrderedAction::Link(from, to, _) => Action::Link(
+                connection::OrderedAction::Edge(from, to, _) => Action::Link(
                     *node_mapping.get(from).unwrap(),
                     *node_mapping.get(to).unwrap(),
                     from.0 as f64 / ESHYPERNEAT.resolution,

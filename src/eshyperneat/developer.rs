@@ -3,7 +3,7 @@ use crate::eshyperneat::{conf::ESHYPERNEAT, search};
 use crate::hyperneat::substrate;
 use evolution::{develop::Develop, environment::EnvironmentDescription};
 use network::{
-    activation, connection,
+    connection,
     execute::{Action, Executor},
 };
 use std::collections::{HashMap, HashSet};
@@ -18,6 +18,7 @@ pub struct Developer {
 impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
         Self {
+            neat_developer: CppnDeveloper::from(description),
             input_nodes: substrate::horizontal_row(
                 description.inputs,
                 -ESHYPERNEAT.resolution as i64,
@@ -26,7 +27,6 @@ impl From<EnvironmentDescription> for Developer {
                 description.outputs,
                 ESHYPERNEAT.resolution as i64,
             ),
-            neat_developer: CppnDeveloper::from(description),
             depth: ESHYPERNEAT.iteration_level + 1,
         }
     }
@@ -126,7 +126,7 @@ impl Develop<Genome, Executor> for Developer {
             .sort_topologically()
             .iter()
             .map(|action| match action {
-                connection::OrderedAction::Link(from, to, weight) => Action::Link(
+                connection::OrderedAction::Edge(from, to, weight) => Action::Link(
                     *node_mapping
                         .get(from)
                         .expect("map does not contain source node"),
@@ -135,7 +135,7 @@ impl Develop<Genome, Executor> for Developer {
                         .expect("map does not contain target node"),
                     *weight,
                 ),
-                connection::OrderedAction::Activation(node) => Action::Activation(
+                connection::OrderedAction::Node(node) => Action::Activation(
                     *node_mapping
                         .get(node)
                         .expect("map does not contain activation node"),
