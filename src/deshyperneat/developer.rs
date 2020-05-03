@@ -2,7 +2,11 @@ use crate::cppn::developer::Developer as CppnDeveloper;
 use crate::deshyperneat::desgenome::DesGenome;
 use crate::eshyperneat::{conf::ESHYPERNEAT, search};
 use crate::hyperneat::substrate;
-use evolution::{develop::Develop, environment::EnvironmentDescription, neat::node::NodeRef};
+use evolution::{
+    develop::Develop,
+    environment::EnvironmentDescription,
+    neat::{genome::GenomeComponent, node::NodeRef},
+};
 use network::{
     connection,
     execute::{Action, Executor},
@@ -237,7 +241,14 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                         assembled_connections.add(
                             (*from, connection.from.0, connection.from.1),
                             (*to, connection.to.0, connection.to.1),
-                            connection.edge,
+                            connection.edge
+                                * genome
+                                    .get_core()
+                                    .links
+                                    .get(&(*from, *to))
+                                    .unwrap()
+                                    .get_core()
+                                    .weight,
                         );
                     }
                 }
