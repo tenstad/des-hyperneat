@@ -14,8 +14,7 @@ use std::collections::HashMap;
 pub struct State {
     pub core: StateCore,
     pub single_cppn_state: StateCore,
-    pub cppn_node_states: HashMap<NodeRef, StateCore>,
-    pub cppn_link_states: HashMap<(NodeRef, NodeRef), StateCore>,
+    pub unique_cppn_states: HashMap<(NodeRef, NodeRef), StateCore>,
 }
 
 impl NeatStateProvider for State {
@@ -95,7 +94,10 @@ impl NeatGenome for Genome {
             node.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
                 &mut state.single_cppn_state
             } else {
-                state.cppn_node_states.get_mut(&node.core.node_ref).unwrap()
+                state
+                    .unique_cppn_states
+                    .get_mut(&(node.core.node_ref, node.core.node_ref))
+                    .unwrap()
             });
         }
         for link in self.core.links.values_mut() {
@@ -103,7 +105,7 @@ impl NeatGenome for Genome {
                 &mut state.single_cppn_state
             } else {
                 state
-                    .cppn_link_states
+                    .unique_cppn_states
                     .get_mut(&(link.core.from, link.core.to))
                     .unwrap()
             });

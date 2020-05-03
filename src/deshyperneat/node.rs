@@ -21,12 +21,17 @@ impl GenomeComponent<NodeCore, State> for Node {
 
         let cppn = if DESHYPERNEAT.single_cppn_state {
             CppnGenome::new(&init_conf, &mut state.single_cppn_state)
-        } else if let Some(cppn_state) = state.cppn_node_states.get_mut(&core.node_ref) {
+        } else if let Some(cppn_state) = state
+            .unique_cppn_states
+            .get_mut(&(core.node_ref, core.node_ref))
+        {
             CppnGenome::new(&init_conf, cppn_state)
         } else {
             let mut cppn_state = StateCore::default();
             let cppn = CppnGenome::new(&init_conf, &mut cppn_state);
-            state.cppn_node_states.insert(core.node_ref, cppn_state);
+            state
+                .unique_cppn_states
+                .insert((core.node_ref, core.node_ref), cppn_state);
             cppn
         };
 

@@ -21,13 +21,13 @@ impl GenomeComponent<LinkCore, State> for Link {
 
         let cppn = if DESHYPERNEAT.single_cppn_state {
             CppnGenome::new(&init_conf, &mut state.single_cppn_state)
-        } else if let Some(cppn_state) = state.cppn_link_states.get_mut(&(core.from, core.to)) {
+        } else if let Some(cppn_state) = state.unique_cppn_states.get_mut(&(core.from, core.to)) {
             CppnGenome::new(&init_conf, cppn_state)
         } else {
             let mut cppn_state = StateCore::default();
             let cppn = CppnGenome::new(&init_conf, &mut cppn_state);
             state
-                .cppn_link_states
+                .unique_cppn_states
                 .insert((core.from, core.to), cppn_state);
             cppn
         };
