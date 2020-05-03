@@ -254,11 +254,11 @@ impl<N: GenomeComponent<NodeCore, S>, L: GenomeComponent<LinkCore, S>, S: NeatSt
         }
     }
 
-    pub fn get_node<'a>(&'a self, node_ref: &'a NodeRef) -> Option<&'a N> {
+    pub fn get_node(&self, node_ref: NodeRef) -> Option<&N> {
         match node_ref {
-            NodeRef::Input(_) => self.inputs.get(node_ref),
-            NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref),
-            NodeRef::Output(_) => self.outputs.get(node_ref),
+            NodeRef::Input(_) => self.inputs.get(&node_ref),
+            NodeRef::Hidden(_) => self.hidden_nodes.get(&node_ref),
+            NodeRef::Output(_) => self.outputs.get(&node_ref),
         }
     }
 
@@ -293,10 +293,7 @@ impl<N: GenomeComponent<NodeCore, S>, L: GenomeComponent<LinkCore, S>, S: NeatSt
 
         self.hidden_nodes.insert(
             new_node_ref,
-            N::new(
-                NodeCore::new(NodeRef::Hidden(new_node_id)),
-                state,
-            ),
+            N::new(NodeCore::new(NodeRef::Hidden(new_node_id)), state),
         );
 
         let link1 = L::new(
@@ -447,8 +444,7 @@ impl<N: GenomeComponent<NodeCore, S>, L: GenomeComponent<LinkCore, S>, S: NeatSt
                         Some(innovation_number) => *innovation_number,
                         None => {
                             let mut core = state.get_core_mut();
-                            core
-                                .innovation_log
+                            core.innovation_log
                                 .edge_additions
                                 .insert((from, to), core.next_innovation.innovation_number);
                             core.next_innovation.innovation_number += 1;

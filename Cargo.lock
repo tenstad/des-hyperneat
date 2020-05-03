@@ -233,6 +233,7 @@ name = "des-hyperneat"
 version = "0.1.0"
 dependencies = [
  "data 0.1.0",
+ "derive-new 0.5.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "envconfig 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "envconfig_derive 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "evolution 0.1.0",
