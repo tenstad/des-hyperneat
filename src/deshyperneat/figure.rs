@@ -1,8 +1,7 @@
 use evolution::neat::node::NodeRef;
 use figure;
 use network::connection::Connections;
-use std::collections::HashMap;
-use std::iter;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 pub fn save_fig_to_file<P: AsRef<Path>>(
@@ -24,23 +23,27 @@ pub fn save_fig_to_file<P: AsRef<Path>>(
     let mut hidden_x = 0.0;
     let mut output_x = 0.0;
     let mut substrate_location = HashMap::<NodeRef, (f64, f64)>::new();
-    for connection in connections.get_all_connections() {
-        for node_ref in iter::once(connection.from.0).chain(iter::once(connection.to.0)) {
-            if !substrate_location.contains_key(&node_ref) {
-                match node_ref {
-                    NodeRef::Input(_) => {
-                        substrate_location.insert(node_ref, (input_x, 0.0));
-                        input_x += 3.0;
-                    }
-                    NodeRef::Hidden(_) => {
-                        substrate_location.insert(node_ref, (hidden_x, 3.0));
-                        hidden_x += 3.0;
-                    }
-                    NodeRef::Output(_) => {
-                        substrate_location.insert(node_ref, (output_x, 6.0));
-                        output_x += 3.0;
-                    }
-                }
+    let mut all_node_refs = connections
+        .get_all_nodes()
+        .iter()
+        .map(|node| node.0)
+        .collect::<HashSet<NodeRef>>()
+        .into_iter()
+        .collect::<Vec<NodeRef>>();
+    all_node_refs.sort();
+    for node_ref in all_node_refs.iter() {
+        match node_ref {
+            NodeRef::Input(_) => {
+                substrate_location.insert(*node_ref, (input_x, 0.0));
+                input_x += 3.0;
+            }
+            NodeRef::Hidden(_) => {
+                substrate_location.insert(*node_ref, (hidden_x, 3.0));
+                hidden_x += 3.0;
+            }
+            NodeRef::Output(_) => {
+                substrate_location.insert(*node_ref, (output_x, 6.0));
+                output_x += 3.0;
             }
         }
     }
