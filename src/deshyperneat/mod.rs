@@ -1,16 +1,19 @@
 pub mod conf;
 pub mod desgenome;
 pub mod developer;
+pub mod figure;
 pub mod genome;
 pub mod link;
+pub mod log;
 pub mod node;
 
 use developer::Developer;
 use evolution::{
     algorithm::Algorithm, environment::Environment, environment::EnvironmentDescription, evolve,
-    log::Logger, neat::state::InitConfig,
+    neat::state::InitConfig,
 };
 use genome::Genome;
+use log::Logger;
 use network::execute::Executor;
 
 pub struct Deshyperneat;

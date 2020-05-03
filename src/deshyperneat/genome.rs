@@ -1,4 +1,5 @@
 use crate::cppn::genome::Genome as CppnGenome;
+use crate::deshyperneat::conf::DESHYPERNEAT;
 use crate::deshyperneat::{desgenome::DesGenome, link::Link, node::Node};
 use evolution::neat::{
     genome::Genome as NeatGenome,
@@ -7,11 +8,14 @@ use evolution::neat::{
     state::{InitConfig, NeatStateProvider, StateCore},
 };
 use rand::{seq::SliceRandom, Rng};
+use std::collections::HashMap;
 
-#[derive(Default, Clone)]
+#[derive(Clone, Default)]
 pub struct State {
     pub core: StateCore,
-    pub cppn_state: StateCore,
+    pub single_cppn_state: StateCore,
+    pub cppn_node_states: HashMap<NodeRef, StateCore>,
+    pub cppn_link_states: HashMap<(NodeRef, NodeRef), StateCore>,
 }
 
 impl NeatStateProvider for State {
@@ -88,10 +92,21 @@ impl NeatGenome for Genome {
         let mut rng = rand::thread_rng();
 
         for node in self.core.hidden_nodes.values_mut() {
-            node.cppn.mutate(&mut state.cppn_state);
+            node.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
+                &mut state.single_cppn_state
+            } else {
+                state.cppn_node_states.get_mut(&node.core.node_ref).unwrap()
+            });
         }
         for link in self.core.links.values_mut() {
-            link.cppn.mutate(&mut state.cppn_state);
+            link.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
+                &mut state.single_cppn_state
+            } else {
+                state
+                    .cppn_link_states
+                    .get_mut(&(link.core.from, link.core.to))
+                    .unwrap()
+            });
         }
 
         if rng.gen::<f64>() < 0.05 {

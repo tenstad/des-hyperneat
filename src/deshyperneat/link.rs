@@ -1,9 +1,10 @@
 use crate::cppn::genome::Genome as CppnGenome;
+use crate::deshyperneat::conf::DESHYPERNEAT;
 use crate::deshyperneat::genome::State;
 use evolution::neat::{
     genome::{Genome, GenomeComponent},
     link::LinkCore,
-    state::InitConfig,
+    state::{InitConfig, StateCore},
 };
 use rand::Rng;
 
@@ -16,9 +17,24 @@ pub struct Link {
 
 impl GenomeComponent<LinkCore, State> for Link {
     fn new(core: LinkCore, state: &mut State) -> Self {
+        let init_conf = InitConfig::new(4, 2);
+
+        let cppn = if DESHYPERNEAT.single_cppn_state {
+            CppnGenome::new(&init_conf, &mut state.single_cppn_state)
+        } else if let Some(cppn_state) = state.cppn_link_states.get_mut(&(core.from, core.to)) {
+            CppnGenome::new(&init_conf, cppn_state)
+        } else {
+            let mut cppn_state = StateCore::default();
+            let cppn = CppnGenome::new(&init_conf, &mut cppn_state);
+            state
+                .cppn_link_states
+                .insert((core.from, core.to), cppn_state);
+            cppn
+        };
+
         Self {
             core,
-            cppn: CppnGenome::new(&InitConfig::new(4, 2), &mut state.cppn_state),
+            cppn,
             depth: 1,
         }
     }
@@ -50,4 +66,3 @@ impl GenomeComponent<LinkCore, State> for Link {
         distance
     }
 }
-

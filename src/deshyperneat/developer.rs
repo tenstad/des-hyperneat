@@ -39,6 +39,131 @@ impl From<EnvironmentDescription> for Developer {
     }
 }
 
+impl Developer {
+    pub fn connections<G: DesGenome>(
+        &self,
+        genome: &G,
+    ) -> connection::Connections<(NodeRef, i64, i64), f64> {
+        // Init assembled network
+        let mut assembled_connections = connection::Connections::<(NodeRef, i64, i64), f64>::new();
+
+        // Init known nodes with the input and output nodes
+        let mut substrate_nodes = HashMap::<NodeRef, HashSet<(i64, i64)>>::new();
+        substrate_nodes.insert(
+            NodeRef::Input(0),
+            self.input_nodes
+                .iter()
+                .cloned()
+                .collect::<HashSet<(i64, i64)>>(),
+        );
+        substrate_nodes.insert(
+            NodeRef::Output(0),
+            self.output_nodes
+                .iter()
+                .cloned()
+                .collect::<HashSet<(i64, i64)>>(),
+        );
+        // All hidden substrates are empty
+        for node_ref in genome.get_core().hidden_nodes.keys() {
+            substrate_nodes.insert(*node_ref, HashSet::new());
+        }
+
+        // Iterative network completion in topologically sorted order
+        let order = genome.get_core().connections.sort_topologically();
+        for element in order.iter() {
+            match element {
+                connection::OrderedAction::Edge(from, to, _) => {
+                    // Develop the link's cppn
+                    let mut cppn = self
+                        .neat_developer
+                        .develop(genome.get_link_cppn(*from, *to));
+
+                    // Search for connections
+                    let (layers, connections) = match to {
+                        NodeRef::Hidden(_) => search::explore_substrate(
+                            substrate_nodes
+                                .get(from)
+                                .unwrap()
+                                .iter()
+                                .cloned()
+                                .collect::<Vec<(i64, i64)>>(),
+                            &vec![],
+                            &mut cppn,
+                            1,
+                            false,
+                        ),
+                        NodeRef::Output(_) => search::explore_substrate(
+                            self.output_nodes.clone(),
+                            &vec![],
+                            &mut cppn,
+                            1,
+                            true,
+                        ),
+                        NodeRef::Input(_) => panic!("target is input substrate"),
+                    };
+
+                    // Add discovered nodes to target substrate
+                    let nodes = substrate_nodes.get_mut(to).unwrap();
+                    // First layer contains source nodes
+                    // Never more than a single layer of new nodes since depth = 1
+                    for node in layers.iter().skip(1).take(1).flatten() {
+                        nodes.insert(*node);
+                    }
+
+                    // Add discovered connections to assembled network
+                    for connection in connections.get_all_connections() {
+                        assembled_connections.add(
+                            (*from, connection.from.0, connection.from.1),
+                            (*to, connection.to.0, connection.to.1),
+                            connection.edge,
+                        );
+                    }
+                }
+                connection::OrderedAction::Node(node_ref) => match node_ref {
+                    NodeRef::Hidden(_) => {
+                        // Develop the node's cppn
+                        let mut cppn = self.neat_developer.develop(genome.get_node_cppn(*node_ref));
+
+                        // Develop substrate
+                        let (layers, connections) = search::explore_substrate(
+                            substrate_nodes
+                                .get(node_ref)
+                                .unwrap()
+                                .iter()
+                                .cloned()
+                                .collect::<Vec<(i64, i64)>>(),
+                            &vec![],
+                            &mut cppn,
+                            genome.get_depth(*node_ref),
+                            false,
+                        );
+                        // Add discovered nodes to target substrate
+                        let nodes = substrate_nodes.get_mut(node_ref).unwrap();
+                        // First layer contains source nodes
+                        for layer in layers.iter().skip(1) {
+                            for node in layer.iter() {
+                                nodes.insert(*node);
+                            }
+                        }
+                        // Add discovered connections to assembled network
+                        for connection in connections.get_all_connections() {
+                            assembled_connections.add(
+                                (*node_ref, connection.from.0, connection.from.1),
+                                (*node_ref, connection.to.0, connection.to.1),
+                                connection.edge,
+                            );
+                        }
+                    }
+                    _ => {}
+                },
+            }
+        }
+
+        assembled_connections.prune(&self.substrate_input_nodes, &self.substrate_output_nodes);
+        assembled_connections
+    }
+}
+
 impl<G: DesGenome> Develop<G, Executor> for Developer {
     fn develop(&self, genome: &G) -> Executor {
         // Init assembled network
