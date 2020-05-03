@@ -46,7 +46,7 @@ pub fn save_fig_to_file<P: AsRef<Path>>(
     }
 
     let input_offset = (hidden_x - input_x) / 2.0;
-    let output_offset = (hidden_x - input_x) / 2.0;
+    let output_offset = (hidden_x - output_x) / 2.0;
     for (node_ref, position) in substrate_location.iter_mut() {
         match node_ref {
             NodeRef::Input(_) => {
