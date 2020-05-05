@@ -1,5 +1,5 @@
 use crate::codeshyperneat::genome::State;
-use evolution::neat::{genome::GenomeComponent, link::LinkCore};
+use evolution::neat::{genome::Link as NeatLink, link::LinkCore};
 use rand::Rng;
 
 #[derive(Clone)]
@@ -8,7 +8,7 @@ pub struct Link {
     pub module_species: usize,
 }
 
-impl GenomeComponent<LinkCore, State> for Link {
+impl NeatLink<State> for Link {
     fn new(core: LinkCore, state: &mut State) -> Self {
         let mut rng = rand::thread_rng();
         let module_species = if state.species > 0 {
@@ -21,6 +21,16 @@ impl GenomeComponent<LinkCore, State> for Link {
             core,
             module_species,
         }
+    }
+
+    fn identity(core: LinkCore, state: &mut State) -> Self {
+        Self::new(core, state)
+    }
+
+    fn clone_with(&self, core: LinkCore, _: &mut State) -> Self {
+        let mut clone = self.clone();
+        clone.core = core;
+        clone
     }
 
     fn get_core(&self) -> &LinkCore {

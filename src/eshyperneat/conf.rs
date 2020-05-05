@@ -16,7 +16,7 @@ pub struct Conf {
     #[envconfig(from = "INITIAL_RESOLUTION", default = "4")]
     pub initial_resolution: usize,
 
-    #[envconfig(from = "MAX_RESOLUTION", default = "5")]
+    #[envconfig(from = "MAX_RESOLUTION", default = "4")]
     pub max_resolution: usize,
 
     #[envconfig(from = "ITERATION_LEVEL", default = "2")]
@@ -25,10 +25,10 @@ pub struct Conf {
     #[envconfig(from = "RESOLUTION", default = "1048576.0")]
     pub resolution: f64,
 
-    #[envconfig(from = "MAX_DISCOVERIES", default = "256")]
+    #[envconfig(from = "MAX_DISCOVERIES", default = "0")]
     pub max_discoveries: usize,
 
-    #[envconfig(from = "MAX_OUTGOING", default = "12")]
+    #[envconfig(from = "MAX_OUTGOING", default = "0")]
     pub max_outgoing: usize,
 
     #[envconfig(from = "HIDDEN_ACTIVATION", default = "None")]

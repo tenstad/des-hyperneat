@@ -1,4 +1,4 @@
-use crate::neat::genome::GenomeComponent;
+use crate::neat::genome::Node;
 use std::fmt;
 
 #[derive(Copy, Clone, new)]
@@ -24,7 +24,7 @@ pub struct DefaultNode {
     pub core: NodeCore,
 }
 
-impl<S> GenomeComponent<NodeCore, S> for DefaultNode {
+impl<S> Node<S> for DefaultNode {
     fn new(core: NodeCore, _: &mut S) -> Self {
         Self { core }
     }

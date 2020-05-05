@@ -7,5 +7,6 @@ g.*
 *.png
 flamegraph*svg
 
-/target
+target/
+debug/
 **/*.rs.bk

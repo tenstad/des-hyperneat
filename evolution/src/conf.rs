@@ -12,7 +12,7 @@ pub struct Conf {
     #[envconfig(from = "POPULATION_SIZE", default = "200")]
     pub population_size: usize,
 
-    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.65")]
+    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.7")]
     pub speciation_threshold: f64,
 
     #[envconfig(from = "ASEXUAL_REPRODUCTION_PROBABILITY", default = "0.2")]

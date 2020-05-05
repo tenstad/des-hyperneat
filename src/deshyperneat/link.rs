@@ -1,42 +1,68 @@
 use crate::cppn::genome::Genome as CppnGenome;
-use crate::deshyperneat::conf::DESHYPERNEAT;
 use crate::deshyperneat::genome::State;
+use crate::eshyperneat::genome::identity_genome;
 use evolution::neat::{
-    genome::{Genome, GenomeComponent},
+    genome::{Genome, Link as NeatLink},
     link::LinkCore,
     state::{InitConfig, StateCore},
 };
 use rand::Rng;
 
-#[derive(Clone)]
+#[derive(Clone, new)]
 pub struct Link {
     pub core: LinkCore,
     pub cppn: CppnGenome,
     pub depth: usize,
 }
 
-impl GenomeComponent<LinkCore, State> for Link {
+impl NeatLink<State> for Link {
     fn new(core: LinkCore, state: &mut State) -> Self {
         let init_conf = InitConfig::new(4, 2);
+        let mut cppn_state = StateCore::default();
+        let cppn = CppnGenome::new(&init_conf, &mut cppn_state);
 
-        let cppn = if DESHYPERNEAT.single_cppn_state {
-            CppnGenome::new(&init_conf, &mut state.single_cppn_state)
-        } else if let Some(cppn_state) = state.unique_cppn_states.get_mut(&(core.from, core.to)) {
-            CppnGenome::new(&init_conf, cppn_state)
-        } else {
-            let mut cppn_state = StateCore::default();
-            let cppn = CppnGenome::new(&init_conf, &mut cppn_state);
+        if !state.unique_cppn_states.contains_key(&(core.from, core.to)) {
             state
                 .unique_cppn_states
                 .insert((core.from, core.to), cppn_state);
-            cppn
-        };
-
-        Self {
-            core,
-            cppn,
-            depth: 1,
         }
+
+        Self::new(core, cppn, 1)
+    }
+
+    fn identity(core: LinkCore, state: &mut State) -> Self {
+        let (cppn, cppn_state) = identity_genome();
+
+        if !state.unique_cppn_states.contains_key(&(core.from, core.to)) {
+            state
+                .unique_cppn_states
+                .insert((core.from, core.to), cppn_state);
+        }
+
+        Self::new(core, cppn, 1)
+    }
+
+    fn clone_with(&self, core: LinkCore, state: &mut State) -> Self {
+        if !state
+            .cppn_state_redirects
+            .contains_key(&(core.from, core.to))
+        {
+            let key = (self.core.from, self.core.to);
+            state.cppn_state_redirects.insert(
+                (core.from, core.to),
+                state
+                    .cppn_state_redirects
+                    .get(&key)
+                    .cloned()
+                    .or_else(|| Some(key))
+                    .unwrap(),
+            );
+        }
+
+        let mut clone = self.clone();
+        clone.core = core;
+
+        clone
     }
 
     fn get_core(&self) -> &LinkCore {

@@ -1,6 +1,6 @@
 use crate::cppn::genome::Genome as CppnGenome;
-use crate::deshyperneat::conf::DESHYPERNEAT;
-use crate::deshyperneat::{desgenome::DesGenome, link::Link, node::Node};
+use crate::deshyperneat::{conf::DESHYPERNEAT, desgenome::DesGenome, link::Link, node::Node};
+use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::neat::{
     genome::Genome as NeatGenome,
     genome_core::GenomeCore,
@@ -15,6 +15,7 @@ pub struct State {
     pub core: StateCore,
     pub single_cppn_state: StateCore,
     pub unique_cppn_states: HashMap<(NodeRef, NodeRef), StateCore>,
+    pub cppn_state_redirects: HashMap<(NodeRef, NodeRef), (NodeRef, NodeRef)>,
 }
 
 impl NeatStateProvider for State {
@@ -90,25 +91,40 @@ impl NeatGenome for Genome {
         self.core.mutate(state);
         let mut rng = rand::thread_rng();
 
+        let node_mut_prob = 3.0 / self.core.hidden_nodes.len() as f64;
+        let link_mut_prob = 3.0 / self.core.links.len() as f64;
+
         for node in self.core.hidden_nodes.values_mut() {
-            node.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
-                &mut state.single_cppn_state
-            } else {
-                state
-                    .unique_cppn_states
-                    .get_mut(&(node.core.node_ref, node.core.node_ref))
-                    .unwrap()
-            });
+            if rng.gen::<f64>() < node_mut_prob {
+                node.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
+                    &mut state.single_cppn_state
+                } else {
+                    state
+                        .unique_cppn_states
+                        .get_mut(&(node.core.node_ref, node.core.node_ref))
+                        .unwrap()
+                });
+            }
         }
         for link in self.core.links.values_mut() {
-            link.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
-                &mut state.single_cppn_state
-            } else {
-                state
-                    .unique_cppn_states
-                    .get_mut(&(link.core.from, link.core.to))
-                    .unwrap()
-            });
+            if rng.gen::<f64>() < link_mut_prob {
+                link.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
+                    &mut state.single_cppn_state
+                } else {
+                    let key = (link.core.from, link.core.to);
+                    state
+                        .unique_cppn_states
+                        .get_mut(
+                            &state
+                                .cppn_state_redirects
+                                .get(&key)
+                                .cloned()
+                                .or_else(|| Some(key))
+                                .unwrap(),
+                        )
+                        .expect("cannot find unique link state")
+                });
+            }
         }
 
         if rng.gen::<f64>() < 0.05 {
@@ -125,7 +141,7 @@ impl NeatGenome for Genome {
                     node.depth = 1;
                 } else {
                     node.depth = if rng.gen::<f64>() < 0.5 {
-                        (node.depth + 1).min(5)
+                        (node.depth + 1).min(ESHYPERNEAT.iteration_level)
                     } else {
                         node.depth - 1
                     };

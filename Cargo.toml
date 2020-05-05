@@ -13,6 +13,7 @@ envconfig = "0.6.0"
 envconfig_derive = "0.6.0"
 derive-new = "0.5.8"
 image = "0.23"
+order-stat = "0.1"
 network = {path = "network"}
 evolution = {path = "evolution"}
 data = {path = "data"}
@@ -29,3 +30,6 @@ members = [
 
 [profile.release]
 debug = true
+
+[build]
+target-dir = "target/rls"

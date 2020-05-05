@@ -263,6 +263,16 @@ impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
     }
 }
 
+impl<N: Hash + Eq + Copy, E: Copy> From<Vec<Connection<N, E>>> for Connections<N, E> {
+    fn from(list: Vec<Connection<N, E>>) -> Connections<N, E> {
+        let mut connections = Connections::new();
+        for connection in list.iter() {
+            connections.add(connection.from, connection.to, connection.edge);
+        }
+        connections
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

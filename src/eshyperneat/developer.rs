@@ -48,17 +48,27 @@ impl Developer {
     // if there is an eqally fast option mergining the two
     pub fn connections(&self, cppn: &mut Executor) -> connection::Connections<(i64, i64), f64> {
         // Forward search with depth
-        let (_, mut connections) = search::explore_substrate(
+        let (_, connections) = search::explore_substrate(
             self.input_nodes.clone(),
             &self.output_nodes,
             cppn,
             self.depth,
             false,
+            false,
         );
 
         // Backward output-connecting search with depth 1
-        let (_, reverse_connections) =
-            search::explore_substrate(self.output_nodes.clone(), &self.input_nodes, cppn, 1, true);
+        let (_, reverse_connections) = search::explore_substrate(
+            self.output_nodes.clone(),
+            &self.input_nodes,
+            cppn,
+            1,
+            true,
+            false,
+        );
+
+        let mut connections = connection::Connections::from(connections);
+        let reverse_connections = connection::Connections::from(reverse_connections);
 
         connections.extend(&reverse_connections);
         connections.prune(&self.input_nodes, &self.output_nodes);
@@ -72,11 +82,12 @@ impl Develop<Genome, Executor> for Developer {
         let mut cppn = self.neat_developer.develop(genome);
 
         // Forward search with depth
-        let (layers, mut connections) = search::explore_substrate(
+        let (layers, connections) = search::explore_substrate(
             self.input_nodes.clone(),
             &self.output_nodes,
             &mut cppn,
             self.depth,
+            false,
             false,
         );
 
@@ -87,7 +98,11 @@ impl Develop<Genome, Executor> for Developer {
             &mut cppn,
             1,
             true,
+            false,
         );
+
+        let mut connections = connection::Connections::from(connections);
+        let reverse_connections = connection::Connections::from(reverse_connections);
 
         connections.extend(&reverse_connections);
         connections.prune(&self.input_nodes, &self.output_nodes);

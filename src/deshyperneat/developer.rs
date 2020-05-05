@@ -5,7 +5,7 @@ use crate::hyperneat::substrate;
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
-    neat::{genome::GenomeComponent, node::NodeRef},
+    neat::{genome::Link, node::NodeRef},
 };
 use network::{
     connection,
@@ -15,30 +15,52 @@ use std::collections::{HashMap, HashSet};
 
 pub struct Developer {
     neat_developer: CppnDeveloper,
-    input_nodes: Vec<(i64, i64)>,
-    output_nodes: Vec<(i64, i64)>,
-    substrate_input_nodes: Vec<(NodeRef, i64, i64)>,
-    substrate_output_nodes: Vec<(NodeRef, i64, i64)>,
+    input_nodes: Vec<Vec<(i64, i64)>>,
+    output_nodes: Vec<Vec<(i64, i64)>>,
+    flattened_inputs: Vec<(NodeRef, i64, i64)>,
+    flattened_outputs: Vec<(NodeRef, i64, i64)>,
 }
 
 impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
-        let input_nodes = substrate::horizontal_row(description.inputs, 0);
-        let output_nodes = substrate::horizontal_row(description.outputs, 0);
-        let substrate_input_nodes = input_nodes
+        let r = ESHYPERNEAT.resolution as i64;
+        let _input_nodes = (0..description.inputs)
+            .map(|_| vec![(0, 0)])
+            .collect::<Vec<Vec<(i64, i64)>>>();
+        let _output_nodes = (0..description.outputs)
+            .map(|_| vec![(0, 0)])
+            .collect::<Vec<Vec<(i64, i64)>>>();
+        let input_nodes = vec![
+            vec![(-r, -r), (-r, r), (r, -r), (r, r)],
+            vec![(-r, -r), (-r, r), (r, -r), (r, r)],
+            vec![(-r, -r), (-r, r), (r, -r), (r, r), (0, 0)],
+        ];
+        let output_nodes = vec![substrate::horizontal_row(description.outputs, 0)];
+        let flattened_inputs = input_nodes
             .iter()
-            .map(|node| (NodeRef::Input(0), node.0, node.1))
+            .enumerate()
+            .flat_map(|(i, nodes)| {
+                nodes
+                    .iter()
+                    .map(move |node| (NodeRef::Input(i), node.0, node.1))
+            })
             .collect::<Vec<(NodeRef, i64, i64)>>();
-        let substrate_output_nodes = output_nodes
+        let flattened_outputs = output_nodes
             .iter()
-            .map(|node| (NodeRef::Output(0), node.0, node.1))
+            .enumerate()
+            .flat_map(|(i, nodes)| {
+                nodes
+                    .iter()
+                    .map(move |node| (NodeRef::Output(i), node.0, node.1))
+            })
             .collect::<Vec<(NodeRef, i64, i64)>>();
+
         Self {
             neat_developer: CppnDeveloper::from(description),
             input_nodes,
             output_nodes,
-            substrate_input_nodes,
-            substrate_output_nodes,
+            flattened_inputs,
+            flattened_outputs,
         }
     }
 }
@@ -53,20 +75,18 @@ impl Developer {
 
         // Init known nodes with the input and output nodes
         let mut substrate_nodes = HashMap::<NodeRef, HashSet<(i64, i64)>>::new();
-        substrate_nodes.insert(
-            NodeRef::Input(0),
-            self.input_nodes
-                .iter()
-                .cloned()
-                .collect::<HashSet<(i64, i64)>>(),
-        );
-        substrate_nodes.insert(
-            NodeRef::Output(0),
-            self.output_nodes
-                .iter()
-                .cloned()
-                .collect::<HashSet<(i64, i64)>>(),
-        );
+        for (i, nodes) in self.input_nodes.iter().enumerate() {
+            substrate_nodes.insert(
+                NodeRef::Input(i),
+                nodes.iter().cloned().collect::<HashSet<(i64, i64)>>(),
+            );
+        }
+        for (i, nodes) in self.output_nodes.iter().enumerate() {
+            substrate_nodes.insert(
+                NodeRef::Output(i),
+                nodes.iter().cloned().collect::<HashSet<(i64, i64)>>(),
+            );
+        }
         // All hidden substrates are empty
         for node_ref in genome.get_core().hidden_nodes.keys() {
             substrate_nodes.insert(*node_ref, HashSet::new());
@@ -95,12 +115,19 @@ impl Developer {
                             &mut cppn,
                             1,
                             false,
+                            true,
                         ),
                         NodeRef::Output(_) => search::explore_substrate(
-                            self.output_nodes.clone(),
+                            substrate_nodes
+                                .get(to)
+                                .unwrap()
+                                .iter()
+                                .cloned()
+                                .collect::<Vec<(i64, i64)>>(),
                             &vec![],
                             &mut cppn,
                             1,
+                            true,
                             true,
                         ),
                         NodeRef::Input(_) => panic!("target is input substrate"),
@@ -115,7 +142,7 @@ impl Developer {
                     }
 
                     // Add discovered connections to assembled network
-                    for connection in connections.get_all_connections() {
+                    for connection in connections.iter() {
                         assembled_connections.add(
                             (*from, connection.from.0, connection.from.1),
                             (*to, connection.to.0, connection.to.1),
@@ -140,7 +167,9 @@ impl Developer {
                             &mut cppn,
                             genome.get_depth(*node_ref),
                             false,
+                            false,
                         );
+
                         // Add discovered nodes to target substrate
                         let nodes = substrate_nodes.get_mut(node_ref).unwrap();
                         // First layer contains source nodes
@@ -150,7 +179,7 @@ impl Developer {
                             }
                         }
                         // Add discovered connections to assembled network
-                        for connection in connections.get_all_connections() {
+                        for connection in connections.iter() {
                             assembled_connections.add(
                                 (*node_ref, connection.from.0, connection.from.1),
                                 (*node_ref, connection.to.0, connection.to.1),
@@ -163,7 +192,7 @@ impl Developer {
             }
         }
 
-        assembled_connections.prune(&self.substrate_input_nodes, &self.substrate_output_nodes);
+        assembled_connections.prune(&self.flattened_inputs, &self.flattened_outputs);
         assembled_connections
     }
 }
@@ -175,20 +204,18 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
 
         // Init known nodes with the input and output nodes
         let mut substrate_nodes = HashMap::<NodeRef, HashSet<(i64, i64)>>::new();
-        substrate_nodes.insert(
-            NodeRef::Input(0),
-            self.input_nodes
-                .iter()
-                .cloned()
-                .collect::<HashSet<(i64, i64)>>(),
-        );
-        substrate_nodes.insert(
-            NodeRef::Output(0),
-            self.output_nodes
-                .iter()
-                .cloned()
-                .collect::<HashSet<(i64, i64)>>(),
-        );
+        for (i, nodes) in self.input_nodes.iter().enumerate() {
+            substrate_nodes.insert(
+                NodeRef::Input(i),
+                nodes.iter().cloned().collect::<HashSet<(i64, i64)>>(),
+            );
+        }
+        for (i, nodes) in self.output_nodes.iter().enumerate() {
+            substrate_nodes.insert(
+                NodeRef::Output(i),
+                nodes.iter().cloned().collect::<HashSet<(i64, i64)>>(),
+            );
+        }
         // All hidden substrates are empty
         for node_ref in genome.get_core().hidden_nodes.keys() {
             substrate_nodes.insert(*node_ref, HashSet::new());
@@ -217,12 +244,19 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                             &mut cppn,
                             1,
                             false,
+                            true,
                         ),
                         NodeRef::Output(_) => search::explore_substrate(
-                            self.output_nodes.clone(),
+                            substrate_nodes
+                                .get(to)
+                                .unwrap()
+                                .iter()
+                                .cloned()
+                                .collect::<Vec<(i64, i64)>>(),
                             &vec![],
                             &mut cppn,
                             1,
+                            true,
                             true,
                         ),
                         NodeRef::Input(_) => panic!("target is input substrate"),
@@ -237,7 +271,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                     }
 
                     // Add discovered connections to assembled network
-                    for connection in connections.get_all_connections() {
+                    for connection in connections.iter() {
                         assembled_connections.add(
                             (*from, connection.from.0, connection.from.1),
                             (*to, connection.to.0, connection.to.1),
@@ -269,8 +303,8 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                             &mut cppn,
                             genome.get_depth(*node_ref),
                             false,
+                            false,
                         );
-
                         // Add discovered nodes to target substrate
                         let nodes = substrate_nodes.get_mut(node_ref).unwrap();
                         // First layer contains source nodes
@@ -281,7 +315,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                         }
 
                         // Add discovered connections to assembled network
-                        for connection in connections.get_all_connections() {
+                        for connection in connections.iter() {
                             assembled_connections.add(
                                 (*node_ref, connection.from.0, connection.from.1),
                                 (*node_ref, connection.to.0, connection.to.1),
@@ -308,16 +342,16 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
 
         // Collect all nodes (in all substrates)
         let nodes = self
-            .substrate_input_nodes
+            .flattened_inputs
             .iter()
             .cloned()
             .chain(hidden_nodes.drain(..))
-            .chain(self.substrate_output_nodes.iter().cloned())
+            .chain(self.flattened_outputs.iter().cloned())
             .collect::<Vec<(NodeRef, i64, i64)>>();
 
-        let first_output_id = nodes.len() - self.output_nodes.len();
-        let inputs = (0..self.input_nodes.len()).collect();
-        let outputs = (first_output_id..(first_output_id + self.output_nodes.len())).collect();
+        let first_output_id = nodes.len() - self.flattened_outputs.len();
+        let inputs = (0..self.flattened_inputs.len()).collect();
+        let outputs = (first_output_id..(first_output_id + self.flattened_outputs.len())).collect();
 
         // Create mapping from nodes to array index in Network's node vector
         let node_mapping: HashMap<(NodeRef, i64, i64), usize> = nodes
@@ -327,7 +361,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
             .collect();
 
         // Remove any node not on a path between input and output nodes
-        assembled_connections.prune(&self.substrate_input_nodes, &self.substrate_output_nodes);
+        assembled_connections.prune(&self.flattened_inputs, &self.flattened_outputs);
 
         // Map topologically sorted order to neural network actions.
         let actions = assembled_connections

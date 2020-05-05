@@ -1,12 +1,14 @@
 use crate::cppn::genome::Genome as CppnGenome;
 use evolution::neat::{
-    genome::GenomeComponent, genome_core::GenomeCore, link::LinkCore, node::NodeCore,
-    node::NodeRef, state::NeatStateProvider,
+    genome::{Link, Node},
+    genome_core::GenomeCore,
+    node::NodeRef,
+    state::NeatStateProvider,
 };
 
 pub trait DesGenome {
-    type Node: GenomeComponent<NodeCore, Self::State>;
-    type Link: GenomeComponent<LinkCore, Self::State>;
+    type Node: Node<Self::State>;
+    type Link: Link<Self::State>;
     type State: NeatStateProvider;
 
     fn get_node_cppn(&self, node: NodeRef) -> &CppnGenome;

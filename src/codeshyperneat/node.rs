@@ -1,5 +1,5 @@
 use crate::codeshyperneat::genome::State;
-use evolution::neat::{genome::GenomeComponent, node::NodeCore};
+use evolution::neat::{genome::Node as NeatNode, node::NodeCore};
 use rand::Rng;
 
 #[derive(Clone)]
@@ -9,7 +9,7 @@ pub struct Node {
     pub depth: usize,
 }
 
-impl GenomeComponent<NodeCore, State> for Node {
+impl NeatNode<State> for Node {
     fn new(core: NodeCore, state: &mut State) -> Self {
         let mut rng = rand::thread_rng();
         let module_species = if state.species > 0 {

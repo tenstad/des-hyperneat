@@ -1,4 +1,4 @@
-use crate::neat::{genome::GenomeComponent, node::NodeRef};
+use crate::neat::{genome::Link, node::NodeRef};
 
 /// Link between two nodes
 #[derive(Clone, Debug)]
@@ -48,8 +48,16 @@ pub struct DefaultLink {
     pub core: LinkCore,
 }
 
-impl<S> GenomeComponent<LinkCore, S> for DefaultLink {
+impl<S> Link<S> for DefaultLink {
     fn new(core: LinkCore, _: &mut S) -> Self {
+        Self { core }
+    }
+
+    fn identity(core: LinkCore, _: &mut S) -> Self {
+        Self { core }
+    }
+
+    fn clone_with(&self, core: LinkCore, _: &mut S) -> Self {
         Self { core }
     }
 

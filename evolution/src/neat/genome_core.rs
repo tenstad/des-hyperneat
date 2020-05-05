@@ -1,6 +1,6 @@
 use crate::neat::{
     conf::NEAT,
-    genome::{Genome, GenomeComponent},
+    genome::{Genome, Link, Node},
     link::LinkCore,
     node::{NodeCore, NodeRef},
     state::{InitConfig, Innovation, NeatStateProvider},
@@ -13,8 +13,8 @@ use std::marker::PhantomData;
 #[derive(Clone)]
 pub struct GenomeCore<N, L, S>
 where
-    N: GenomeComponent<NodeCore, S>,
-    L: GenomeComponent<LinkCore, S>,
+    N: Node<S>,
+    L: Link<S>,
 {
     pub inputs: HashMap<NodeRef, N>,
     pub hidden_nodes: HashMap<NodeRef, N>,
@@ -27,8 +27,8 @@ where
 
 impl<N, L, S: NeatStateProvider> Genome for GenomeCore<N, L, S>
 where
-    N: GenomeComponent<NodeCore, S>,
-    L: GenomeComponent<LinkCore, S>,
+    N: Node<S>,
+    L: Link<S>,
     S: NeatStateProvider,
 {
     type Node = N;
@@ -240,9 +240,7 @@ where
     }
 }
 
-impl<N: GenomeComponent<NodeCore, S>, L: GenomeComponent<LinkCore, S>, S: NeatStateProvider>
-    GenomeCore<N, L, S>
-{
+impl<N: Node<S>, L: Link<S>, S: NeatStateProvider> GenomeCore<N, L, S> {
     pub fn empty() -> Self {
         Self {
             inputs: HashMap::new(),
@@ -270,16 +268,16 @@ impl<N: GenomeComponent<NodeCore, S>, L: GenomeComponent<LinkCore, S>, S: NeatSt
         innovation_number: usize,
         state: &mut S,
     ) {
-        // Disable link
         let link = self
             .links
             .get_mut(&(from, to))
-            .expect("unable to split nonexistent link")
-            .get_core_mut();
+            .expect("unable to split nonexistent link");
+        let link_core = link.get_core_mut();
 
-        assert!(link.enabled);
-        link.enabled = false;
-        link.split = true;
+        // Disable link
+        assert!(link_core.enabled);
+        link_core.enabled = false;
+        link_core.split = true;
 
         let new_node_ref = NodeRef::Hidden(new_node_id);
 
@@ -296,12 +294,22 @@ impl<N: GenomeComponent<NodeCore, S>, L: GenomeComponent<LinkCore, S>, S: NeatSt
             N::new(NodeCore::new(NodeRef::Hidden(new_node_id)), state),
         );
 
-        let link1 = L::new(
-            LinkCore::new(from, new_node_ref, 1.0, innovation_number),
+        let (link1_nodes, link2_nodes) = if let NodeRef::Input(_) = from {
+            ((new_node_ref, to), (from, new_node_ref))
+        } else {
+            ((from, new_node_ref), (new_node_ref, to))
+        };
+        let link1 = L::identity(
+            LinkCore::new(link1_nodes.0, link1_nodes.1, 1.0, innovation_number),
             state,
         );
-        let link2 = L::new(
-            LinkCore::new(new_node_ref, to, link.weight, innovation_number + 1),
+        let link2 = link.clone_with(
+            LinkCore::new(
+                link2_nodes.0,
+                link2_nodes.1,
+                link.get_core().weight,
+                innovation_number + 1,
+            ),
             state,
         );
 

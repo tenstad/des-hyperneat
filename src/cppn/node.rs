@@ -1,6 +1,6 @@
 use crate::cppn::conf::CPPN;
 use evolution::neat::{
-    genome::GenomeComponent,
+    genome::Node as NeatNode,
     node::{NodeCore, NodeRef},
     state::StateCore,
 };
@@ -14,7 +14,7 @@ pub struct Node {
     pub bias: f64,
 }
 
-impl GenomeComponent<NodeCore, StateCore> for Node {
+impl NeatNode<StateCore> for Node {
     fn new(core: NodeCore, _: &mut StateCore) -> Self {
         Self {
             core,

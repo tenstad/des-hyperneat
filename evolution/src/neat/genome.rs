@@ -14,8 +14,8 @@ impl crate::genome::Genome for DefaultNeatGenome {
 pub trait Genome: Clone + Send {
     type Init;
     type State: NeatStateProvider;
-    type Node: GenomeComponent<NodeCore, Self::State>;
-    type Link: GenomeComponent<LinkCore, Self::State>;
+    type Node: Node<Self::State>;
+    type Link: Link<Self::State>;
 
     fn new(init_config: &Self::Init, state: &mut Self::State) -> Self;
     fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link, Self::State>;
@@ -25,19 +25,26 @@ pub trait Genome: Clone + Send {
     fn distance(&self, other: &Self) -> f64;
 }
 
-pub trait GenomeComponent<T, S>: Clone + Send {
-    fn new(core_component: T, state: &mut S) -> Self;
-    fn get_core(&self) -> &T;
-    fn get_core_mut(&mut self) -> &mut T;
+pub trait Node<S>: Clone + Send {
+    fn new(core: NodeCore, state: &mut S) -> Self;
+    fn get_core(&self) -> &NodeCore;
+    fn get_core_mut(&mut self) -> &mut NodeCore;
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
     fn distance(&self, other: &Self) -> f64;
 }
 
-impl<
-        N: GenomeComponent<NodeCore, G::State>,
-        L: GenomeComponent<LinkCore, G::State>,
-        G: Genome<Node = N, Link = L>,
-    > crate::genome::GenericGenome<G::State, G::Init> for G
+pub trait Link<S>: Clone + Send {
+    fn new(core: LinkCore, state: &mut S) -> Self;
+    fn identity(core: LinkCore, state: &mut S) -> Self;
+    fn clone_with(&self, core: LinkCore, state: &mut S) -> Self;
+    fn get_core(&self) -> &LinkCore;
+    fn get_core_mut(&mut self) -> &mut LinkCore;
+    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
+    fn distance(&self, other: &Self) -> f64;
+}
+
+impl<N: Node<G::State>, L: Link<G::State>, G: Genome<Node = N, Link = L>>
+    crate::genome::GenericGenome<G::State, G::Init> for G
 {
     fn new(init_config: &G::Init, state: &mut G::State) -> Self {
         G::new(init_config, state)

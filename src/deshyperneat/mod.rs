@@ -25,7 +25,7 @@ impl Algorithm for Deshyperneat {
     type Logger = Logger;
 
     fn genome_init_config(_: &EnvironmentDescription) -> InitConfig {
-        InitConfig::new(1, 1)
+        InitConfig::new(3, 1)
     }
 }
 

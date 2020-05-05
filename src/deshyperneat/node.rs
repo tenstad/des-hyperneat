@@ -2,7 +2,7 @@ use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::conf::DESHYPERNEAT;
 use crate::deshyperneat::genome::State;
 use evolution::neat::{
-    genome::{Genome, GenomeComponent},
+    genome::{Genome, Node as NeatNode},
     node::NodeCore,
     state::{InitConfig, StateCore},
 };
@@ -15,7 +15,7 @@ pub struct Node {
     pub depth: usize,
 }
 
-impl GenomeComponent<NodeCore, State> for Node {
+impl NeatNode<State> for Node {
     fn new(core: NodeCore, state: &mut State) -> Self {
         let init_conf = InitConfig::new(4, 2);
 

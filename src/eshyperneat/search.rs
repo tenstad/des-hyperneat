@@ -10,6 +10,7 @@ struct QuadPoint {
     width: f64,
     weight: f64,
     depth: usize,
+    variance: f64,
     children: Option<[Box<QuadPoint>; 4]>,
 }
 
@@ -21,6 +22,7 @@ impl QuadPoint {
             width,
             weight: f(x, y),
             depth,
+            variance: 0.0,
             children: None,
         }
     }
@@ -29,19 +31,48 @@ impl QuadPoint {
         self.children.iter().flatten()
     }
 
+    fn leaf_weights(&self, weights: &mut Vec<f64>, root: bool, branch: bool) {
+        if let Some(children) = &self.children {
+            for child in children.iter() {
+                child.leaf_weights(weights, true, branch);
+            }
+        }
+        if branch && root {
+            weights.push(self.weight);
+        }
+    }
+
     fn children_mut(&mut self) -> impl Iterator<Item = &mut Box<QuadPoint>> {
         self.children.iter_mut().flatten()
     }
 
-    fn variance(&self) -> f64 {
-        let w = self.children().map(|child| child.weight).sum::<f64>() / 4.0;
-        self.children()
-            .map(|child| (w - child.weight).powi(2))
-            .sum::<f64>()
-            / 4.0
+    fn calc_variance(&mut self, average: bool, delta_weight: f64, root: bool, branch: bool) -> f64 {
+        if delta_weight == 0.0 {
+            return 0.0;
+        };
+
+        let mut weights = Vec::new();
+        self.leaf_weights(&mut weights, root, branch);
+        if weights.len() == 0 {
+            return 0.0;
+        }
+
+        //let avg_w = weights.iter().sum::<f64>() / weights.len() as f64;
+        let median_w =
+            *order_stat::median_of_medians_by(&mut weights, |x, y| x.partial_cmp(y).unwrap()).1;
+
+        let squares = weights
+            .iter()
+            .map(|w| ((median_w - w) / delta_weight).powi(2));
+        self.variance = if average {
+            squares.sum::<f64>() / weights.len() as f64
+        } else {
+            squares.max_by(|a, b| a.partial_cmp(&b).unwrap()).unwrap()
+        };
+        self.variance
     }
 
-    fn expand(&mut self, f: &mut dyn FnMut(f64, f64) -> f64) {
+    fn create_children(&mut self, f: &mut dyn FnMut(f64, f64) -> f64) -> (f64, f64) {
         let width = self.width / 2.0;
         let depth = self.depth + 1;
 
@@ -55,60 +86,60 @@ impl QuadPoint {
             child(width, -width),
         ]);
 
+        (
+            self.children()
+                .map(|c| c.weight)
+                .min_by(|a, b| a.partial_cmp(&b).unwrap())
+                .unwrap(),
+            self.children()
+                .map(|c| c.weight)
+                .max_by(|a, b| a.partial_cmp(&b).unwrap())
+                .unwrap(),
+        )
+    }
+
+    fn expand(&mut self, delta_weight: f64) -> impl Iterator<Item = &mut Box<QuadPoint>> {
         if self.depth + 1 < ESHYPERNEAT.initial_resolution
             || (self.depth + 1 < ESHYPERNEAT.max_resolution
-                && self.variance() > ESHYPERNEAT.division_threshold)
+                && self.calc_variance(false, delta_weight, true, true)
+                    > ESHYPERNEAT.division_threshold)
         {
-            for child in self.children_mut() {
-                child.expand(f);
-            }
+            self.children_mut().take(4)
+        } else {
+            self.children_mut().take(0)
         }
     }
 
     fn extract(
-        &self,
+        &mut self,
         f: &mut dyn FnMut(f64, f64) -> f64,
         connections: &mut Vec<Target<(f64, f64), f64>>,
-    ) {
-        let variances = self
-            .children()
-            .map(|child| child.variance())
-            .collect::<Vec<f64>>();
+        delta_weight: f64,
+    ) -> impl Iterator<Item = &mut Box<QuadPoint>> {
+        let width = self.width;
 
-        for (variance, child) in variances.iter().zip(self.children()) {
-            if *variance <= ESHYPERNEAT.variance_threshold {
-                let d_left = (child.weight - f(child.x - self.width, child.y)).abs();
-                let d_right = (child.weight - f(child.x + self.width, child.y)).abs();
-                let d_up = (child.weight - f(child.x, child.y - self.width)).abs();
-                let d_down = (child.weight - f(child.x, child.y + self.width)).abs();
+        for child in self.children_mut() {
+            if child.calc_variance(false, delta_weight, false, true)
+                <= ESHYPERNEAT.variance_threshold
+            {
+                let d_left = (child.weight - f(child.x - width, child.y)).abs();
+                let d_right = (child.weight - f(child.x + width, child.y)).abs();
+                let d_up = (child.weight - f(child.x, child.y - width)).abs();
+                let d_down = (child.weight - f(child.x, child.y + width)).abs();
 
-                if b(d_up, d_down, d_left, d_right) > ESHYPERNEAT.band_threshold {
+                if d_up.min(d_down).max(d_left.min(d_right)) >= ESHYPERNEAT.band_threshold {
                     connections.push(Target::new((child.x, child.y), child.weight));
                 }
             }
         }
 
-        for (variance, child) in variances.iter().zip(self.children()) {
-            if *variance > ESHYPERNEAT.variance_threshold {
-                if ESHYPERNEAT.max_discoveries > 0
-                    && connections.len() >= ESHYPERNEAT.max_discoveries
-                {
-                    connections.push(Target::new((child.x, child.y), child.weight));
-                } else {
-                    child.extract(f, connections);
-                }
+        self.children_mut().filter_map(|child| {
+            if child.variance > ESHYPERNEAT.variance_threshold {
+                Some(child)
+            } else {
+                None
             }
-        }
-    }
-}
-
-fn b(up: f64, down: f64, left: f64, right: f64) -> f64 {
-    let mi_v = if up < down { up } else { down };
-    let mi_h = if left < right { left } else { right };
-    if mi_v > mi_h {
-        mi_v
-    } else {
-        mi_h
+        })
     }
 }
 
@@ -127,10 +158,41 @@ pub fn find_connections(
             }),
         )[0]
     };
-    let mut root = QuadPoint::new(0.0, 0.0, 1.0, 1, &mut f);
+
     let mut connections = Vec::<Target<(f64, f64), f64>>::new();
-    root.expand(&mut f);
-    root.extract(&mut f, &mut connections);
+    let mut root = Box::new(QuadPoint::new(0.0, 0.0, 1.0, 1, &mut f));
+    let mut min_weight = root.weight;
+    let mut max_weight = root.weight;
+
+    let mut leaves = vec![&mut root];
+    while leaves.len() > 0 {
+        for leaf in leaves.iter_mut() {
+            let (mi, ma) = leaf.create_children(&mut f);
+            min_weight = min_weight.min(mi);
+            max_weight = max_weight.max(ma);
+        }
+
+        leaves = leaves
+            .drain(..)
+            .flat_map(|leaf| leaf.expand(max_weight - min_weight))
+            .collect();
+    }
+    if min_weight == max_weight {
+        return connections;
+    }
+
+    let mut leaves = vec![&mut root];
+    while leaves.len() > 0
+        && (ESHYPERNEAT.max_discoveries == 0 || connections.len() < ESHYPERNEAT.max_discoveries)
+    {
+        leaves = leaves
+            .drain(..)
+            .flat_map(|leaf| leaf.extract(&mut f, &mut connections, max_weight - min_weight))
+            .collect();
+    }
+    for leaf in leaves.iter() {
+        connections.push(Target::new((leaf.x, leaf.y), leaf.weight))
+    }
 
     if ESHYPERNEAT.max_outgoing > 0 && connections.len() > ESHYPERNEAT.max_outgoing {
         connections.sort_by(|a, b| b.edge.abs().partial_cmp(&a.edge.abs()).unwrap());
@@ -145,14 +207,17 @@ pub fn explore_substrate(
     cppn: &mut execute::Executor,
     depth: usize,
     reverse: bool,
-) -> (
-    Vec<Vec<(i64, i64)>>,
-    connection::Connections<(i64, i64), f64>,
-) {
+    crossing_substrate: bool,
+) -> (Vec<Vec<(i64, i64)>>, Vec<Connection<(i64, i64), f64>>) {
     let outputs = outputs.iter().cloned().collect::<HashSet<(i64, i64)>>();
-    let mut visited = inputs.iter().cloned().collect::<HashSet<(i64, i64)>>();
+    let mut visited = if !crossing_substrate {
+        inputs.iter().cloned().collect::<HashSet<(i64, i64)>>()
+    } else {
+        // Have not visited the input nodes because we are locating nodes within a new substrates
+        HashSet::<(i64, i64)>::new()
+    };
     let mut nodes: Vec<Vec<(i64, i64)>> = vec![inputs];
-    let mut connections = connection::Connections::<(i64, i64), f64>::new();
+    let mut connections = Vec::<Connection<(i64, i64), f64>>::new();
 
     for d in 0..depth {
         let mut discoveries = Vec::<Connection<(i64, i64), f64>>::new();
@@ -183,9 +248,17 @@ pub fn explore_substrate(
         // Store all new connections
         for connection in discoveries.iter() {
             if reverse {
-                connections.add(connection.to, connection.from, connection.edge);
+                connections.push(Connection::new(
+                    connection.to,
+                    connection.from,
+                    connection.edge,
+                ));
             } else {
-                connections.add(connection.from, connection.to, connection.edge);
+                connections.push(Connection::new(
+                    connection.from,
+                    connection.to,
+                    connection.edge,
+                ));
             }
         }
 

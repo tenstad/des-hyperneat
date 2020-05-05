@@ -1,6 +1,7 @@
 pub mod conf;
 pub mod developer;
 pub mod figure;
+pub mod genome;
 pub mod img;
 pub mod log;
 pub mod search;
