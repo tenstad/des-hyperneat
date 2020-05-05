@@ -90,7 +90,7 @@ pub fn identity_genome() -> (Genome, StateCore) {
         &mut state,
         NodeRef::Input(0),
         NodeRef::Output(0),
-        5.0,
+        7.5,
     );
 
     insert_link(
@@ -98,7 +98,7 @@ pub fn identity_genome() -> (Genome, StateCore) {
         &mut state,
         NodeRef::Input(1),
         NodeRef::Output(0),
-        5.0,
+        7.5,
     );
 
     let hidden_x = split_link(
@@ -106,7 +106,7 @@ pub fn identity_genome() -> (Genome, StateCore) {
         &mut state,
         NodeRef::Input(0),
         NodeRef::Output(0),
-        5.0,
+        7.5,
         Activation::Square,
         0.0,
     );
@@ -116,13 +116,13 @@ pub fn identity_genome() -> (Genome, StateCore) {
         &mut state,
         NodeRef::Input(1),
         NodeRef::Output(0),
-        5.0,
+        7.5,
         Activation::Square,
         0.0,
     );
 
-    insert_link(&mut genome, &mut state, NodeRef::Input(2), hidden_x, -5.0);
-    insert_link(&mut genome, &mut state, NodeRef::Input(3), hidden_y, -5.0);
+    insert_link(&mut genome, &mut state, NodeRef::Input(2), hidden_x, -7.5);
+    insert_link(&mut genome, &mut state, NodeRef::Input(3), hidden_y, -7.5);
 
     let output = genome
         .get_core_mut()
