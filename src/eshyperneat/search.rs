@@ -1,7 +1,9 @@
 use crate::eshyperneat::conf::ESHYPERNEAT;
-use network::connection;
-use network::connection::{Connection, Target};
-use network::execute;
+use network::{
+    connection::{Connection, Target},
+    execute,
+};
+
 use std::collections::HashSet;
 
 struct QuadPoint {
@@ -31,47 +33,63 @@ impl QuadPoint {
         self.children.iter().flatten()
     }
 
-    fn leaf_weights(&self, weights: &mut Vec<f64>, root: bool, branch: bool) {
-        if let Some(children) = &self.children {
-            for child in children.iter() {
-                child.leaf_weights(weights, true, branch);
-            }
-        }
-        if branch && root {
-            weights.push(self.weight);
-        }
-    }
-
     fn children_mut(&mut self) -> impl Iterator<Item = &mut Box<QuadPoint>> {
         self.children.iter_mut().flatten()
     }
 
-    fn calc_variance(&mut self, average: bool, delta_weight: f64, root: bool, branch: bool) -> f64 {
-        if delta_weight == 0.0 {
-            return 0.0;
-        };
+    /// Collect weight of all nodes in tree. If root is true, collect the root's weight. If
+    /// internal is true, collect all internal node weights. Allways collect leaf node weights.
+    fn collect_leaf_weights(&self, weights: &mut Vec<f64>, root: bool, internal: bool) {
+        if (root && !ESHYPERNEAT.only_leaf_variance) || self.children.is_none() {
+            weights.push(self.weight);
+        }
+        for child in self.children() {
+            child.collect_leaf_weights(weights, internal, internal);
+        }
+    }
 
-        let mut weights = Vec::new();
-        self.leaf_weights(&mut weights, root, branch);
-        if weights.len() == 0 {
+    fn calc_variance(&mut self, delta_weight: f64, root: bool, branch: bool) -> f64 {
+        if delta_weight == 0.0 {
             return 0.0;
         }
 
-        //let avg_w = weights.iter().sum::<f64>() / weights.len() as f64;
-        let median_w =
-            *order_stat::median_of_medians_by(&mut weights, |x, y| x.partial_cmp(y).unwrap()).1;
+        let mut weights = Vec::new();
+        self.collect_leaf_weights(&mut weights, root, branch);
 
-        let squares = weights
-            .iter()
-            .map(|w| ((median_w - w) / delta_weight).powi(2));
-        self.variance = if average {
-            squares.sum::<f64>() / weights.len() as f64
+        let len = weights.len() as f64;
+        if len == 0.0 {
+            return 0.0;
+        }
+
+        let cmp = |a: &f64, b: &f64| a.partial_cmp(&b).unwrap();
+
+        let centroid = if ESHYPERNEAT.median_variance {
+            // median weight
+            *order_stat::median_of_medians_by(&mut weights, cmp).1
         } else {
-            squares.max_by(|a, b| a.partial_cmp(&b).unwrap()).unwrap()
+            // mean weight
+            weights.iter().sum::<f64>() / len
         };
+        let dw = if ESHYPERNEAT.relative_variance {
+            delta_weight
+        } else {
+            1.0
+        };
+
+        let squares = weights.iter().map(|w| ((centroid - w) / dw).powi(2));
+
+        self.variance = if ESHYPERNEAT.max_variance {
+            // max square offset
+            squares.max_by(cmp).unwrap()
+        } else {
+            // mean square offset
+            squares.sum::<f64>() / len
+        };
+
         self.variance
     }
 
+    /// Creates the four children of a node. Returns their min and max weight value.
     fn create_children(&mut self, f: &mut dyn FnMut(f64, f64) -> f64) -> (f64, f64) {
         let width = self.width / 2.0;
         let depth = self.depth + 1;
@@ -86,30 +104,24 @@ impl QuadPoint {
             child(width, -width),
         ]);
 
+        let cmp = |a: &f64, b: &f64| a.partial_cmp(&b).unwrap();
         (
-            self.children()
-                .map(|c| c.weight)
-                .min_by(|a, b| a.partial_cmp(&b).unwrap())
-                .unwrap(),
-            self.children()
-                .map(|c| c.weight)
-                .max_by(|a, b| a.partial_cmp(&b).unwrap())
-                .unwrap(),
+            self.children().map(|c| c.weight).min_by(cmp).unwrap(),
+            self.children().map(|c| c.weight).max_by(cmp).unwrap(),
         )
     }
 
+    /// Yields all children if this parent (self) should be expanded
     fn expand(&mut self, delta_weight: f64) -> impl Iterator<Item = &mut Box<QuadPoint>> {
-        if self.depth + 1 < ESHYPERNEAT.initial_resolution
+        let expand = self.depth + 1 < ESHYPERNEAT.initial_resolution
             || (self.depth + 1 < ESHYPERNEAT.max_resolution
-                && self.calc_variance(false, delta_weight, true, true)
-                    > ESHYPERNEAT.division_threshold)
-        {
-            self.children_mut().take(4)
-        } else {
-            self.children_mut().take(0)
-        }
+                && self.calc_variance(delta_weight, true, true) > ESHYPERNEAT.division_threshold);
+
+        self.children_mut().take(4 * (expand as usize))
     }
 
+    /// Yields children with high variance. Pushes children with low
+    /// variance to connections, if their band value is above band threshold.
     fn extract(
         &mut self,
         f: &mut dyn FnMut(f64, f64) -> f64,
@@ -119,30 +131,26 @@ impl QuadPoint {
         let width = self.width;
 
         for child in self.children_mut() {
-            if child.calc_variance(false, delta_weight, false, true)
-                <= ESHYPERNEAT.variance_threshold
-            {
+            if child.calc_variance(delta_weight, false, true) <= ESHYPERNEAT.variance_threshold {
                 let d_left = (child.weight - f(child.x - width, child.y)).abs();
                 let d_right = (child.weight - f(child.x + width, child.y)).abs();
                 let d_up = (child.weight - f(child.x, child.y - width)).abs();
                 let d_down = (child.weight - f(child.x, child.y + width)).abs();
+                let band_value = d_up.min(d_down).max(d_left.min(d_right));
 
-                if d_up.min(d_down).max(d_left.min(d_right)) >= ESHYPERNEAT.band_threshold {
+                if band_value >= ESHYPERNEAT.band_threshold {
                     connections.push(Target::new((child.x, child.y), child.weight));
                 }
             }
         }
 
-        self.children_mut().filter_map(|child| {
-            if child.variance > ESHYPERNEAT.variance_threshold {
-                Some(child)
-            } else {
-                None
-            }
-        })
+        // Use stored variance calculated in previous loop
+        self.children_mut()
+            .filter(|child| child.variance > ESHYPERNEAT.variance_threshold)
     }
 }
 
+/// Single iteration search for new nodes and connections from a given point.
 pub fn find_connections(
     x: f64,
     y: f64,
@@ -177,6 +185,8 @@ pub fn find_connections(
             .flat_map(|leaf| leaf.expand(max_weight - min_weight))
             .collect();
     }
+
+    // If all weight values are the same, no nodes will be collected.
     if min_weight == max_weight {
         return connections;
     }
@@ -190,38 +200,42 @@ pub fn find_connections(
             .flat_map(|leaf| leaf.extract(&mut f, &mut connections, max_weight - min_weight))
             .collect();
     }
+    // If the collection was limited by max_discoveris, nodes at the current depth in the tree
+    // are included, since either they or their children would be if the seach continues.
     for leaf in leaves.iter() {
         connections.push(Target::new((leaf.x, leaf.y), leaf.weight))
     }
 
+    // Only return the weights with the highest absolute value.
     if ESHYPERNEAT.max_outgoing > 0 && connections.len() > ESHYPERNEAT.max_outgoing {
         connections.sort_by(|a, b| b.edge.abs().partial_cmp(&a.edge.abs()).unwrap());
         connections.truncate(ESHYPERNEAT.max_outgoing);
     }
+
     connections
 }
 
+/// Iteratively explore substrate by calling find_connections on discovered nodes
 pub fn explore_substrate(
     inputs: Vec<(i64, i64)>,
     outputs: &Vec<(i64, i64)>,
     cppn: &mut execute::Executor,
     depth: usize,
     reverse: bool,
-    crossing_substrate: bool,
+    allow_connections_to_input: bool,
 ) -> (Vec<Vec<(i64, i64)>>, Vec<Connection<(i64, i64), f64>>) {
     let outputs = outputs.iter().cloned().collect::<HashSet<(i64, i64)>>();
-    let mut visited = if !crossing_substrate {
-        inputs.iter().cloned().collect::<HashSet<(i64, i64)>>()
-    } else {
-        // Have not visited the input nodes because we are locating nodes within a new substrates
+    let mut visited = if allow_connections_to_input {
         HashSet::<(i64, i64)>::new()
+    } else {
+        inputs.iter().cloned().collect::<HashSet<(i64, i64)>>()
     };
     let mut nodes: Vec<Vec<(i64, i64)>> = vec![inputs];
     let mut connections = Vec::<Connection<(i64, i64), f64>>::new();
 
     for d in 0..depth {
         let mut discoveries = Vec::<Connection<(i64, i64), f64>>::new();
-        // Search from all nodes within final depth layer
+        // Search from all nodes within previous layer of discoveries
         for (x, y) in nodes[d].iter() {
             discoveries.extend(
                 find_connections(
@@ -245,25 +259,17 @@ pub fn explore_substrate(
             );
         }
 
-        // Store all new connections
-        for connection in discoveries.iter() {
+        // Store all new connections in correct direction
+        connections.extend(discoveries.iter().map(|connection| {
             if reverse {
-                connections.push(Connection::new(
-                    connection.to,
-                    connection.from,
-                    connection.edge,
-                ));
+                Connection::new(connection.to, connection.from, connection.edge)
             } else {
-                connections.push(Connection::new(
-                    connection.from,
-                    connection.to,
-                    connection.edge,
-                ));
+                Connection::new(connection.from, connection.to, connection.edge)
             }
-        }
+        }));
 
         // Collect all unique target nodes
-        // Avoid furhter exploration from potential output nodes
+        // Avoid furhter exploration from output nodes
         let next_nodes = discoveries
             .iter()
             .map(|connection| connection.to)
