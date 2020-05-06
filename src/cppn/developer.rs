@@ -97,22 +97,18 @@ impl Develop<Genome, Executor> for Developer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cppn::{genome::Genome as CppnGenome, Cppn};
-    use evolution::{
-        algorithm::Algorithm,
-        neat::{
-            genome::Genome,
-            link::{DefaultLink, LinkCore},
-            state::StateCore,
-        },
+    use crate::cppn::genome::Genome as CppnGenome;
+    use evolution::neat::{
+        genome::Genome,
+        link::{DefaultLink, LinkCore},
+        state::{InitConfig, StateCore},
     };
     use network::activation::Activation;
 
     #[test]
     fn test_develop() {
-        let description = EnvironmentDescription::new(4, 2);
         let mut state = StateCore::default();
-        let mut genome = CppnGenome::new(&Cppn::genome_init_config(&description), &mut state);
+        let mut genome = CppnGenome::new(&InitConfig::new(4, 2), &mut state);
         let link = DefaultLink::new(LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0));
 
         let core = genome.get_core_mut();
@@ -129,14 +125,14 @@ mod tests {
             .unwrap()
             .activation = Activation::Sine;
 
-        let mut phenotype = Developer::from(description.clone()).develop(&genome);
+        let mut phenotype = Developer::from(EnvironmentDescription::new(4, 2)).develop(&genome);
 
         let result = phenotype.execute(&vec![5.0, 7.0, -1.0, -1.0]);
         assert_eq!(
             result,
             vec![
                 0.0,
-                Activation::Sine.activate(3.0 * Activation::Exp.activate(7.0))
+                Activation::Sine.activate(Activation::Exp.activate(3.0 * 7.0))
             ]
         );
     }

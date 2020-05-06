@@ -90,15 +90,19 @@ impl Dataset {
         })
     }
 
-    pub fn mse(&self, outputs: impl Iterator<Item = Vec<f64>>) -> f64 {
+    pub fn mse(&self, outputs: &Vec<Vec<f64>>) -> f64 {
         error::mse(
             &self.targets,
             outputs,
-            self.is_classification && self.is_classification,
+            self.is_classification && self.one_hot_output,
         )
     }
 
-    pub fn acc(&self, outputs: impl Iterator<Item = Vec<f64>>) -> f64 {
+    pub fn crossentropy(&self, outputs: &Vec<Vec<f64>>) -> f64 {
+        error::crossentropy(&self.targets, outputs, true)
+    }
+
+    pub fn acc(&self, outputs: &Vec<Vec<f64>>) -> f64 {
         if !self.is_classification {
             0.0
         } else if self.one_hot_output {

@@ -1,26 +1,24 @@
 use data::dataset::Dataset;
-use evolution::environment::{Environment, EnvironmentDescription};
-use network::execute;
+use evolution::environment::{Environment, EnvironmentDescription, Stats};
+use network::execute::Executor;
+use std::fmt::{Display, Formatter, Result};
 
 pub struct DatasetEnvironment {
     dataset: Dataset,
     description: EnvironmentDescription,
 }
 
-impl DatasetEnvironment {
-    fn accuracy(&self, executor: &mut execute::Executor) -> f64 {
-        if !self.dataset.is_classification {
-            return 0.0;
-        }
+pub struct DatasetStats {
+    accuracy: f64,
+}
 
-        self.dataset.acc(
-            self.dataset
-                .inputs
-                .iter()
-                .map(|input| executor.execute(input)),
-        )
+impl Display for DatasetStats {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "Accuracy: {}", self.accuracy)
     }
 }
+
+impl Stats for DatasetStats {}
 
 impl Default for DatasetEnvironment {
     fn default() -> DatasetEnvironment {
@@ -30,23 +28,51 @@ impl Default for DatasetEnvironment {
             EnvironmentDescription::new(dataset.dimensions.inputs, dataset.dimensions.outputs);
 
         DatasetEnvironment {
-            dataset: dataset,
-            description: description,
+            dataset,
+            description,
         }
     }
 }
 
-impl Environment<execute::Executor> for DatasetEnvironment {
+impl DatasetEnvironment {
+    fn accuracy(&self, predictions: &Vec<Vec<f64>>) -> f64 {
+        if !self.dataset.is_classification {
+            return 0.0;
+        }
+
+        self.dataset.acc(&predictions)
+    }
+
+    fn fitness(&self, predictions: &Vec<Vec<f64>>) -> f64 {
+        if self.dataset.is_classification && self.dataset.one_hot_output {
+            (3.0 - self.dataset.crossentropy(&predictions)).max(0.0)
+        } else {
+            1.0 - self.dataset.mse(&predictions)
+        }
+    }
+}
+
+impl Environment for DatasetEnvironment {
+    type Phenotype = Executor;
+    type Stats = DatasetStats;
+
     fn description(&self) -> EnvironmentDescription {
         self.description.clone()
     }
 
-    fn fitness(&self, executor: &mut execute::Executor) -> f64 {
-        1.0 - self.dataset.mse(
-            self.dataset
-                .inputs
-                .iter()
-                .map(|input| executor.execute(input)),
+    fn evaluate(&self, executor: &mut Executor) -> (f64, DatasetStats) {
+        let predictions = self
+            .dataset
+            .inputs
+            .iter()
+            .map(|input| executor.execute(input))
+            .collect::<Vec<Vec<_>>>();
+
+        (
+            self.fitness(&predictions),
+            DatasetStats {
+                accuracy: self.accuracy(&predictions),
+            },
         )
     }
 }

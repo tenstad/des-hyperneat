@@ -16,9 +16,8 @@ pub mod node;
 
 pub struct Cppn;
 
-impl Algorithm for Cppn {
+impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Cppn {
     type Genome = Genome;
-    type Phenotype = Executor;
     type Developer = Developer;
     type Logger = Logger;
 
@@ -27,6 +26,6 @@ impl Algorithm for Cppn {
     }
 }
 
-pub fn cppn<E: Environment<Executor> + Default>() {
-    evolve::<Cppn, E>();
+pub fn cppn<E: Environment<Phenotype = Executor> + Default + 'static>() {
+    evolve::<E, Cppn>();
 }

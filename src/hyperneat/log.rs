@@ -1,7 +1,10 @@
 use crate::cppn::{developer::Developer, genome::Genome, log::Logger as CppnLogger};
 use crate::hyperneat::img;
 use evolution::{
-    develop::Develop, environment::EnvironmentDescription, log, population::Population,
+    develop::Develop,
+    environment::{EnvironmentDescription, Stats},
+    log,
+    population::Population,
 };
 
 pub struct Logger {
@@ -20,8 +23,8 @@ impl From<EnvironmentDescription> for Logger {
     }
 }
 
-impl log::Log<Genome> for Logger {
-    fn log(&mut self, iteration: usize, population: &Population<Genome>) {
+impl<S: Stats> log::Log<Genome, S> for Logger {
+    fn log(&mut self, iteration: usize, population: &Population<Genome, S>) {
         self.cppn_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {

@@ -16,9 +16,8 @@ pub mod state;
 
 pub struct Neat;
 
-impl Algorithm for Neat {
+impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Neat {
     type Genome = Genome;
-    type Phenotype = Executor;
     type Developer = Developer;
     type Logger = Logger;
 
@@ -27,6 +26,6 @@ impl Algorithm for Neat {
     }
 }
 
-pub fn neat<E: Environment<Executor> + Default>() {
-    evolve::<Neat, E>();
+pub fn neat<E: Environment<Phenotype = Executor> + Default + 'static>() {
+    evolve::<E, Neat>();
 }

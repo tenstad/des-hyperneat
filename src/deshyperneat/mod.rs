@@ -18,9 +18,8 @@ use network::execute::Executor;
 
 pub struct Deshyperneat;
 
-impl Algorithm for Deshyperneat {
+impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Deshyperneat {
     type Genome = Genome;
-    type Phenotype = Executor;
     type Developer = Developer;
     type Logger = Logger;
 
@@ -29,6 +28,6 @@ impl Algorithm for Deshyperneat {
     }
 }
 
-pub fn deshyperneat<E: Environment<Executor> + Default>() {
-    evolve::<Deshyperneat, E>();
+pub fn deshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
+    evolve::<E, Deshyperneat>();
 }

@@ -129,9 +129,9 @@ impl NeatGenome for Genome {
 }
 
 impl Genome {
-    pub fn select_modules(
+    pub fn select_modules<S>(
         &self,
-        modules: &Population<CppnGenome>,
+        modules: &Population<CppnGenome, S>,
     ) -> HashMap<usize, (usize, CppnGenome)> {
         let mut rng = rand::thread_rng();
         let mut genomes = HashMap::<usize, (usize, CppnGenome)>::new();

@@ -1,15 +1,12 @@
 use crate::develop::Develop;
-use crate::environment::EnvironmentDescription;
+use crate::environment::{Environment, EnvironmentDescription};
 use crate::genome::Genome;
 use crate::log::Log;
 
-pub trait Algorithm {
+pub trait Algorithm<E: Environment> {
     type Genome: Genome + 'static;
-    type Phenotype;
-    type Developer: Develop<Self::Genome, Self::Phenotype>;
-    type Logger: Log<Self::Genome>;
+    type Developer: Develop<Self::Genome, E::Phenotype>;
+    type Logger: Log<Self::Genome, E::Stats>;
 
-    fn genome_init_config(
-        e: &EnvironmentDescription,
-    ) -> <<Self as Algorithm>::Genome as Genome>::InitConfig;
+    fn genome_init_config(e: &EnvironmentDescription) -> <Self::Genome as Genome>::InitConfig;
 }

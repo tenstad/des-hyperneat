@@ -15,9 +15,8 @@ use network::execute::Executor;
 
 pub struct Hyperneat;
 
-impl Algorithm for Hyperneat {
+impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Hyperneat {
     type Genome = Genome;
-    type Phenotype = Executor;
     type Developer = Developer;
     type Logger = Logger;
 
@@ -26,6 +25,6 @@ impl Algorithm for Hyperneat {
     }
 }
 
-pub fn hyperneat<E: Environment<Executor> + Default>() {
-    evolve::<Hyperneat, E>();
+pub fn hyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
+    evolve::<E, Hyperneat>();
 }

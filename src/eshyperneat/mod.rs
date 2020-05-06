@@ -16,9 +16,8 @@ use network::execute::Executor;
 
 pub struct Eshyperneat;
 
-impl Algorithm for Eshyperneat {
+impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Eshyperneat {
     type Genome = Genome;
-    type Phenotype = Executor;
     type Developer = Developer;
     type Logger = Logger;
 
@@ -27,6 +26,6 @@ impl Algorithm for Eshyperneat {
     }
 }
 
-pub fn eshyperneat<E: Environment<Executor> + Default>() {
-    evolve::<Eshyperneat, E>();
+pub fn eshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
+    evolve::<E, Eshyperneat>();
 }

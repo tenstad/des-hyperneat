@@ -2,7 +2,10 @@ use crate::cppn::{developer::Developer as CppnDeveloper, genome::Genome};
 use crate::eshyperneat::{conf::ESHYPERNEAT, developer::Developer, figure::save_fig_to_file, img};
 use crate::hyperneat::log::Logger as HyperneatLogger;
 use evolution::{
-    develop::Develop, environment::EnvironmentDescription, log, population::Population,
+    develop::Develop,
+    environment::{EnvironmentDescription, Stats},
+    log,
+    population::Population,
 };
 
 pub struct Logger {
@@ -23,8 +26,8 @@ impl From<EnvironmentDescription> for Logger {
     }
 }
 
-impl log::Log<Genome> for Logger {
-    fn log(&mut self, iteration: usize, population: &Population<Genome>) {
+impl<S: Stats> log::Log<Genome, S> for Logger {
+    fn log(&mut self, iteration: usize, population: &Population<Genome, S>) {
         self.hyperneat_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {

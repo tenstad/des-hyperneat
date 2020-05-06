@@ -24,22 +24,23 @@ use evaluate::MultiEvaluator;
 use log::Log;
 use population::Population;
 
-pub fn evolve<A: Algorithm, E: Environment<A::Phenotype>>() {
+pub fn evolve<E: Environment + 'static, A: Algorithm<E>>() {
     let environment = &E::default();
 
     let init_config = A::genome_init_config(&environment.description());
-    let mut population = Population::<A::Genome>::new(EVOLUTION.population_size, &init_config);
+    let mut population =
+        Population::<A::Genome, E::Stats>::new(EVOLUTION.population_size, &init_config);
 
-    let evaluator = MultiEvaluator::<A::Genome>::new::<A::Phenotype, A::Developer, E>(
+    let evaluator = MultiEvaluator::<A::Genome, E>::new::<A::Developer>(
         EVOLUTION.population_size,
         EVOLUTION.thread_count,
     );
     let mut logger = A::Logger::from(environment.description());
 
     for i in 1..EVOLUTION.iterations {
-        population.evolve();
         population.evaluate(&evaluator);
-
         logger.log(i, &population);
+
+        population.evolve();
     }
 }

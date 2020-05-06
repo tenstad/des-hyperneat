@@ -7,20 +7,20 @@ use std::f64;
 /// Collection of similar organisms
 // The lock is used to add new organisms without affecting the reproduction of the previous generation.
 // It is unlocked after reproduction, which will remove the previous generation and keep the new.
-pub struct Species<G> {
+pub struct Species<G, S> {
     age: u64,
     pub best_fitness: f64,
     lifetime_best_fitness: f64,
     last_improvement: u64,
     pub offsprings: f64,
     pub elites: usize,
-    pub organisms: Vec<Organism<G>>,
+    pub organisms: Vec<Organism<G, S>>,
     pub extinct: bool,
     locked: bool, // When locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
     locked_organisms: usize, // The number of organisms when species was locked
 }
 
-impl<G: Genome> Species<G> {
+impl<G: Genome, S> Species<G, S> {
     pub fn new() -> Self {
         Self {
             age: 0,
@@ -37,7 +37,7 @@ impl<G: Genome> Species<G> {
     }
 
     /// Determine wether a new organism is compatible
-    pub fn is_compatible(&mut self, other: &Organism<G>) -> bool {
+    pub fn is_compatible(&mut self, other: &Organism<G, S>) -> bool {
         if let Some(organism) = self.organisms.first() {
             organism.distance(other) < EVOLUTION.speciation_threshold
         } else {
@@ -46,7 +46,7 @@ impl<G: Genome> Species<G> {
     }
 
     /// Add an organism
-    pub fn push(&mut self, individual: Organism<G>) {
+    pub fn push(&mut self, individual: Organism<G, S>) {
         self.organisms.push(individual);
     }
 
@@ -60,18 +60,18 @@ impl<G: Genome> Species<G> {
     }
 
     /// Iterate organisms. Adheres to lock.
-    pub fn iter(&self) -> impl Iterator<Item = &Organism<G>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Organism<G, S>> {
         self.organisms.iter().take(self.len())
     }
 
     /// Iterate mutable organisms. Adheres to lock.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<G>> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<G, S>> {
         let len = self.len(); // Must read len before iter_mut
         self.organisms.iter_mut().take(len)
     }
 
     /// Get a random organism. Adheres to lock.
-    pub fn random_organism(&self) -> Option<&Organism<G>> {
+    pub fn random_organism(&self) -> Option<&Organism<G, S>> {
         self.iter()
             .skip(rand::thread_rng().gen_range(0, self.len()))
             .next()
@@ -86,25 +86,27 @@ impl<G: Genome> Species<G> {
         let size: f64 = self.organisms.len() as f64;
 
         for organism in self.organisms.iter_mut() {
-            organism.adjusted_fitness = organism.fitness;
+            let mut adjusted_fitness = organism.fitness.expect("organism does not have fitness");
 
             // Greatly penalize stagnent species
             if is_stagnent {
-                organism.adjusted_fitness *= EVOLUTION.stagnent_species_fitness_multiplier;
+                adjusted_fitness *= EVOLUTION.stagnent_species_fitness_multiplier;
             }
 
             // Boost young species
             if is_young {
-                organism.adjusted_fitness *= EVOLUTION.young_species_fitness_multiplier;
+                adjusted_fitness *= EVOLUTION.young_species_fitness_multiplier;
             }
 
             // Share fitness within species
-            organism.adjusted_fitness /= size;
+            adjusted_fitness /= size;
 
             // Avoid zero fitness
-            if organism.adjusted_fitness <= 0.0 || !organism.adjusted_fitness.is_finite() {
-                organism.adjusted_fitness = 0.0001;
+            if adjusted_fitness <= 0.0 || !adjusted_fitness.is_finite() {
+                adjusted_fitness = 0.0001;
             }
+
+            organism.adjusted_fitness = Some(adjusted_fitness);
         }
 
         // Sort organisms descendingly by adjusted fitness
@@ -115,7 +117,7 @@ impl<G: Genome> Species<G> {
         self.best_fitness = self
             .organisms
             .first()
-            .map(|organism| organism.fitness)
+            .map(|organism| organism.fitness.unwrap())
             .unwrap_or(0.0);
         if self.best_fitness > self.lifetime_best_fitness {
             self.lifetime_best_fitness = self.best_fitness;
@@ -168,21 +170,23 @@ impl<G: Genome> Species<G> {
         self.offsprings = self
             .organisms
             .iter()
-            .map(|organism| organism.adjusted_fitness / avg_fitness)
+            .map(|organism| organism.adjusted_fitness.unwrap() / avg_fitness)
             .sum();
         self.elites = EVOLUTION.guaranteed_elites;
     }
 
     /// Use tournament selection to select an organism
-    pub fn tournament_select(&self, k: usize) -> Option<&Organism<G>> {
-        let mut best: Option<&Organism<G>> = None;
+    pub fn tournament_select(&self, k: usize) -> Option<&Organism<G, S>> {
+        let mut best: Option<&Organism<G, S>> = None;
         let mut best_fitness = f64::MIN;
 
         for _ in 0..k {
             if let Some(organism) = self.random_organism() {
-                if organism.fitness > best_fitness {
-                    best = Some(organism);
-                    best_fitness = organism.fitness;
+                if let Some(fitness) = organism.fitness {
+                    if fitness > best_fitness {
+                        best = Some(organism);
+                        best_fitness = fitness;
+                    }
                 }
             }
         }

@@ -1,7 +1,11 @@
 use crate::deshyperneat::figure::save_fig_to_file;
 use crate::deshyperneat::{developer::Developer, genome::Genome};
 use crate::eshyperneat::conf::ESHYPERNEAT;
-use evolution::{environment::EnvironmentDescription, log, population::Population};
+use evolution::{
+    environment::{EnvironmentDescription, Stats},
+    log,
+    population::Population,
+};
 
 pub struct Logger {
     default_logger: log::Logger,
@@ -19,8 +23,8 @@ impl From<EnvironmentDescription> for Logger {
     }
 }
 
-impl log::Log<Genome> for Logger {
-    fn log(&mut self, iteration: usize, population: &Population<Genome>) {
+impl<S: Stats> log::Log<Genome, S> for Logger {
+    fn log(&mut self, iteration: usize, population: &Population<Genome, S>) {
         self.default_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {
