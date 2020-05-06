@@ -1,4 +1,6 @@
-use crate::codeshyperneat::{developer::CombinedGenome, genome::Genome as BlueprintGenome};
+use crate::codeshyperneat::{
+    conf::CODESHYPERNEAT, developer::CombinedGenome, genome::Genome as BlueprintGenome,
+};
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::developer::Developer;
 use evolution::{
@@ -36,8 +38,7 @@ pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>(
     for i in 1..EVOLUTION.iterations {
         let mut avg_fitnesses = Vec::<f64>::new();
 
-        let num_repeats = 5;
-        for _ in 0..num_repeats {
+        for _ in 0..CODESHYPERNEAT.blueprint_developments {
             let mut combined_genomes = blueprints
                 .enumerate()
                 .map(|(species_index, organism_index, organism)| {
@@ -67,7 +68,7 @@ pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>(
                     .unwrap()
                     .organisms[organism_index]
                     .fitness
-                    .get_or_insert(0.0) += fitness / num_repeats as f64;
+                    .get_or_insert(0.0) += fitness / CODESHYPERNEAT.blueprint_developments as f64;
                 // Assign fitness to the modules
                 for (module_species, (module_index, _)) in combined_genome.modules.iter() {
                     if modules.extinct_species.contains_key(module_species) {
