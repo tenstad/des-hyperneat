@@ -3,7 +3,7 @@ use crate::neat::{
     genome::{Genome, Link, Node},
     link::LinkCore,
     node::{NodeCore, NodeRef},
-    state::{InitConfig, Innovation, NeatStateProvider},
+    state::{InitConfig, NeatStateProvider},
 };
 use network::connection;
 use rand::{seq::SliceRandom, Rng};
@@ -361,52 +361,16 @@ impl<N: Node<S>, L: Link<S>, S: NeatStateProvider> GenomeCore<N, L, S> {
             .collect::<Vec<(NodeRef, NodeRef)>>()
             .choose(&mut rand::thread_rng())
         {
-            let link = self.links.get(index).unwrap().clone();
-            let from = link.get_core().from;
-            let to = link.get_core().to;
+            let link = self.links.get(index).unwrap().get_core().clone();
+            let innovation = state.get_core_mut().get_split_innovation(link.innovation);
 
-            // Check if this link has been split by another individual
-            if let Some(addition) = state
-                .get_core()
-                .innovation_log
-                .node_additions
-                .get(&link.get_core().innovation)
-            {
-                // Split the link
-                self.split_link(
-                    from,
-                    to,
-                    addition.node_number,
-                    addition.innovation_number,
-                    state,
-                );
-            } else {
-                let (node_number, innovation_number) = {
-                    let core = state.get_core();
-                    (
-                        core.next_innovation.node_number,
-                        core.next_innovation.innovation_number,
-                    )
-                };
-
-                // Split the link
-                self.split_link(from, to, node_number, innovation_number, state);
-
-                let mut core = state.get_core_mut();
-
-                // Add this mutation to log
-                core.innovation_log.node_additions.insert(
-                    link.get_core().innovation,
-                    Innovation {
-                        node_number: core.next_innovation.node_number,
-                        innovation_number: core.next_innovation.innovation_number,
-                    },
-                );
-
-                // Increase global node count and innovation number
-                core.next_innovation.node_number += 1;
-                core.next_innovation.innovation_number += 2;
-            }
+            self.split_link(
+                link.from,
+                link.to,
+                innovation.node_number,
+                innovation.innovation_number,
+                state,
+            );
         }
     }
 
@@ -442,24 +406,7 @@ impl<N: Node<S>, L: Link<S>, S: NeatStateProvider> GenomeCore<N, L, S> {
                 if !self.links.contains_key(&(from, to))
                     && !self.connections.creates_cycle(from, to)
                 {
-                    // Check if this link has been added by another individual
-                    let innovation = match state
-                        .get_core()
-                        .innovation_log
-                        .edge_additions
-                        .get(&(from, to))
-                    {
-                        Some(innovation_number) => *innovation_number,
-                        None => {
-                            let mut core = state.get_core_mut();
-                            core.innovation_log
-                                .edge_additions
-                                .insert((from, to), core.next_innovation.innovation_number);
-                            core.next_innovation.innovation_number += 1;
-
-                            core.next_innovation.innovation_number - 1
-                        }
-                    };
+                    let innovation = state.get_core_mut().get_connect_innovation(from, to);
 
                     self.insert_link(L::new(
                         LinkCore::new(
