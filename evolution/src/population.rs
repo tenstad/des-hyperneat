@@ -231,6 +231,14 @@ impl<G: Genome, S> Population<G, S> {
         );
     }
 
+    pub fn mutate(&mut self) {
+        for species in self.species.values_mut() {
+            for organism in species.iter_mut() {
+                organism.mutate(&mut self.state);
+            }
+        }
+    }
+
     /// Get random organism from population
     fn random_organism(&self) -> Option<&Organism<G, S>> {
         let len = self.iter().count();

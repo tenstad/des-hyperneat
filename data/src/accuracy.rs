@@ -1,6 +1,6 @@
 use std::f64;
 
-pub fn one_hot_accuracy(targets: &Vec<Vec<f64>>, outputs: &Vec<Vec<f64>>) -> f64 {
+pub fn one_hot_accuracy(targets: &[std::vec::Vec<f64>], outputs: &[std::vec::Vec<f64>]) -> f64 {
     targets
         .iter()
         .zip(outputs)
@@ -9,7 +9,7 @@ pub fn one_hot_accuracy(targets: &Vec<Vec<f64>>, outputs: &Vec<Vec<f64>>) -> f64
         / targets.len() as f64
 }
 
-pub fn rounded_accuracy(targets: &Vec<Vec<f64>>, outputs: &Vec<Vec<f64>>) -> f64 {
+pub fn rounded_accuracy(targets: &[std::vec::Vec<f64>], outputs: &[std::vec::Vec<f64>]) -> f64 {
     targets
         .iter()
         .zip(outputs)

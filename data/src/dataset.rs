@@ -1,18 +1,28 @@
-use crate::accuracy;
 use crate::conf::DATA;
-use crate::error;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Error};
-use std::path::Path;
+use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader, Error},
+    path::Path,
+};
 
 #[derive(Debug)]
 pub struct Dataset {
     pub dimensions: Dimensions,
-    pub size: usize,
     pub is_classification: bool,
     pub one_hot_output: bool,
-    pub inputs: Vec<Vec<f64>>,
-    pub targets: Vec<Vec<f64>>,
+
+    pub training_inputs: Vec<Vec<f64>>,
+    pub training_targets: Vec<Vec<f64>>,
+    pub validation_inputs: Vec<Vec<f64>>,
+    pub validation_targets: Vec<Vec<f64>>,
+    pub test_inputs: Vec<Vec<f64>>,
+    pub test_targets: Vec<Vec<f64>>,
+
+    pub total_count: usize,
+    pub training_count: usize,
+    pub validation_count: usize,
+    pub test_count: usize,
 }
 
 #[derive(Debug)]
@@ -29,11 +39,11 @@ impl Dataset {
     }
 
     pub fn load_specific<P: AsRef<Path>>(path: P) -> Result<Dataset, Error> {
-        let input = File::open(path)?;
-        let mut buffered = BufReader::new(input);
+        let file = File::open(path)?;
+        let mut buffered = BufReader::new(file);
 
         let mut inputs: Vec<Vec<f64>> = Vec::new();
-        let mut outputs: Vec<Vec<f64>> = Vec::new();
+        let mut targets: Vec<Vec<f64>> = Vec::new();
 
         let mut read_state: bool = false;
 
@@ -70,45 +80,52 @@ impl Dataset {
             if !read_state {
                 inputs.push(line);
             } else {
-                outputs.push(line);
+                targets.push(line);
             }
         }
 
         assert_ne!(inputs.len(), 0);
-        assert_eq!(inputs.len(), outputs.len());
+        assert_eq!(inputs.len(), targets.len());
+
+        inputs.shuffle(&mut StdRng::seed_from_u64(DATA.seed));
+        targets.shuffle(&mut StdRng::seed_from_u64(DATA.seed));
+
+        let total_count = inputs.len();
+        let validation_count = (total_count as f64 * DATA.validation_fraction).round() as usize;
+        let test_count = (total_count as f64 * DATA.test_fraction).round() as usize;
+        let training_count = total_count - validation_count - test_count;
+
+        let i = training_count + validation_count;
+        let test_inputs = inputs[i..].iter().cloned().collect::<Vec<_>>();
+        let test_targets = targets[i..].iter().cloned().collect::<Vec<_>>();
+        inputs.truncate(i);
+        targets.truncate(i);
+
+        let i = training_count;
+        let validation_inputs = inputs[i..].iter().cloned().collect::<Vec<_>>();
+        let validation_targets = targets[i..].iter().cloned().collect::<Vec<_>>();
+        inputs.truncate(i);
+        targets.truncate(i);
 
         Ok(Dataset {
-            is_classification: is_classification,
-            size: inputs.len(),
-            one_hot_output: one_hot_encoded,
             dimensions: Dimensions {
                 inputs: inputs[0].len(),
-                outputs: outputs[0].len(),
+                outputs: targets[0].len(),
             },
-            inputs: inputs,
-            targets: outputs,
+            is_classification: is_classification,
+            one_hot_output: one_hot_encoded,
+
+            training_inputs: inputs,
+            training_targets: targets,
+            validation_inputs,
+            validation_targets,
+            test_inputs,
+            test_targets,
+
+            total_count,
+            training_count,
+            validation_count,
+            test_count,
         })
-    }
-
-    pub fn mse(&self, outputs: &Vec<Vec<f64>>) -> f64 {
-        error::mse(
-            &self.targets,
-            outputs,
-            self.is_classification && self.one_hot_output,
-        )
-    }
-
-    pub fn crossentropy(&self, outputs: &Vec<Vec<f64>>) -> f64 {
-        error::crossentropy(&self.targets, outputs, true)
-    }
-
-    pub fn acc(&self, outputs: &Vec<Vec<f64>>) -> f64 {
-        if !self.is_classification {
-            0.0
-        } else if self.one_hot_output {
-            accuracy::one_hot_accuracy(&self.targets, outputs)
-        } else {
-            accuracy::rounded_accuracy(&self.targets, outputs)
-        }
     }
 }

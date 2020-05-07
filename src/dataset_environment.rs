@@ -1,4 +1,4 @@
-use data::dataset::Dataset;
+use data::{accuracy, dataset::Dataset, error};
 use evolution::environment::{Environment, EnvironmentDescription, Stats};
 use network::execute::Executor;
 use std::fmt::{Display, Formatter, Result};
@@ -9,21 +9,33 @@ pub struct DatasetEnvironment {
 }
 
 pub struct DatasetStats {
-    accuracy: f64,
+    validation_fitness: f64,
+    training_accuracy: f64,
+    validation_accuracy: f64,
 }
 
 impl Display for DatasetStats {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "Accuracy: {}", self.accuracy)
+        write!(
+            f,
+            "Val fitness: {} \t Tr acc: {} \t Val acc: {}",
+            self.validation_fitness, self.training_accuracy, self.validation_accuracy
+        )
     }
 }
 
-impl Stats for DatasetStats {}
+impl Stats for DatasetStats {
+    fn space_separated(&self) -> String {
+        format!(
+            "{} {} {}",
+            self.validation_fitness, self.training_accuracy, self.validation_accuracy
+        )
+    }
+}
 
 impl Default for DatasetEnvironment {
     fn default() -> DatasetEnvironment {
         let dataset = Dataset::load();
-
         let description =
             EnvironmentDescription::new(dataset.dimensions.inputs, dataset.dimensions.outputs);
 
@@ -35,20 +47,25 @@ impl Default for DatasetEnvironment {
 }
 
 impl DatasetEnvironment {
-    fn accuracy(&self, predictions: &Vec<Vec<f64>>) -> f64 {
+    fn accuracy(&self, targets: &Vec<Vec<f64>>, predictions: &Vec<Vec<f64>>) -> f64 {
         if !self.dataset.is_classification {
-            return 0.0;
+            0.0
+        } else if self.dataset.one_hot_output {
+            accuracy::one_hot_accuracy(targets, predictions)
+        } else {
+            accuracy::rounded_accuracy(targets, predictions)
         }
-
-        self.dataset.acc(&predictions)
     }
 
-    fn fitness(&self, predictions: &Vec<Vec<f64>>) -> f64 {
-        if self.dataset.is_classification && self.dataset.one_hot_output {
-            (3.0 - self.dataset.crossentropy(&predictions)).max(0.0)
+    fn fitness(&self, targets: &Vec<Vec<f64>>, predictions: &Vec<Vec<f64>>) -> f64 {
+        let norm = self.dataset.is_classification && self.dataset.one_hot_output;
+        1.0 - error::mse(targets, predictions, norm)
+
+        /*if self.dataset.is_classification && self.dataset.one_hot_output {
+            (3.0 - error::crossentropy(targets, predictions, norm)).max(0.0) / 3.0
         } else {
-            1.0 - self.dataset.mse(&predictions)
-        }
+            1.0 - error::mse(targets, predictions, norm)
+        }*/
     }
 }
 
@@ -61,17 +78,30 @@ impl Environment for DatasetEnvironment {
     }
 
     fn evaluate(&self, executor: &mut Executor) -> (f64, DatasetStats) {
-        let predictions = self
+        let tr_pred = self
             .dataset
-            .inputs
+            .training_inputs
+            .iter()
+            .map(|input| executor.execute(input))
+            .collect::<Vec<Vec<_>>>();
+        let val_pred = self
+            .dataset
+            .validation_inputs
             .iter()
             .map(|input| executor.execute(input))
             .collect::<Vec<Vec<_>>>();
 
+        let training_fitness = self.fitness(&self.dataset.training_targets, &tr_pred);
+        let validation_fitness = self.fitness(&self.dataset.validation_targets, &val_pred);
+        let training_accuracy = self.accuracy(&self.dataset.training_targets, &tr_pred);
+        let validation_accuracy = self.accuracy(&self.dataset.validation_targets, &val_pred);
+
         (
-            self.fitness(&predictions),
+            training_fitness,
             DatasetStats {
-                accuracy: self.accuracy(&predictions),
+                validation_fitness,
+                training_accuracy,
+                validation_accuracy,
             },
         )
     }

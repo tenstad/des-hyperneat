@@ -1,6 +1,10 @@
 use crate::environment::{EnvironmentDescription, Stats};
 use crate::genome::Genome;
 use crate::population::Population;
+use std::{
+    fs::{File, OpenOptions},
+    io::prelude::Write,
+};
 
 pub trait Log<G: Genome, S: Stats>: From<EnvironmentDescription> {
     fn log(&mut self, iteration: usize, population: &Population<G, S>);
@@ -12,6 +16,7 @@ pub struct Logger {
 
 impl From<EnvironmentDescription> for Logger {
     fn from(_: EnvironmentDescription) -> Self {
+        File::create("log.txt").ok();
         Self { log_interval: 10 }
     }
 }
@@ -21,11 +26,19 @@ impl<G: Genome, S: Stats> Log<G, S> for Logger {
         if iteration % self.log_interval == 0 {
             print!("Iter: {}", iteration);
             if let Some(best) = &population.best() {
-                if let Some(fitness) = best.fitness {
+                if let (Some(fitness), Some(stats)) = (best.fitness, &best.stats) {
                     print!("\t Fitness: {}", fitness);
-                }
-                if let Some(stats) = &best.stats {
                     print!("\n{}", stats);
+                    OpenOptions::new()
+                        .write(true)
+                        .append(true)
+                        .open("log.txt")
+                        .unwrap()
+                        .write_all(
+                            format!("{} {} {}\n", iteration, fitness, stats.space_separated())
+                                .as_bytes(),
+                        )
+                        .unwrap();
                 }
             }
             println!("\n{}", population);

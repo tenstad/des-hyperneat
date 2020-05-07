@@ -33,17 +33,6 @@ impl From<EnvironmentDescription> for Developer {
 }
 
 impl Developer {
-    // Creates a phenotype with all 0 outputs.
-    fn disconnected(&self) -> Executor {
-        let num_outputs = self.output_nodes.len();
-        Executor::create(
-            num_outputs,
-            Vec::new(),
-            (0..num_outputs).collect(),
-            Vec::new(),
-        )
-    }
-
     // Copy of part of the evolution below. This should be avoided
     // if there is an eqally fast option mergining the two
     pub fn connections(&self, cppn: &mut Executor) -> connection::Connections<(i64, i64), f64> {

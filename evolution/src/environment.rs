@@ -1,9 +1,15 @@
 use std::fmt::{Display, Formatter, Result};
 
-pub trait Stats: Send + Display {}
+pub trait Stats: Send + Display {
+    fn space_separated(&self) -> String;
+}
 
 pub struct NoStats;
-impl Stats for NoStats {}
+impl Stats for NoStats {
+    fn space_separated(&self) -> String {
+        String::from("")
+    }
+}
 impl Display for NoStats {
     fn fmt(&self, _: &mut Formatter) -> Result {
         Ok(())

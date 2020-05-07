@@ -8,11 +8,11 @@ pub fn normalize(list: &Vec<f64>) -> Vec<f64> {
     }
 }
 
-pub fn mse(targets: &Vec<Vec<f64>>, outputs: &Vec<Vec<f64>>, norm: bool) -> f64 {
+pub fn mse(targets: &[std::vec::Vec<f64>], predictions: &[std::vec::Vec<f64>], norm: bool) -> f64 {
     targets
         .iter()
-        .zip(outputs)
-        .map(|(t, o)| mse_single(t, &o, norm))
+        .zip(predictions)
+        .map(|(t, p)| mse_single(t, &p, norm))
         .sum::<f64>()
         / targets.len() as f64
 }
@@ -27,16 +27,20 @@ pub fn mse_single(target: &Vec<f64>, prediction: &Vec<f64>, norm: bool) -> f64 {
     target
         .iter()
         .zip(prediction.iter())
-        .map(|(t, o)| f64::powi(t - o, 2))
+        .map(|(t, p)| f64::powi(t - p, 2))
         .sum::<f64>()
         / target.len() as f64
 }
 
-pub fn crossentropy(targets: &Vec<Vec<f64>>, outputs: &Vec<Vec<f64>>, norm: bool) -> f64 {
+pub fn crossentropy(
+    targets: &[std::vec::Vec<f64>],
+    predictions: &[std::vec::Vec<f64>],
+    norm: bool,
+) -> f64 {
     targets
         .iter()
-        .zip(outputs)
-        .map(|(t, o)| crossentropy_single(t, &o, norm))
+        .zip(predictions)
+        .map(|(t, p)| crossentropy_single(t, &p, norm))
         .sum::<f64>()
         / targets.len() as f64
 }
@@ -60,6 +64,6 @@ pub fn crossentropy_single(target: &Vec<f64>, prediction: &Vec<f64>, norm: bool)
     -target
         .iter()
         .zip(prediction.iter())
-        .map(|(t, pred)| t * pred.ln())
+        .map(|(t, p)| t * p.ln())
         .sum::<f64>()
 }
