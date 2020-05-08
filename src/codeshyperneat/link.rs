@@ -30,9 +30,10 @@ impl NeatLink for Link {
     }
 
     fn clone_with(&self, core: LinkCore, _: &mut Self::State) -> Self {
-        let mut clone = self.clone();
-        clone.core = core;
-        clone
+        Self {
+            core,
+            module_species: self.module_species,
+        }
     }
 
     fn get_core(&self) -> &LinkCore {

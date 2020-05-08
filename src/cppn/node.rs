@@ -2,7 +2,7 @@ use crate::cppn::conf::CPPN;
 use evolution::neat::{
     genome::Node as NeatNode,
     node::{NodeCore, NodeRef},
-    state::{NeatStateProvider, StateCore},
+    state::StateCore,
 };
 use network::activation::Activation;
 use rand::Rng;
