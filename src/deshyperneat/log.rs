@@ -1,8 +1,8 @@
-use crate::deshyperneat::figure::save_fig_to_file;
-use crate::deshyperneat::{developer::Developer, genome::Genome};
+use crate::deshyperneat::{desgenome::DesGenome, developer::Developer, figure::save_fig_to_file};
 use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::{
     environment::{EnvironmentDescription, Stats},
+    genome::Genome,
     log,
     population::Population,
 };
@@ -23,8 +23,8 @@ impl From<EnvironmentDescription> for Logger {
     }
 }
 
-impl<S: Stats> log::Log<Genome, S> for Logger {
-    fn log(&mut self, iteration: usize, population: &Population<Genome, S>) {
+impl<S: Stats, G: DesGenome + Genome> log::Log<G, S> for Logger {
+    fn log(&mut self, iteration: usize, population: &Population<G, S>) {
         self.default_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {
