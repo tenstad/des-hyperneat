@@ -110,16 +110,15 @@ impl NeatGenome for Genome {
                 link.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
                     &mut state.single_cppn_state
                 } else {
-                    let key = (link.core.from, link.core.to);
+                    let key = &(link.core.from, link.core.to);
                     state
                         .unique_cppn_states
                         .get_mut(
-                            &state
-                                .cppn_state_redirects
-                                .get(&key)
-                                .cloned()
-                                .or_else(|| Some(key))
-                                .unwrap(),
+                            if let Some(redirect) = state.cppn_state_redirects.get(key) {
+                                redirect
+                            } else {
+                                key
+                            },
                         )
                         .expect("cannot find unique link state")
                 });

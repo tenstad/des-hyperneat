@@ -8,7 +8,7 @@ use evolution::neat::{
 };
 use rand::Rng;
 
-#[derive(Clone)]
+#[derive(Clone, new)]
 pub struct Node {
     pub core: NodeCore,
     pub cppn: CppnGenome,
@@ -37,11 +37,7 @@ impl NeatNode for Node {
             cppn
         };
 
-        Self {
-            core,
-            cppn,
-            depth: 1,
-        }
+        Self::new(core, cppn, 1)
     }
 
     fn get_core(&self) -> &NodeCore {

@@ -285,21 +285,27 @@ impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
             N::new(NodeCore::new(NodeRef::Hidden(new_node_id)), state),
         );
 
-        let (link1_nodes, link2_nodes) = if let NodeRef::Input(_) = from {
-            ((new_node_ref, to), (from, new_node_ref))
+        let (link1_details, link2_details) = if let NodeRef::Input(_) = from {
+            (
+                (new_node_ref, to, innovation_number + 1),
+                (from, new_node_ref, innovation_number),
+            )
         } else {
-            ((from, new_node_ref), (new_node_ref, to))
+            (
+                (from, new_node_ref, innovation_number),
+                (new_node_ref, to, innovation_number + 1),
+            )
         };
         let link1 = L::identity(
-            LinkCore::new(link1_nodes.0, link1_nodes.1, 1.0, innovation_number),
+            LinkCore::new(link1_details.0, link1_details.1, 1.0, link1_details.2),
             state,
         );
         let link2 = link.clone_with(
             LinkCore::new(
-                link2_nodes.0,
-                link2_nodes.1,
+                link2_details.0,
+                link2_details.1,
                 link.get_core().weight,
-                innovation_number + 1,
+                link2_details.2,
             ),
             state,
         );

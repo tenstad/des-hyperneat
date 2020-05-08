@@ -52,19 +52,15 @@ impl NeatLink for Link {
             let key = (self.core.from, self.core.to);
             state.cppn_state_redirects.insert(
                 (core.from, core.to),
-                state
-                    .cppn_state_redirects
-                    .get(&key)
-                    .cloned()
-                    .or_else(|| Some(key))
-                    .unwrap(),
+                if let Some(redirect) = state.cppn_state_redirects.get(&key) {
+                    *redirect
+                } else {
+                    key
+                },
             );
         }
 
-        let mut clone = self.clone();
-        clone.core = core;
-
-        clone
+        Self::new(core, self.cppn.clone(), self.depth)
     }
 
     fn get_core(&self) -> &LinkCore {

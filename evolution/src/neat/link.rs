@@ -1,8 +1,4 @@
-use crate::neat::{
-    genome::Link,
-    node::NodeRef,
-    state::{NeatStateProvider, StateCore},
-};
+use crate::neat::{genome::Link, node::NodeRef, state::StateCore};
 
 /// Link between two nodes
 #[derive(Clone, Debug)]
