@@ -27,7 +27,7 @@ impl NeatStateProvider for State {
     }
 }
 
-type NeatCore = GenomeCore<Node, Link, State>;
+type NeatCore = GenomeCore<Node, Link>;
 
 impl evolution::genome::Genome for Genome {
     type InitConfig = InitConfig;
@@ -47,7 +47,7 @@ impl NeatGenome for Genome {
 
     fn new(init_config: &Self::Init, state: &mut Self::State) -> Self {
         Self {
-            core: GenomeCore::<Self::Node, Self::Link, Self::State>::new(init_config, state),
+            core: GenomeCore::<Self::Node, Self::Link>::new(init_config, state),
         }
     }
 

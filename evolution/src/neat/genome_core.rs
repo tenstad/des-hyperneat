@@ -8,33 +8,26 @@ use crate::neat::{
 use network::connection;
 use rand::{seq::SliceRandom, Rng};
 use std::collections::HashMap;
-use std::marker::PhantomData;
 
 #[derive(Clone)]
-pub struct GenomeCore<N, L, S>
-where
-    N: Node<S>,
-    L: Link<S>,
-{
+pub struct GenomeCore<N, L> {
     pub inputs: HashMap<NodeRef, N>,
     pub hidden_nodes: HashMap<NodeRef, N>,
     pub outputs: HashMap<NodeRef, N>,
     pub links: HashMap<(NodeRef, NodeRef), L>, // Links between nodes
 
     pub connections: connection::Connections<NodeRef, ()>, // Fast connection lookup
-    phantom: PhantomData<S>,
 }
 
-impl<N, L, S: NeatStateProvider> Genome for GenomeCore<N, L, S>
+impl<N, L> Genome for GenomeCore<N, L>
 where
-    N: Node<S>,
-    L: Link<S>,
-    S: NeatStateProvider,
+    N: Node,
+    L: Link<State = N::State>,
 {
     type Node = N;
     type Link = L;
     type Init = InitConfig;
-    type State = S;
+    type State = N::State;
 
     fn get_core(&self) -> &Self {
         self
@@ -177,7 +170,6 @@ where
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
             connections: connection::Connections::<NodeRef, ()>::new(),
-            phantom: PhantomData,
         }
     }
 
@@ -240,7 +232,7 @@ where
     }
 }
 
-impl<N: Node<S>, L: Link<S>, S: NeatStateProvider> GenomeCore<N, L, S> {
+impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
     pub fn empty() -> Self {
         Self {
             inputs: HashMap::new(),
@@ -248,7 +240,6 @@ impl<N: Node<S>, L: Link<S>, S: NeatStateProvider> GenomeCore<N, L, S> {
             hidden_nodes: HashMap::new(),
             links: HashMap::new(),
             connections: connection::Connections::<NodeRef, ()>::new(),
-            phantom: PhantomData,
         }
     }
 
@@ -266,7 +257,7 @@ impl<N: Node<S>, L: Link<S>, S: NeatStateProvider> GenomeCore<N, L, S> {
         to: NodeRef,
         new_node_id: usize,
         innovation_number: usize,
-        state: &mut S,
+        state: &mut N::State,
     ) {
         let link = self
             .links
@@ -351,7 +342,7 @@ impl<N: Node<S>, L: Link<S>, S: NeatStateProvider> GenomeCore<N, L, S> {
         }*/
     }
 
-    fn mutation_add_node(&mut self, state: &mut S) {
+    fn mutation_add_node(&mut self, state: &mut N::State) {
         // Select random enabled link
         if let Some(index) = self
             .links
@@ -375,7 +366,7 @@ impl<N: Node<S>, L: Link<S>, S: NeatStateProvider> GenomeCore<N, L, S> {
     }
 
     // TODO: avoid retries
-    fn mutation_add_connection(&mut self, state: &mut S) {
+    fn mutation_add_connection(&mut self, state: &mut N::State) {
         let mut rng = rand::thread_rng();
 
         // Retry 50 times

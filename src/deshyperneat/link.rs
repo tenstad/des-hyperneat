@@ -15,7 +15,9 @@ pub struct Link {
     pub depth: usize,
 }
 
-impl NeatLink<State> for Link {
+impl NeatLink for Link {
+    type State = State;
+
     fn new(core: LinkCore, state: &mut State) -> Self {
         let init_conf = InitConfig::new(4, 2);
         let mut cppn_state = StateCore::default();

@@ -9,7 +9,7 @@ use evolution::neat::{
 use network::activation;
 use rand::Rng;
 
-type NeatCore = GenomeCore<Node, DefaultLink, StateCore>;
+pub type NeatCore = GenomeCore<Node, DefaultLink>;
 
 impl evolution::genome::Genome for Genome {
     type InitConfig = InitConfig;
@@ -27,7 +27,7 @@ impl NeatGenome for Genome {
     type Node = Node;
     type Link = DefaultLink;
 
-    fn new(init_config: &Self::Init, state: &mut Self::State) -> Self {
+    fn new(init_config: &InitConfig, state: &mut StateCore) -> Self {
         Self {
             core: NeatCore::new(init_config, state),
         }

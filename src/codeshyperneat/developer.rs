@@ -1,4 +1,4 @@
-use crate::codeshyperneat::genome::{Genome as BlueprintGenome, State};
+use crate::codeshyperneat::genome::Genome as BlueprintGenome;
 use crate::codeshyperneat::{link::Link, node::Node};
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::desgenome::DesGenome;
@@ -12,7 +12,6 @@ pub struct CombinedGenome {
 }
 
 impl DesGenome for CombinedGenome {
-    type State = State;
     type Node = Node;
     type Link = Link;
 
@@ -44,7 +43,7 @@ impl DesGenome for CombinedGenome {
         self.blueprint.core.get_node(node).unwrap().depth
     }
 
-    fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link, Self::State> {
+    fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link> {
         &self.blueprint.core
     }
 }

@@ -14,7 +14,7 @@ use network::{
 use std::collections::{HashMap, HashSet};
 
 pub struct Developer {
-    neat_developer: CppnDeveloper,
+    cppn_developer: CppnDeveloper,
     input_nodes: Vec<Vec<(i64, i64)>>,
     output_nodes: Vec<Vec<(i64, i64)>>,
     flattened_inputs: Vec<(NodeRef, i64, i64)>,
@@ -56,7 +56,7 @@ impl From<EnvironmentDescription> for Developer {
             .collect::<Vec<(NodeRef, i64, i64)>>();
 
         Self {
-            neat_developer: CppnDeveloper::from(description),
+            cppn_developer: CppnDeveloper::from(description),
             input_nodes,
             output_nodes,
             flattened_inputs,
@@ -99,7 +99,7 @@ impl Developer {
                 connection::OrderedAction::Edge(from, to, _) => {
                     // Develop the link's cppn
                     let mut cppn = self
-                        .neat_developer
+                        .cppn_developer
                         .develop(genome.get_link_cppn(*from, *to));
 
                     // Search for connections
@@ -153,7 +153,7 @@ impl Developer {
                 connection::OrderedAction::Node(node_ref) => match node_ref {
                     NodeRef::Hidden(_) => {
                         // Develop the node's cppn
-                        let mut cppn = self.neat_developer.develop(genome.get_node_cppn(*node_ref));
+                        let mut cppn = self.cppn_developer.develop(genome.get_node_cppn(*node_ref));
 
                         // Develop substrate
                         let (layers, connections) = search::explore_substrate(
@@ -228,7 +228,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                 connection::OrderedAction::Edge(from, to, _) => {
                     // Develop the link's cppn
                     let mut cppn = self
-                        .neat_developer
+                        .cppn_developer
                         .develop(genome.get_link_cppn(*from, *to));
 
                     // Search for connections
@@ -289,7 +289,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                 connection::OrderedAction::Node(node_ref) => match node_ref {
                     NodeRef::Hidden(_) => {
                         // Develop the node's cppn
-                        let mut cppn = self.neat_developer.develop(genome.get_node_cppn(*node_ref));
+                        let mut cppn = self.cppn_developer.develop(genome.get_node_cppn(*node_ref));
 
                         // Develop substrate
                         let (layers, connections) = search::explore_substrate(

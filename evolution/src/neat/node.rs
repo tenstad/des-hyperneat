@@ -1,4 +1,4 @@
-use crate::neat::genome::Node;
+use crate::neat::{genome::Node, state::StateCore};
 use std::fmt;
 
 #[derive(Copy, Clone, new)]
@@ -24,8 +24,10 @@ pub struct DefaultNode {
     pub core: NodeCore,
 }
 
-impl<S> Node<S> for DefaultNode {
-    fn new(core: NodeCore, _: &mut S) -> Self {
+impl Node for DefaultNode {
+    type State = StateCore;
+
+    fn new(core: NodeCore, _: &mut Self::State) -> Self {
         Self { core }
     }
 

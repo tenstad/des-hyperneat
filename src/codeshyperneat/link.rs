@@ -8,7 +8,9 @@ pub struct Link {
     pub module_species: usize,
 }
 
-impl NeatLink<State> for Link {
+impl NeatLink for Link {
+    type State = State;
+
     fn new(core: LinkCore, state: &mut State) -> Self {
         let mut rng = rand::thread_rng();
         let module_species = if state.species > 0 {

@@ -9,7 +9,9 @@ pub struct Node {
     pub depth: usize,
 }
 
-impl NeatNode<State> for Node {
+impl NeatNode for Node {
+    type State = State;
+
     fn new(core: NodeCore, state: &mut State) -> Self {
         let mut rng = rand::thread_rng();
         let module_species = if state.species > 0 {

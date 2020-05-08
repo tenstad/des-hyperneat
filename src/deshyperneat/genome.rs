@@ -27,7 +27,7 @@ impl NeatStateProvider for State {
     }
 }
 
-type NeatCore = GenomeCore<Node, Link, State>;
+type NeatCore = GenomeCore<Node, Link>;
 
 impl evolution::genome::Genome for Genome {
     type InitConfig = InitConfig;
@@ -40,7 +40,6 @@ pub struct Genome {
 }
 
 impl DesGenome for Genome {
-    type State = State;
     type Node = Node;
     type Link = Link;
 
@@ -56,7 +55,7 @@ impl DesGenome for Genome {
         self.core.get_node(node).unwrap().depth
     }
 
-    fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link, Self::State> {
+    fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link> {
         &self.core
     }
 }
@@ -69,7 +68,7 @@ impl NeatGenome for Genome {
 
     fn new(init_config: &Self::Init, state: &mut Self::State) -> Self {
         Self {
-            core: GenomeCore::<Self::Node, Self::Link, Self::State>::new(init_config, state),
+            core: GenomeCore::<Self::Node, Self::Link>::new(init_config, state),
         }
     }
 

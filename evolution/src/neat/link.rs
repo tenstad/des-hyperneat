@@ -1,4 +1,4 @@
-use crate::neat::{genome::Link, node::NodeRef};
+use crate::neat::{genome::Link, node::NodeRef, state::StateCore};
 
 /// Link between two nodes
 #[derive(Clone, Debug)]
@@ -48,16 +48,18 @@ pub struct DefaultLink {
     pub core: LinkCore,
 }
 
-impl<S> Link<S> for DefaultLink {
-    fn new(core: LinkCore, _: &mut S) -> Self {
+impl Link for DefaultLink {
+    type State = StateCore;
+
+    fn new(core: LinkCore, _: &mut Self::State) -> Self {
         Self { core }
     }
 
-    fn identity(core: LinkCore, _: &mut S) -> Self {
+    fn identity(core: LinkCore, _: &mut Self::State) -> Self {
         Self { core }
     }
 
-    fn clone_with(&self, core: LinkCore, _: &mut S) -> Self {
+    fn clone_with(&self, core: LinkCore, _: &mut Self::State) -> Self {
         Self { core }
     }
 

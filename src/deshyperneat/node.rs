@@ -15,7 +15,9 @@ pub struct Node {
     pub depth: usize,
 }
 
-impl NeatNode<State> for Node {
+impl NeatNode for Node {
+    type State = State;
+
     fn new(core: NodeCore, state: &mut State) -> Self {
         let init_conf = InitConfig::new(4, 2);
 
