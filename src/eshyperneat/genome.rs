@@ -3,7 +3,7 @@ use evolution::neat::{
     genome::Genome as NeatGenome,
     link::{DefaultLink, LinkCore},
     node::NodeRef,
-    state::{InitConfig, Innovation, StateCore},
+    state::{InitConfig, StateCore},
 };
 use network::activation::Activation;
 
@@ -14,14 +14,7 @@ fn insert_link(
     to: NodeRef,
     weight: f64,
 ) {
-    let innovation = state.next_innovation.innovation_number;
-    state.next_innovation.innovation_number += 1;
-
-    state
-        .innovation_log
-        .edge_additions
-        .insert((from, to), innovation);
-
+    let innovation = state.get_connect_innovation(from, to);
     genome
         .get_core_mut()
         .insert_link(DefaultLink::new(LinkCore::new(
@@ -35,15 +28,11 @@ fn split_link(
     from: NodeRef,
     to: NodeRef,
     weight: f64,
+    weight2: f64,
     activation: Activation,
     bias: f64,
 ) -> NodeRef {
-    let node_number = state.next_innovation.node_number;
-    let innovation_number = state.next_innovation.innovation_number;
-    state.next_innovation.node_number += 1;
-    state.next_innovation.innovation_number += 2;
-
-    state.innovation_log.node_additions.insert(
+    let innovation = state.get_split_innovation(
         genome
             .get_core()
             .links
@@ -51,16 +40,16 @@ fn split_link(
             .expect("cannot split nonexisting link")
             .core
             .innovation,
-        Innovation {
-            node_number: node_number,
-            innovation_number: innovation_number,
-        },
     );
+    let new_node = NodeRef::Hidden(innovation.node_number);
 
-    let new_node = NodeRef::Hidden(node_number);
-    genome
-        .get_core_mut()
-        .split_link(from, to, node_number, innovation_number, state);
+    genome.get_core_mut().split_link(
+        from,
+        to,
+        innovation.node_number,
+        innovation.innovation_number,
+        state,
+    );
     let hidden_node = genome
         .get_core_mut()
         .hidden_nodes
@@ -77,6 +66,14 @@ fn split_link(
         .core
         .weight = weight;
 
+    genome
+        .get_core_mut()
+        .links
+        .get_mut(&(new_node, to))
+        .unwrap()
+        .core
+        .weight = weight2;
+
     new_node
 }
 
@@ -90,7 +87,7 @@ pub fn identity_genome() -> (Genome, StateCore) {
         &mut state,
         NodeRef::Input(0),
         NodeRef::Output(0),
-        7.5,
+        0.0,
     );
 
     insert_link(
@@ -98,7 +95,7 @@ pub fn identity_genome() -> (Genome, StateCore) {
         &mut state,
         NodeRef::Input(1),
         NodeRef::Output(0),
-        7.5,
+        0.0,
     );
 
     let hidden_x = split_link(
@@ -106,6 +103,7 @@ pub fn identity_genome() -> (Genome, StateCore) {
         &mut state,
         NodeRef::Input(0),
         NodeRef::Output(0),
+        7.5,
         7.5,
         Activation::Square,
         0.0,
@@ -116,6 +114,7 @@ pub fn identity_genome() -> (Genome, StateCore) {
         &mut state,
         NodeRef::Input(1),
         NodeRef::Output(0),
+        7.5,
         7.5,
         Activation::Square,
         0.0,
@@ -133,4 +132,44 @@ pub fn identity_genome() -> (Genome, StateCore) {
     output.bias = 0.0;
 
     (genome, state)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cppn::developer::Developer;
+    use crate::eshyperneat::{conf::ESHYPERNEAT, search::find_connections};
+    use evolution::{develop::Develop, environment::EnvironmentDescription};
+
+    #[test]
+    fn test_identity() {
+        let (genome, _) = identity_genome();
+        let developer = Developer::from(EnvironmentDescription::new(0, 0));
+        let mut cppn = developer.develop(&genome);
+        println!("{:?}", cppn);
+        let mut test_points = Vec::new();
+        if ESHYPERNEAT.initial_resolution > 0 {
+            test_points.push((0.5, -0.5));
+        }
+        if ESHYPERNEAT.initial_resolution > 1 {
+            test_points.push((0.25, -0.25));
+        }
+        if ESHYPERNEAT.initial_resolution > 2 {
+            test_points.push((0.125, 0.25 + 0.125));
+        }
+        if ESHYPERNEAT.initial_resolution > 3 {
+            test_points.push((0.0625, 0.125 - 0.0625));
+        }
+        if ESHYPERNEAT.initial_resolution > 4 {
+            test_points.push((0.03125, -0.0625 - 0.03125));
+        }
+
+        for (x, y) in test_points.iter() {
+            println!("{} {}", x, y);
+            let discoveries = find_connections(*x, *y, &mut cppn, false);
+            assert_eq!(discoveries.len(), 1);
+            assert_eq!(discoveries[0].node.0, *x);
+            assert_eq!(discoveries[0].node.1, *y);
+        }
+    }
 }

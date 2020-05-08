@@ -10,7 +10,7 @@ use std::collections::HashMap;
 pub struct Developer;
 
 impl From<EnvironmentDescription> for Developer {
-    fn from(description: EnvironmentDescription) -> Self {
+    fn from(_: EnvironmentDescription) -> Self {
         Developer {}
     }
 }
