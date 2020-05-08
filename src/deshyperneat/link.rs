@@ -2,7 +2,7 @@ use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::genome::State;
 use crate::eshyperneat::genome::identity_genome;
 use evolution::neat::{
-    genome::{Genome, Link as NeatLink},
+    genome::{GenericLink, Genome, Link as NeatLink},
     link::LinkCore,
     state::{InitConfig, StateCore},
 };
@@ -17,7 +17,9 @@ pub struct Link {
 
 impl NeatLink for Link {
     type State = State;
+}
 
+impl GenericLink<State> for Link {
     fn new(core: LinkCore, state: &mut State) -> Self {
         let init_conf = InitConfig::new(4, 2);
         let mut cppn_state = StateCore::default();

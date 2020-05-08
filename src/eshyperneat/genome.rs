@@ -1,7 +1,7 @@
 use crate::cppn::genome::Genome;
 use evolution::neat::{
     genome::Genome as NeatGenome,
-    link::{DefaultLink, LinkCore},
+    link::LinkCore,
     node::NodeRef,
     state::{InitConfig, StateCore},
 };
@@ -17,9 +17,7 @@ fn insert_link(
     let innovation = state.get_connect_innovation(from, to);
     genome
         .get_core_mut()
-        .insert_link(DefaultLink::new(LinkCore::new(
-            from, to, weight, innovation,
-        )));
+        .insert_link(LinkCore::new(from, to, weight, innovation));
 }
 
 fn split_link(
@@ -38,7 +36,6 @@ fn split_link(
             .links
             .get(&(from, to))
             .expect("cannot split nonexisting link")
-            .core
             .innovation,
     );
     let new_node = NodeRef::Hidden(innovation.node_number);
@@ -63,7 +60,6 @@ fn split_link(
         .links
         .get_mut(&(from, new_node))
         .unwrap()
-        .core
         .weight = weight;
 
     genome
@@ -71,7 +67,6 @@ fn split_link(
         .links
         .get_mut(&(new_node, to))
         .unwrap()
-        .core
         .weight = weight2;
 
     new_node

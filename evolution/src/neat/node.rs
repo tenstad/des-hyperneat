@@ -1,4 +1,7 @@
-use crate::neat::{genome::Node, state::StateCore};
+use crate::neat::{
+    genome::{GenericNode, Node},
+    state::{NeatStateProvider, StateCore},
+};
 use std::fmt;
 
 #[derive(Copy, Clone, new)]
@@ -19,34 +22,29 @@ impl NodeCore {
     }
 }
 
-#[derive(Clone)]
-pub struct DefaultNode {
-    pub core: NodeCore,
+impl Node for NodeCore {
+    type State = StateCore;
 }
 
-impl Node for DefaultNode {
-    type State = StateCore;
-
-    fn new(core: NodeCore, _: &mut Self::State) -> Self {
-        Self { core }
+impl<S: NeatStateProvider> GenericNode<S> for NodeCore {
+    fn new(core: NodeCore, _: &mut S) -> Self {
+        core
     }
 
     fn get_core(&self) -> &NodeCore {
-        &self.core
+        self
     }
 
     fn get_core_mut(&mut self) -> &mut NodeCore {
-        &mut self.core
+        self
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
-        Self {
-            core: self.core.crossover(&other.core, fitness, other_fitness),
-        }
+        self.crossover(&other, fitness, other_fitness)
     }
 
     fn distance(&self, other: &Self) -> f64 {
-        self.core.distance(&other.core)
+        self.distance(&other)
     }
 }
 

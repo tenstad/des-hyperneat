@@ -1,21 +1,22 @@
-use crate::cppn::genome;
+use crate::cppn::genome::Genome as CppnGenome;
+use evolution::neat::genome::{GenericLink, GenericNode, Genome as NeatGenome};
 use std::{fs::File, io::prelude::Write};
 
-pub fn genome_to_dot(fname: String, genome: &genome::Genome) -> std::io::Result<()> {
+pub fn genome_to_dot(fname: String, genome: &CppnGenome) -> std::io::Result<()> {
     let mut file = File::create(fname)?;
     file.write_all(b"digraph g {\n")?;
 
     for link in genome.core.links.values() {
-        let s = if link.core.enabled {
+        let s = if link.enabled {
             format!(
                 "    {} -> {} [ label = \"{:.2}\" ];\n",
-                link.core.from, link.core.to, link.core.weight
+                link.from, link.to, link.weight
             )
         } else {
             //format!("")
             format!(
                 "    {} -> {} [ label = \"{:.2}\" style=dotted ];\n",
-                link.core.from, link.core.to, link.core.weight
+                link.from, link.to, link.weight
             )
         };
         file.write_all(s.as_bytes())?;

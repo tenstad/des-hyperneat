@@ -1,4 +1,8 @@
-use crate::neat::{genome::Link, node::NodeRef, state::StateCore};
+use crate::neat::{
+    genome::{GenericLink, Link},
+    node::NodeRef,
+    state::{NeatStateProvider, StateCore},
+};
 
 /// Link between two nodes
 #[derive(Clone, Debug)]
@@ -43,41 +47,36 @@ impl LinkCore {
     }
 }
 
-#[derive(Clone, new)]
-pub struct DefaultLink {
-    pub core: LinkCore,
+impl Link for LinkCore {
+    type State = StateCore;
 }
 
-impl Link for DefaultLink {
-    type State = StateCore;
-
-    fn new(core: LinkCore, _: &mut Self::State) -> Self {
-        Self { core }
+impl<S: NeatStateProvider> GenericLink<S> for LinkCore {
+    fn new(core: LinkCore, _: &mut S) -> Self {
+        core
     }
 
-    fn identity(core: LinkCore, _: &mut Self::State) -> Self {
-        Self { core }
+    fn identity(core: LinkCore, _: &mut S) -> Self {
+        core
     }
 
-    fn clone_with(&self, core: LinkCore, _: &mut Self::State) -> Self {
-        Self { core }
+    fn clone_with(&self, core: LinkCore, _: &mut S) -> Self {
+        core
     }
 
     fn get_core(&self) -> &LinkCore {
-        &self.core
+        self
     }
 
     fn get_core_mut(&mut self) -> &mut LinkCore {
-        &mut self.core
+        self
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
-        Self {
-            core: self.core.crossover(&other.core, fitness, other_fitness),
-        }
+        self.crossover(&other, fitness, other_fitness)
     }
 
     fn distance(&self, other: &Self) -> f64 {
-        self.core.distance(&other.core)
+        self.distance(&other)
     }
 }

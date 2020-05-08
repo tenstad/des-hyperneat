@@ -2,14 +2,14 @@ use crate::cppn::{conf::CPPN, node::Node};
 use evolution::neat::{
     genome::Genome as NeatGenome,
     genome_core::GenomeCore,
-    link::DefaultLink,
+    link::LinkCore,
     node::NodeRef,
     state::{InitConfig, StateCore},
 };
 use network::activation;
 use rand::Rng;
 
-pub type NeatCore = GenomeCore<Node, DefaultLink>;
+pub type NeatCore = GenomeCore<Node, LinkCore>;
 
 impl evolution::genome::Genome for Genome {
     type InitConfig = InitConfig;
@@ -25,7 +25,7 @@ impl NeatGenome for Genome {
     type Init = InitConfig;
     type State = StateCore;
     type Node = Node;
-    type Link = DefaultLink;
+    type Link = LinkCore;
 
     fn new(init_config: &InitConfig, state: &mut StateCore) -> Self {
         Self {

@@ -1,11 +1,11 @@
 use crate::neat::{
     genome_core::GenomeCore,
-    link::{DefaultLink, LinkCore},
-    node::{DefaultNode, NodeCore},
+    link::LinkCore,
+    node::NodeCore,
     state::{InitConfig, NeatStateProvider, StateCore},
 };
 
-pub type DefaultNeatGenome = GenomeCore<DefaultNode, DefaultLink>;
+pub type DefaultNeatGenome = GenomeCore<NodeCore, LinkCore>;
 impl crate::genome::Genome for DefaultNeatGenome {
     type InitConfig = InitConfig;
     type State = StateCore;
@@ -14,8 +14,8 @@ impl crate::genome::Genome for DefaultNeatGenome {
 pub trait Genome: Clone + Send {
     type Init;
     type State: NeatStateProvider;
-    type Node: Node<State = Self::State>;
-    type Link: Link<State = Self::State>;
+    type Node: Node<State = Self::State> + GenericNode<Self::State>;
+    type Link: Link<State = Self::State> + GenericLink<Self::State>;
 
     fn new(init_config: &Self::Init, state: &mut Self::State) -> Self;
     fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link>;
@@ -25,20 +25,26 @@ pub trait Genome: Clone + Send {
     fn distance(&self, other: &Self) -> f64;
 }
 
-pub trait Node: Clone + Send {
+pub trait Node: GenericNode<<Self as Node>::State> + Clone + Send {
     type State: NeatStateProvider;
-    fn new(core: NodeCore, state: &mut Self::State) -> Self;
+}
+
+pub trait GenericNode<S: NeatStateProvider> {
+    fn new(core: NodeCore, state: &mut S) -> Self;
     fn get_core(&self) -> &NodeCore;
     fn get_core_mut(&mut self) -> &mut NodeCore;
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
     fn distance(&self, other: &Self) -> f64;
 }
 
-pub trait Link: Clone + Send {
+pub trait Link: GenericLink<<Self as Link>::State> + Clone + Send {
     type State: NeatStateProvider;
-    fn new(core: LinkCore, state: &mut Self::State) -> Self;
-    fn identity(core: LinkCore, state: &mut Self::State) -> Self;
-    fn clone_with(&self, core: LinkCore, state: &mut Self::State) -> Self;
+}
+
+pub trait GenericLink<S: NeatStateProvider>: Clone + Send {
+    fn new(core: LinkCore, state: &mut S) -> Self;
+    fn identity(core: LinkCore, state: &mut S) -> Self;
+    fn clone_with(&self, core: LinkCore, state: &mut S) -> Self;
     fn get_core(&self) -> &LinkCore;
     fn get_core_mut(&mut self) -> &mut LinkCore;
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;

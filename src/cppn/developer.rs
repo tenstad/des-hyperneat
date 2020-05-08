@@ -71,11 +71,11 @@ impl Develop<Genome, Executor> for Developer {
             .filter_map(|action| match action {
                 connection::OrderedAction::Edge(from, to, _) => {
                     let link = genome.get_core().links.get(&(*from, *to)).unwrap();
-                    if link.core.enabled {
+                    if link.enabled {
                         Some(execute::Action::Link(
                             *node_mapping.get(from).unwrap(),
                             *node_mapping.get(to).unwrap(),
-                            link.core.weight,
+                            link.weight,
                         ))
                     } else {
                         None
@@ -100,7 +100,7 @@ mod tests {
     use crate::cppn::genome::Genome as CppnGenome;
     use evolution::neat::{
         genome::Genome,
-        link::{DefaultLink, LinkCore},
+        link::LinkCore,
         state::{InitConfig, StateCore},
     };
     use network::activation::Activation;
@@ -109,11 +109,11 @@ mod tests {
     fn test_develop() {
         let mut state = StateCore::default();
         let mut genome = CppnGenome::new(&InitConfig::new(4, 2), &mut state);
-        let link = DefaultLink::new(LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0));
+        let link = LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
 
         let core = genome.get_core_mut();
         core.insert_link(link.clone());
-        core.split_link(link.core.from, link.core.to, 0, 1, &mut state);
+        core.split_link(link.from, link.to, 0, 1, &mut state);
 
         core.inputs.get_mut(&NodeRef::Input(1)).unwrap().activation = Activation::None;
         core.hidden_nodes
