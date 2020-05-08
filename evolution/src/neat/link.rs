@@ -1,5 +1,5 @@
 use crate::neat::{
-    genome::{GenericLink, Link},
+    genome::Link,
     node::NodeRef,
     state::{NeatStateProvider, StateCore},
 };
@@ -49,18 +49,16 @@ impl LinkCore {
 
 impl Link for LinkCore {
     type State = StateCore;
-}
 
-impl<S: NeatStateProvider> GenericLink<S> for LinkCore {
-    fn new(core: LinkCore, _: &mut S) -> Self {
+    fn new(core: LinkCore, _: &mut Self::State) -> Self {
         core
     }
 
-    fn identity(core: LinkCore, _: &mut S) -> Self {
+    fn identity(core: LinkCore, _: &mut Self::State) -> Self {
         core
     }
 
-    fn clone_with(&self, core: LinkCore, _: &mut S) -> Self {
+    fn clone_with(&self, core: LinkCore, _: &mut Self::State) -> Self {
         core
     }
 

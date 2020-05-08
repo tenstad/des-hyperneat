@@ -1,8 +1,5 @@
 use crate::codeshyperneat::genome::State;
-use evolution::neat::{
-    genome::{GenericLink, Link as NeatLink},
-    link::LinkCore,
-};
+use evolution::neat::{genome::Link as NeatLink, link::LinkCore};
 use rand::Rng;
 
 #[derive(Clone)]
@@ -13,10 +10,8 @@ pub struct Link {
 
 impl NeatLink for Link {
     type State = State;
-}
 
-impl GenericLink<State> for Link {
-    fn new(core: LinkCore, state: &mut State) -> Self {
+    fn new(core: LinkCore, state: &mut Self::State) -> Self {
         let mut rng = rand::thread_rng();
         let module_species = if state.species > 0 {
             rng.gen_range(0, state.species)
@@ -30,11 +25,11 @@ impl GenericLink<State> for Link {
         }
     }
 
-    fn identity(core: LinkCore, state: &mut State) -> Self {
+    fn identity(core: LinkCore, state: &mut Self::State) -> Self {
         Self::new(core, state)
     }
 
-    fn clone_with(&self, core: LinkCore, _: &mut State) -> Self {
+    fn clone_with(&self, core: LinkCore, _: &mut Self::State) -> Self {
         let mut clone = self.clone();
         clone.core = core;
         clone

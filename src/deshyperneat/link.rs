@@ -2,7 +2,7 @@ use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::genome::State;
 use crate::eshyperneat::genome::identity_genome;
 use evolution::neat::{
-    genome::{GenericLink, Genome, Link as NeatLink},
+    genome::{Genome, Link as NeatLink},
     link::LinkCore,
     state::{InitConfig, StateCore},
 };
@@ -17,10 +17,8 @@ pub struct Link {
 
 impl NeatLink for Link {
     type State = State;
-}
 
-impl GenericLink<State> for Link {
-    fn new(core: LinkCore, state: &mut State) -> Self {
+    fn new(core: LinkCore, state: &mut Self::State) -> Self {
         let init_conf = InitConfig::new(4, 2);
         let mut cppn_state = StateCore::default();
         let cppn = CppnGenome::new(&init_conf, &mut cppn_state);
@@ -34,7 +32,7 @@ impl GenericLink<State> for Link {
         Self::new(core, cppn, 1)
     }
 
-    fn identity(core: LinkCore, state: &mut State) -> Self {
+    fn identity(core: LinkCore, state: &mut Self::State) -> Self {
         let (cppn, cppn_state) = identity_genome();
 
         if !state.unique_cppn_states.contains_key(&(core.from, core.to)) {
@@ -46,7 +44,7 @@ impl GenericLink<State> for Link {
         Self::new(core, cppn, 1)
     }
 
-    fn clone_with(&self, core: LinkCore, state: &mut State) -> Self {
+    fn clone_with(&self, core: LinkCore, state: &mut Self::State) -> Self {
         if !state
             .cppn_state_redirects
             .contains_key(&(core.from, core.to))

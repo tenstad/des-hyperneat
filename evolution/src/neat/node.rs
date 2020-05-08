@@ -1,7 +1,4 @@
-use crate::neat::{
-    genome::{GenericNode, Node},
-    state::{NeatStateProvider, StateCore},
-};
+use crate::neat::{genome::Node, state::StateCore};
 use std::fmt;
 
 #[derive(Copy, Clone, new)]
@@ -24,10 +21,8 @@ impl NodeCore {
 
 impl Node for NodeCore {
     type State = StateCore;
-}
 
-impl<S: NeatStateProvider> GenericNode<S> for NodeCore {
-    fn new(core: NodeCore, _: &mut S) -> Self {
+    fn new(core: NodeCore, _: &mut Self::State) -> Self {
         core
     }
 

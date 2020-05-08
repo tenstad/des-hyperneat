@@ -1,8 +1,7 @@
 use crate::develop::Develop;
 use crate::environment::EnvironmentDescription;
 use crate::neat::{
-    genome::{GenericLink, Genome, Link},
-    link::LinkCore,
+    genome::{Genome, Link},
     node::NodeRef,
 };
 use network::{connection, execute, execute::Executor};

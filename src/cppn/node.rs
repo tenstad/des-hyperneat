@@ -1,6 +1,6 @@
 use crate::cppn::conf::CPPN;
 use evolution::neat::{
-    genome::{GenericNode, Node as NeatNode},
+    genome::Node as NeatNode,
     node::{NodeCore, NodeRef},
     state::{NeatStateProvider, StateCore},
 };
@@ -16,10 +16,8 @@ pub struct Node {
 
 impl NeatNode for Node {
     type State = StateCore;
-}
 
-impl<S: NeatStateProvider> GenericNode<S> for Node {
-    fn new(core: NodeCore, _: &mut S) -> Self {
+    fn new(core: NodeCore, _: &mut Self::State) -> Self {
         Self {
             core,
             bias: 0.0,
