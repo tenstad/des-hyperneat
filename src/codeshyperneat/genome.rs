@@ -1,31 +1,13 @@
-use crate::codeshyperneat::{link::Link, node::Node};
+use crate::codeshyperneat::{link::Link, node::Node, state::State};
 use crate::cppn::genome::Genome as CppnGenome;
 use evolution::{
     neat::{
-        genome::Genome as NeatGenome,
-        genome_core::GenomeCore,
-        node::NodeRef,
-        state::{InitConfig, NeatStateProvider, StateCore},
+        genome::Genome as NeatGenome, genome_core::GenomeCore, node::NodeRef, state::InitConfig,
     },
     population::Population,
 };
 use rand::{seq::SliceRandom, Rng};
 use std::collections::HashMap;
-
-#[derive(Default, Clone)]
-pub struct State {
-    pub species: usize,
-    pub core: StateCore,
-}
-
-impl NeatStateProvider for State {
-    fn get_core(&self) -> &StateCore {
-        &self.core
-    }
-    fn get_core_mut(&mut self) -> &mut StateCore {
-        &mut self.core
-    }
-}
 
 type NeatCore = GenomeCore<Node, Link>;
 
@@ -39,13 +21,12 @@ pub struct Genome {
     pub core: NeatCore,
 }
 
-impl NeatGenome for Genome {
+impl NeatGenome<State> for Genome {
     type Init = InitConfig;
-    type State = State;
     type Node = Node;
     type Link = Link;
 
-    fn new(init_config: &Self::Init, state: &mut Self::State) -> Self {
+    fn new(init_config: &Self::Init, state: &mut State) -> Self {
         Self {
             core: GenomeCore::<Self::Node, Self::Link>::new(init_config, state),
         }
@@ -65,12 +46,12 @@ impl NeatGenome for Genome {
         }
     }
 
-    fn mutate(&mut self, state: &mut Self::State) {
+    fn mutate(&mut self, state: &mut State) {
         self.core.mutate(state);
 
         let mut rng = rand::thread_rng();
 
-        if state.species > 0 {
+        if state.custom.species > 0 {
             if rng.gen::<f64>() < 0.05 {
                 if let Some(key) = self
                     .core
@@ -81,7 +62,7 @@ impl NeatGenome for Genome {
                     .choose(&mut rng)
                 {
                     self.core.links.get_mut(&key).unwrap().module_species =
-                        rng.gen_range(0, state.species);
+                        rng.gen_range(0, state.custom.species);
                 }
             }
 
@@ -95,7 +76,7 @@ impl NeatGenome for Genome {
                     .choose(&mut rng)
                 {
                     self.core.hidden_nodes.get_mut(&key).unwrap().module_species =
-                        rng.gen_range(0, state.species);
+                        rng.gen_range(0, state.custom.species);
                 }
             }
         }

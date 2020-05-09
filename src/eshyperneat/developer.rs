@@ -67,7 +67,7 @@ impl Developer {
 }
 
 impl Develop<Genome, Executor> for Developer {
-    fn develop(&self, genome: &Genome) -> Executor {
+    fn develop(&self, genome: Genome) -> Executor {
         let mut cppn = self.neat_developer.develop(genome);
 
         // Forward search with depth

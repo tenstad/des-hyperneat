@@ -1,31 +1,9 @@
-use crate::cppn::genome::Genome as CppnGenome;
-use crate::deshyperneat::{conf::DESHYPERNEAT, desgenome::DesGenome, link::Link, node::Node};
+use crate::deshyperneat::{conf::DESHYPERNEAT, link::Link, node::Node, state::State};
 use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::neat::{
-    genome::Genome as NeatGenome,
-    genome_core::GenomeCore,
-    node::NodeRef,
-    state::{InitConfig, NeatStateProvider, StateCore},
+    genome::Genome as NeatGenome, genome_core::GenomeCore, node::NodeRef, state::InitConfig,
 };
 use rand::{seq::SliceRandom, Rng};
-use std::collections::HashMap;
-
-#[derive(Clone, Default)]
-pub struct State {
-    pub core: StateCore,
-    pub single_cppn_state: StateCore,
-    pub unique_cppn_states: HashMap<(NodeRef, NodeRef), StateCore>,
-    pub cppn_state_redirects: HashMap<(NodeRef, NodeRef), (NodeRef, NodeRef)>,
-}
-
-impl NeatStateProvider for State {
-    fn get_core(&self) -> &StateCore {
-        &self.core
-    }
-    fn get_core_mut(&mut self) -> &mut StateCore {
-        &mut self.core
-    }
-}
 
 type NeatCore = GenomeCore<Node, Link>;
 
@@ -39,34 +17,12 @@ pub struct Genome {
     pub core: NeatCore,
 }
 
-impl DesGenome for Genome {
-    type Node = Node;
-    type Link = Link;
-
-    fn get_node_cppn(&self, node: NodeRef) -> &CppnGenome {
-        &self.core.get_node(node).unwrap().cppn
-    }
-
-    fn get_link_cppn(&self, source: NodeRef, target: NodeRef) -> &CppnGenome {
-        &self.core.links.get(&(source, target)).unwrap().cppn
-    }
-
-    fn get_depth(&self, node: NodeRef) -> usize {
-        self.core.get_node(node).unwrap().depth
-    }
-
-    fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link> {
-        &self.core
-    }
-}
-
-impl NeatGenome for Genome {
+impl NeatGenome<State> for Genome {
     type Init = InitConfig;
-    type State = State;
     type Node = Node;
     type Link = Link;
 
-    fn new(init_config: &Self::Init, state: &mut Self::State) -> Self {
+    fn new(init_config: &Self::Init, state: &mut State) -> Self {
         Self {
             core: GenomeCore::<Self::Node, Self::Link>::new(init_config, state),
         }
@@ -86,7 +42,7 @@ impl NeatGenome for Genome {
         }
     }
 
-    fn mutate(&mut self, state: &mut Self::State) {
+    fn mutate(&mut self, state: &mut State) {
         self.core.mutate(state);
         let mut rng = rand::thread_rng();
 
@@ -96,9 +52,10 @@ impl NeatGenome for Genome {
         for node in self.core.hidden_nodes.values_mut() {
             if rng.gen::<f64>() < node_mut_prob {
                 node.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
-                    &mut state.single_cppn_state
+                    &mut state.custom.single_cppn_state
                 } else {
                     state
+                        .custom
                         .unique_cppn_states
                         .get_mut(&(node.core.node_ref, node.core.node_ref))
                         .unwrap()
@@ -108,13 +65,14 @@ impl NeatGenome for Genome {
         for link in self.core.links.values_mut() {
             if rng.gen::<f64>() < link_mut_prob {
                 link.cppn.mutate(if DESHYPERNEAT.single_cppn_state {
-                    &mut state.single_cppn_state
+                    &mut state.custom.single_cppn_state
                 } else {
                     let key = &(link.core.from, link.core.to);
                     state
+                        .custom
                         .unique_cppn_states
                         .get_mut(
-                            if let Some(redirect) = state.cppn_state_redirects.get(key) {
+                            if let Some(redirect) = state.custom.cppn_state_redirects.get(key) {
                                 redirect
                             } else {
                                 key

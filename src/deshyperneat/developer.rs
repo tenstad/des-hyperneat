@@ -68,8 +68,12 @@ impl From<EnvironmentDescription> for Developer {
 impl Developer {
     pub fn connections<G: DesGenome>(
         &self,
-        genome: &G,
+        genome: G,
     ) -> connection::Connections<(NodeRef, i64, i64), f64> {
+        // Let the genome prepeare to provide cppns and depth
+        let mut genome = genome;
+        genome.init_desgenome();
+
         // Init assembled network
         let mut assembled_connections = connection::Connections::<(NodeRef, i64, i64), f64>::new();
 
@@ -100,7 +104,7 @@ impl Developer {
                     // Develop the link's cppn
                     let mut cppn = self
                         .cppn_developer
-                        .develop(genome.get_link_cppn(*from, *to));
+                        .develop(genome.get_link_cppn(*from, *to).clone());
 
                     // Search for connections
                     let (layers, connections) = match to {
@@ -153,7 +157,9 @@ impl Developer {
                 connection::OrderedAction::Node(node_ref) => match node_ref {
                     NodeRef::Hidden(_) => {
                         // Develop the node's cppn
-                        let mut cppn = self.cppn_developer.develop(genome.get_node_cppn(*node_ref));
+                        let mut cppn = self
+                            .cppn_developer
+                            .develop(genome.get_node_cppn(node_ref).clone());
 
                         // Develop substrate
                         let (layers, connections) = search::explore_substrate(
@@ -165,7 +171,7 @@ impl Developer {
                                 .collect::<Vec<(i64, i64)>>(),
                             &vec![],
                             &mut cppn,
-                            genome.get_depth(*node_ref),
+                            genome.get_depth(node_ref),
                             false,
                             false,
                         );
@@ -198,7 +204,11 @@ impl Developer {
 }
 
 impl<G: DesGenome> Develop<G, Executor> for Developer {
-    fn develop(&self, genome: &G) -> Executor {
+    fn develop(&self, genome: G) -> Executor {
+        // Let the genome prepeare to provide cppns and depth
+        let mut genome = genome;
+        genome.init_desgenome();
+
         // Init assembled network
         let mut assembled_connections = connection::Connections::<(NodeRef, i64, i64), f64>::new();
 
@@ -229,7 +239,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                     // Develop the link's cppn
                     let mut cppn = self
                         .cppn_developer
-                        .develop(genome.get_link_cppn(*from, *to));
+                        .develop(genome.get_link_cppn(*from, *to).clone());
 
                     // Search for connections
                     let (layers, connections) = match to {
@@ -289,7 +299,9 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                 connection::OrderedAction::Node(node_ref) => match node_ref {
                     NodeRef::Hidden(_) => {
                         // Develop the node's cppn
-                        let mut cppn = self.cppn_developer.develop(genome.get_node_cppn(*node_ref));
+                        let mut cppn = self
+                            .cppn_developer
+                            .develop(genome.get_node_cppn(node_ref).clone());
 
                         // Develop substrate
                         let (layers, connections) = search::explore_substrate(
@@ -301,7 +313,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                                 .collect::<Vec<(i64, i64)>>(),
                             &vec![],
                             &mut cppn,
-                            genome.get_depth(*node_ref),
+                            genome.get_depth(node_ref),
                             false,
                             false,
                         );

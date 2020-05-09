@@ -33,7 +33,7 @@ impl<S: Stats> log::Log<Genome, S> for Logger {
         if iteration % self.log_interval == 0 {
             let mut phenotype = self
                 .neat_developer
-                .develop(&population.best().unwrap().genome);
+                .develop(population.best().unwrap().genome.clone());
 
             img::plot_weights(&mut phenotype, 0.0, 0.0, 1.0, 256)
                 .save("w.png")

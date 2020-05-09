@@ -140,8 +140,7 @@ mod tests {
     fn test_identity() {
         let (genome, _) = identity_genome();
         let developer = Developer::from(EnvironmentDescription::new(0, 0));
-        let mut cppn = developer.develop(&genome);
-        println!("{:?}", cppn);
+        let mut cppn = developer.develop(genome);
         let mut test_points = Vec::new();
         if ESHYPERNEAT.initial_resolution > 0 {
             test_points.push((0.5, -0.5));

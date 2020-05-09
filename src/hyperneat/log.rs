@@ -28,7 +28,9 @@ impl<S: Stats> log::Log<Genome, S> for Logger {
         self.cppn_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {
-            let mut phenotype = self.developer.develop(&population.best().unwrap().genome);
+            let mut phenotype = self
+                .developer
+                .develop(population.best().unwrap().genome.clone());
 
             img::plot_weights(&mut phenotype, -1.0, -1.0, 1.0, 256)
                 .save("w.png")

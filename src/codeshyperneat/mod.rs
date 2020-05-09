@@ -1,5 +1,5 @@
 use crate::codeshyperneat::{
-    conf::CODESHYPERNEAT, developer::CombinedGenome, genome::Genome as BlueprintGenome,
+    conf::CODESHYPERNEAT, develop::CombinedGenome, genome::Genome as BlueprintGenome,
 };
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::developer::Developer;
@@ -14,10 +14,11 @@ use evolution::{
 use network::execute::Executor;
 
 pub mod conf;
-pub mod developer;
+pub mod develop;
 pub mod genome;
 pub mod link;
 pub mod node;
+pub mod state;
 
 pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
     let environment = &E::default();
@@ -105,6 +106,6 @@ pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>(
         blueprints.evolve();
         modules.evolve();
 
-        blueprints.state.species = modules.next_id;
+        blueprints.state.custom.species = modules.next_id;
     }
 }

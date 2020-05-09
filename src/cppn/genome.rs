@@ -11,19 +11,18 @@ use rand::Rng;
 
 pub type NeatCore = GenomeCore<Node, LinkCore>;
 
-impl evolution::genome::Genome for Genome {
-    type InitConfig = InitConfig;
-    type State = StateCore;
-}
-
 #[derive(Clone)]
 pub struct Genome {
     pub core: NeatCore,
 }
 
-impl NeatGenome for Genome {
-    type Init = InitConfig;
+impl evolution::genome::Genome for Genome {
+    type InitConfig = InitConfig;
     type State = StateCore;
+}
+
+impl NeatGenome<StateCore> for Genome {
+    type Init = InitConfig;
     type Node = Node;
     type Link = LinkCore;
 

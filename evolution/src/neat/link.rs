@@ -1,4 +1,4 @@
-use crate::neat::{genome::Link, node::NodeRef, state::StateCore};
+use crate::neat::{genome::Link, node::NodeRef};
 
 /// Link between two nodes
 #[derive(Clone, Debug)]
@@ -44,7 +44,7 @@ impl LinkCore {
 }
 
 impl Link for LinkCore {
-    type State = StateCore;
+    type State = ();
 
     fn new(core: LinkCore, _: &mut Self::State) -> Self {
         core

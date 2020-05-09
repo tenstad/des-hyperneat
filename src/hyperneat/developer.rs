@@ -21,7 +21,7 @@ impl From<EnvironmentDescription> for Developer {
 }
 
 impl Develop<Genome, Executor> for Developer {
-    fn develop(&self, genome: &Genome) -> Executor {
+    fn develop(&self, genome: Genome) -> Executor {
         let mut neat_executor = self.neat_developer.develop(genome);
 
         Executor::create(

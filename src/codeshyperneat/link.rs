@@ -1,4 +1,4 @@
-use crate::codeshyperneat::genome::State;
+use crate::codeshyperneat::state::CustomState;
 use evolution::neat::{genome::Link as NeatLink, link::LinkCore};
 use rand::Rng;
 
@@ -9,7 +9,7 @@ pub struct Link {
 }
 
 impl NeatLink for Link {
-    type State = State;
+    type State = CustomState;
 
     fn new(core: LinkCore, state: &mut Self::State) -> Self {
         let mut rng = rand::thread_rng();

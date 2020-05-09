@@ -1,4 +1,4 @@
-use crate::cppn::genome::Genome;
+use crate::cppn::Genome;
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
@@ -7,16 +7,20 @@ use evolution::{
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
-pub struct Developer;
+pub struct Developer {
+    pub pad_missing_outputs: bool,
+}
 
 impl From<EnvironmentDescription> for Developer {
     fn from(_: EnvironmentDescription) -> Self {
-        Developer {}
+        Developer {
+            pad_missing_outputs: false,
+        }
     }
 }
 
 impl Develop<Genome, Executor> for Developer {
-    fn develop(&self, genome: &Genome) -> Executor {
+    fn develop(&self, genome: Genome) -> Executor {
         // Sort genomes netowrk topologically
         let order = genome.get_core().connections.sort_topologically();
 
@@ -41,21 +45,45 @@ impl Develop<Genome, Executor> for Developer {
             }))
             .collect::<Vec<NodeRef>>();
 
+        // Create vector of all output nodes. If pad_missing_outputs is false,
+        // nonexisting output nodes will not be present in the network output. If
+        // it is true, the network output will be padded with missing nodes.
+        // Example with pad_missing_outputs = false and nodes Output(0), Output(2)
+        // Output of netowork will the output of the two nodes: [O0, O2]
+
+        // Example with pad_missing_outputs = false and nodes Output(0), Output(2)
+        // Output of netowork will be padded with missing output nodes: [O0, O1, O2]
+        let output_nodes = if self.pad_missing_outputs {
+            let num_output_nodes = genome
+                .get_core()
+                .outputs
+                .keys()
+                .map(|n| n.id())
+                .max()
+                .unwrap() as usize
+                + 1;
+
+            (0..(num_output_nodes))
+                .map(|i| NodeRef::Output(i))
+                .collect()
+        } else {
+            let mut output_nodes = genome
+                .get_core()
+                .outputs
+                .keys()
+                .cloned()
+                .collect::<Vec<NodeRef>>();
+            output_nodes.sort();
+            output_nodes
+        };
+        let num_output_nodes = output_nodes.len();
         // Create vector of all output node indexes, for extraction of nerual network execution result
-        let num_output_nodes = genome
-            .get_core()
-            .outputs
-            .keys()
-            .map(|n| n.id())
-            .max()
-            .unwrap() as usize
-            + 1;
         let outputs = (nodes.len()..(nodes.len() + num_output_nodes)).collect();
 
         // Append all output nodes. Disconnected nodes (not present in topological sorting)
         // are added to make the output vector of the correct size. If num_output_nodes grows
         // with evolution, this could use the highest known num_output_nodes of all genomes.
-        nodes.extend((0..(num_output_nodes)).map(|i| NodeRef::Output(i)));
+        nodes.extend(output_nodes.iter());
 
         // Create mapping from NodeRef to array index in Network's node vector
         let node_mapping: HashMap<NodeRef, usize> = nodes
@@ -125,7 +153,7 @@ mod tests {
             .unwrap()
             .activation = Activation::Sine;
 
-        let mut phenotype = Developer::from(EnvironmentDescription::new(4, 2)).develop(&genome);
+        let mut phenotype = Developer::from(EnvironmentDescription::new(4, 2)).develop(genome);
 
         let result = phenotype.execute(&vec![5.0, 7.0, -1.0, -1.0]);
         assert_eq!(

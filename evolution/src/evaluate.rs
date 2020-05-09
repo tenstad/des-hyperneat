@@ -30,8 +30,7 @@ impl<G: Send + 'static, E: Environment + 'static> MultiEvaluator<G, E> {
 
                 loop {
                     if let Ok((species_index, organism_index, genome)) = input.pop() {
-                        let (fitness, stats) =
-                            environment.evaluate(&mut developer.develop(&genome));
+                        let (fitness, stats) = environment.evaluate(&mut developer.develop(genome));
                         let mut result = (species_index, organism_index, fitness, stats);
 
                         while let Err(queue::PushError(ret)) = output.push(result) {

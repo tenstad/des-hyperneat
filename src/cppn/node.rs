@@ -2,7 +2,6 @@ use crate::cppn::conf::CPPN;
 use evolution::neat::{
     genome::Node as NeatNode,
     node::{NodeCore, NodeRef},
-    state::StateCore,
 };
 use network::activation::Activation;
 use rand::Rng;
@@ -15,7 +14,7 @@ pub struct Node {
 }
 
 impl NeatNode for Node {
-    type State = StateCore;
+    type State = ();
 
     fn new(core: NodeCore, _: &mut Self::State) -> Self {
         Self {

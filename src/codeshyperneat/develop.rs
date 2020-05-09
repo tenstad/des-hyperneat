@@ -1,5 +1,4 @@
-use crate::codeshyperneat::genome::Genome as BlueprintGenome;
-use crate::codeshyperneat::{link::Link, node::Node};
+use crate::codeshyperneat::{genome::Genome as BlueprintGenome, link::Link, node::Node};
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::desgenome::DesGenome;
 use evolution::neat::{genome_core::GenomeCore, node::NodeRef};
@@ -15,7 +14,7 @@ impl DesGenome for CombinedGenome {
     type Node = Node;
     type Link = Link;
 
-    fn get_node_cppn(&self, node: NodeRef) -> &CppnGenome {
+    fn get_node_cppn(&self, node: &NodeRef) -> &CppnGenome {
         &self
             .modules
             .get(&self.blueprint.core.get_node(node).unwrap().module_species)
@@ -39,7 +38,7 @@ impl DesGenome for CombinedGenome {
             .1
     }
 
-    fn get_depth(&self, node: NodeRef) -> usize {
+    fn get_depth(&self, node: &NodeRef) -> usize {
         self.blueprint.core.get_node(node).unwrap().depth
     }
 

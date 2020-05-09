@@ -1,5 +1,4 @@
 use crate::cppn::genome::Genome as CppnGenome;
-use evolution::neat::genome::Genome as NeatGenome;
 use std::{fs::File, io::prelude::Write};
 
 pub fn genome_to_dot(fname: String, genome: &CppnGenome) -> std::io::Result<()> {

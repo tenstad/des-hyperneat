@@ -30,7 +30,7 @@ impl<S: Stats, G: DesGenome + Genome> log::Log<G, S> for Logger {
         if iteration % self.log_interval == 0 {
             save_fig_to_file(
                 self.developer
-                    .connections(&population.best().unwrap().genome),
+                    .connections(population.best().unwrap().genome.clone()),
                 "g.tex",
                 0.5 / ESHYPERNEAT.resolution,
                 4.0,

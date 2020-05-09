@@ -1,6 +1,5 @@
 use crate::cppn::genome::Genome as CppnGenome;
-use crate::deshyperneat::conf::DESHYPERNEAT;
-use crate::deshyperneat::genome::State;
+use crate::deshyperneat::{conf::DESHYPERNEAT, state::CustomState};
 use evolution::neat::{
     genome::{Genome, Node as NeatNode},
     node::NodeCore,
@@ -16,7 +15,7 @@ pub struct Node {
 }
 
 impl NeatNode for Node {
-    type State = State;
+    type State = CustomState;
 
     fn new(core: NodeCore, state: &mut Self::State) -> Self {
         let init_conf = InitConfig::new(4, 2);

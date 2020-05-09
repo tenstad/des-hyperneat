@@ -3,7 +3,7 @@ use crate::neat::{
     genome::{Genome, Link, Node},
     link::LinkCore,
     node::{NodeCore, NodeRef},
-    state::{InitConfig, NeatStateProvider},
+    state::{InitConfig, StateProvider},
 };
 use network::connection;
 use rand::{seq::SliceRandom, Rng};
@@ -19,15 +19,15 @@ pub struct GenomeCore<N, L> {
     pub connections: connection::Connections<NodeRef, ()>, // Fast connection lookup
 }
 
-impl<N, L> Genome for GenomeCore<N, L>
+impl<N, L, S> Genome<S> for GenomeCore<N, L>
 where
     N: Node,
-    L: Link<State = N::State>,
+    L: Link,
+    S: StateProvider<N::State, L::State>,
 {
+    type Init = InitConfig;
     type Node = N;
     type Link = L;
-    type Init = InitConfig;
-    type State = N::State;
 
     fn get_core(&self) -> &Self {
         self
@@ -37,7 +37,7 @@ where
         self
     }
 
-    fn mutate(&mut self, state: &mut Self::State) {
+    fn mutate(&mut self, state: &mut S) {
         let mut rng = rand::thread_rng();
 
         if rng.gen::<f64>() < NEAT.add_node_probability {
@@ -57,8 +57,54 @@ where
         }
     }
 
-    // Genetic distance between two genomes
+    /// Generate genome with default activation and no connections
+    fn new(init_config: &InitConfig, state: &mut S) -> Self {
+        let inputs: HashMap<NodeRef, N> = (0..init_config.inputs)
+            .map(|i| {
+                (
+                    NodeRef::Input(i),
+                    N::new(NodeCore::new(NodeRef::Input(i)), state.get_node_state_mut()),
+                )
+            })
+            .collect();
+
+        let outputs: HashMap<NodeRef, N> = (0..init_config.outputs)
+            .map(|i| {
+                (
+                    NodeRef::Output(i),
+                    N::new(
+                        NodeCore::new(NodeRef::Output(i)),
+                        state.get_node_state_mut(),
+                    ),
+                )
+            })
+            .collect();
+
+        Self {
+            inputs,
+            outputs,
+            hidden_nodes: HashMap::new(),
+            links: HashMap::new(),
+            connections: connection::Connections::<NodeRef, ()>::new(),
+        }
+    }
+
     fn distance(&self, other: &Self) -> f64 {
+        Self::distance(self, other)
+    }
+
+    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+        Self::crossover(self, other, fitness, other_fitness)
+    }
+}
+
+impl<N, L> GenomeCore<N, L>
+where
+    N: Node,
+    L: Link,
+{
+    // Genetic distance between two genomes
+    pub fn distance(&self, other: &Self) -> f64 {
         let mut link_differences: f64 = 0.0; // Number of links present in only one of the genomes
         let mut link_distance: f64 = 0.0; // Total distance between links present in both genomes
         let mut link_count = self.links.len() as f64; // Number of unique links between the two genomes
@@ -144,36 +190,7 @@ where
         NEAT.link_distance_weight * link_dist + (1.0 - NEAT.link_distance_weight) * node_dist
     }
 
-    /// Generate genome with default activation and no connections
-    fn new(init_config: &InitConfig, state: &mut Self::State) -> Self {
-        let inputs: HashMap<NodeRef, N> = (0..init_config.inputs)
-            .map(|i| {
-                (
-                    NodeRef::Input(i),
-                    N::new(NodeCore::new(NodeRef::Input(i)), state),
-                )
-            })
-            .collect();
-
-        let outputs: HashMap<NodeRef, N> = (0..init_config.outputs)
-            .map(|i| {
-                (
-                    NodeRef::Output(i),
-                    N::new(NodeCore::new(NodeRef::Output(i)), state),
-                )
-            })
-            .collect();
-
-        Self {
-            inputs,
-            outputs,
-            hidden_nodes: HashMap::new(),
-            links: HashMap::new(),
-            connections: connection::Connections::<NodeRef, ()>::new(),
-        }
-    }
-
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    pub fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
         // Let parent1 be the fitter parent
         let (parent1, parent2) = if fitness > other_fitness {
             (self, other)
@@ -230,9 +247,6 @@ where
 
         return genome;
     }
-}
-
-impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
     pub fn empty() -> Self {
         Self {
             inputs: HashMap::new(),
@@ -243,21 +257,29 @@ impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
         }
     }
 
-    pub fn get_node(&self, node_ref: NodeRef) -> Option<&N> {
+    pub fn get_node(&self, node_ref: &NodeRef) -> Option<&N> {
         match node_ref {
-            NodeRef::Input(_) => self.inputs.get(&node_ref),
-            NodeRef::Hidden(_) => self.hidden_nodes.get(&node_ref),
-            NodeRef::Output(_) => self.outputs.get(&node_ref),
+            &NodeRef::Input(_) => self.inputs.get(node_ref),
+            &NodeRef::Hidden(_) => self.hidden_nodes.get(node_ref),
+            &NodeRef::Output(_) => self.outputs.get(node_ref),
         }
     }
 
-    pub fn split_link(
+    pub fn get_node_mut(&mut self, node_ref: &NodeRef) -> Option<&mut N> {
+        match node_ref {
+            &NodeRef::Input(_) => self.inputs.get_mut(node_ref),
+            &NodeRef::Hidden(_) => self.hidden_nodes.get_mut(node_ref),
+            &NodeRef::Output(_) => self.outputs.get_mut(node_ref),
+        }
+    }
+
+    pub fn split_link<S: StateProvider<N::State, L::State>>(
         &mut self,
         from: NodeRef,
         to: NodeRef,
         new_node_id: usize,
         innovation_number: usize,
-        state: &mut N::State,
+        state: &mut S,
     ) {
         let link = self
             .links
@@ -282,7 +304,10 @@ impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
 
         self.hidden_nodes.insert(
             new_node_ref,
-            N::new(NodeCore::new(NodeRef::Hidden(new_node_id)), state),
+            N::new(
+                NodeCore::new(NodeRef::Hidden(new_node_id)),
+                state.get_node_state_mut(),
+            ),
         );
 
         let (link1_details, link2_details) = if let NodeRef::Input(_) = from {
@@ -298,7 +323,7 @@ impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
         };
         let link1 = L::identity(
             LinkCore::new(link1_details.0, link1_details.1, 1.0, link1_details.2),
-            state,
+            state.get_link_state_mut(),
         );
         let link2 = link.clone_with(
             LinkCore::new(
@@ -307,7 +332,7 @@ impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
                 link.get_core().weight,
                 link2_details.2,
             ),
-            state,
+            state.get_link_state_mut(),
         );
 
         assert!(!self
@@ -348,7 +373,7 @@ impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
         }*/
     }
 
-    fn mutation_add_node(&mut self, state: &mut N::State) {
+    fn mutation_add_node<S: StateProvider<N::State, L::State>>(&mut self, state: &mut S) {
         // Select random enabled link
         if let Some(index) = self
             .links
@@ -372,7 +397,7 @@ impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
     }
 
     // TODO: avoid retries
-    fn mutation_add_connection(&mut self, state: &mut N::State) {
+    fn mutation_add_connection<S: StateProvider<N::State, L::State>>(&mut self, state: &mut S) {
         let mut rng = rand::thread_rng();
 
         // Retry 50 times
@@ -412,7 +437,7 @@ impl<N: Node, L: Link<State = N::State>> GenomeCore<N, L> {
                             (rng.gen::<f64>() - 0.5) * 2.0 * NEAT.initial_link_weight_size,
                             innovation,
                         ),
-                        state,
+                        state.get_link_state_mut(),
                     ));
                     break;
                 }

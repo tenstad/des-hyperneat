@@ -1,5 +1,5 @@
 use crate::cppn::genome::Genome as CppnGenome;
-use crate::deshyperneat::genome::State;
+use crate::deshyperneat::state::CustomState;
 use crate::eshyperneat::genome::identity_genome;
 use evolution::neat::{
     genome::{Genome, Link as NeatLink},
@@ -16,7 +16,7 @@ pub struct Link {
 }
 
 impl NeatLink for Link {
-    type State = State;
+    type State = CustomState;
 
     fn new(core: LinkCore, state: &mut Self::State) -> Self {
         let init_conf = InitConfig::new(4, 2);

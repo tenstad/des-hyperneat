@@ -1,4 +1,4 @@
-use crate::codeshyperneat::genome::State;
+use crate::codeshyperneat::state::CustomState;
 use evolution::neat::{genome::Node as NeatNode, node::NodeCore};
 use rand::Rng;
 
@@ -10,7 +10,7 @@ pub struct Node {
 }
 
 impl NeatNode for Node {
-    type State = State;
+    type State = CustomState;
 
     fn new(core: NodeCore, state: &mut Self::State) -> Self {
         let mut rng = rand::thread_rng();

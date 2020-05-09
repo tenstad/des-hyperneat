@@ -2,7 +2,9 @@ use crate::develop::Develop;
 use crate::environment::EnvironmentDescription;
 use crate::neat::{
     genome::{Genome, Link},
-    node::NodeRef,
+    link::LinkCore,
+    node::{NodeCore, NodeRef},
+    state::StateCore,
 };
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
@@ -15,8 +17,11 @@ impl From<EnvironmentDescription> for Developer {
     }
 }
 
-impl<G: Genome> Develop<G, Executor> for Developer {
-    fn develop(&self, genome: &G) -> Executor {
+impl<G> Develop<G, Executor> for Developer
+where
+    G: Genome<StateCore, Node = NodeCore, Link = LinkCore>,
+{
+    fn develop(&self, genome: G) -> Executor {
         // Sort genomes netowrk topologically
         let order = genome.get_core().connections.sort_topologically();
 

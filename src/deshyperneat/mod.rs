@@ -6,6 +6,7 @@ pub mod genome;
 pub mod link;
 pub mod log;
 pub mod node;
+pub mod state;
 
 use developer::Developer;
 use evolution::{

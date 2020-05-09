@@ -1,10 +1,21 @@
 use crate::neat::node::NodeRef;
 use std::collections::HashMap;
 
+#[derive(new)]
+pub struct InitConfig {
+    pub inputs: usize,
+    pub outputs: usize,
+}
+
 #[derive(Default, Clone)]
 pub struct InnovationLog {
+    // Hidden node id -> Innovation
+    pub hidden_node_innovations: HashMap<usize, Innovation>,
+    // Link split innovation -> Innovation
     pub split_innovations: HashMap<usize, Innovation>,
+    // Source and target node -> link connect innovation
     pub connect_innovations: HashMap<(NodeRef, NodeRef), usize>,
+    // Link connect innovation -> Source and target node
     pub reverse_connect_innovations: HashMap<usize, (NodeRef, NodeRef)>,
 }
 
@@ -18,26 +29,38 @@ pub struct Innovation {
 pub struct StateCore {
     pub innovation_log: InnovationLog,
     pub next_innovation: Innovation,
+    pub node_state: (),
+    pub link_state: (),
 }
 
-pub trait NeatStateProvider: Default + Clone + Send {
+pub trait StateProvider<N, L>: Clone + Send + Default {
     fn get_core(&self) -> &StateCore;
     fn get_core_mut(&mut self) -> &mut StateCore;
+    fn get_node_state(&self) -> &N;
+    fn get_node_state_mut(&mut self) -> &mut N;
+    fn get_link_state(&self) -> &L;
+    fn get_link_state_mut(&mut self) -> &mut L;
 }
 
-impl NeatStateProvider for StateCore {
+impl StateProvider<(), ()> for StateCore {
     fn get_core(&self) -> &StateCore {
         self
     }
     fn get_core_mut(&mut self) -> &mut StateCore {
         self
     }
-}
-
-#[derive(new)]
-pub struct InitConfig {
-    pub inputs: usize,
-    pub outputs: usize,
+    fn get_node_state(&self) -> &() {
+        &self.node_state
+    }
+    fn get_node_state_mut(&mut self) -> &mut () {
+        &mut self.node_state
+    }
+    fn get_link_state(&self) -> &() {
+        &self.link_state
+    }
+    fn get_link_state_mut(&mut self) -> &mut () {
+        &mut self.link_state
+    }
 }
 
 impl StateCore {
@@ -75,10 +98,16 @@ impl StateCore {
             self.innovation_log
                 .split_innovations
                 .insert(link_innovation, self.next_innovation.clone());
+            // Add hidden node innovation
+            self.innovation_log.hidden_node_innovations.insert(
+                self.next_innovation.node_number,
+                self.next_innovation.clone(),
+            );
 
             // Increase global node count and innovation number
             self.next_innovation.node_number += 1;
-            self.next_innovation.innovation_number += 2;
+            // link soruce - hidden; link hidden - target; hidden node
+            self.next_innovation.innovation_number += 3;
         }
 
         &self
