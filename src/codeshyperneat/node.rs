@@ -54,7 +54,7 @@ impl NeatNode for Node {
     fn distance(&self, other: &Self) -> f64 {
         let mut distance = self.core.distance(&other.core);
         distance += 0.5 * ((self.module_species != other.module_species) as u8) as f64;
-        distance += 0.5 * ((self.depth - other.depth) as f64).abs().tanh();
+        distance += 0.5 * (self.depth as f64 - other.depth as f64).abs().tanh();
         distance
     }
 }
