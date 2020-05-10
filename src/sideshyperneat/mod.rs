@@ -1,3 +1,4 @@
+pub mod conf;
 pub mod develop;
 pub mod dot;
 pub mod genome;

@@ -1,7 +1,7 @@
 use crate::cppn::{genome::Genome as CppnGenome, node::Node as CppnNode};
 use crate::deshyperneat::genome::Genome as DesGenome;
 use crate::eshyperneat::genome::insert_identity;
-use crate::sideshyperneat::{link::Link, node::Node, state::State};
+use crate::sideshyperneat::{conf::SIDESHYPERNEAT, link::Link, node::Node, state::State};
 use evolution::neat::{
     genome::{Genome as NeatGenome, Node as NeatNode},
     genome_core::GenomeCore,
@@ -69,7 +69,7 @@ impl NeatGenome<State> for Genome {
     fn mutate(&mut self, state: &mut State) {
         let mut rng = rand::thread_rng();
 
-        if rng.gen::<f64>() < 0.1 {
+        if rng.gen::<f64>() < SIDESHYPERNEAT.topology_mutation_probability {
             self.topology.mutate(state);
         }
 
@@ -102,8 +102,10 @@ impl NeatGenome<State> for Genome {
             }
         }
 
-        self.cppn.mutate(&mut state.cppn_state);
-
+        if rng.gen::<f64>() < SIDESHYPERNEAT.cppn_mutation_probability {
+            self.cppn.mutate(&mut state.cppn_state);
+        }
+        
         /*println!("{:?}", self.topology.links.keys().collect::<Vec<_>>());
         println!("{:?}", self.cppn.core.links.keys().collect::<Vec<_>>());
         println!("");*/
