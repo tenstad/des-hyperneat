@@ -32,15 +32,23 @@ impl NeatGenome<State> for Genome {
     type Link = LinkCore;
 
     fn new(_init_config: &Self::Init, state: &mut State) -> Self {
-        let mut topology = TopologyCore::new(&InitConfig::new(1, 1), state);
+        let mut topology = TopologyCore::new(&InitConfig::new(3, 1), state);
         topology
             .get_node_mut(&NodeRef::Input(0))
             .unwrap()
             .cppn_output_id = 0;
         topology
-            .get_node_mut(&NodeRef::Output(0))
+            .get_node_mut(&NodeRef::Input(1))
             .unwrap()
             .cppn_output_id = 1;
+        topology
+            .get_node_mut(&NodeRef::Input(2))
+            .unwrap()
+            .cppn_output_id = 2;
+        topology
+            .get_node_mut(&NodeRef::Output(0))
+            .unwrap()
+            .cppn_output_id = 3;
         Self {
             cppn: CppnGenome::new(&InitConfig::new(4, 2), &mut state.cppn_state),
             topology,
