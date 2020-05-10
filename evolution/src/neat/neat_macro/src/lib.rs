@@ -10,7 +10,7 @@ use syn::{Attribute, DeriveInput, Field, Fields};
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
 
-    if attrs_contains_core(&ast.attrs) {
+    if attrs_contains(&ast.attrs, "core") {
         impl_getcore_self_macro(&ast)
     } else {
         impl_getcore_macro(&ast)
@@ -34,8 +34,7 @@ fn impl_getcore_self_macro(ast: &syn::DeriveInput) -> TokenStream {
 }
 
 fn impl_getcore_macro(ast: &syn::DeriveInput) -> TokenStream {
-    let field = find_core(ast);
-
+    let field = find_field(ast, "core").expect("no field declared as core");
     let field_name = field.ident.as_ref().unwrap();
     let field_type = &field.ty;
 
@@ -54,28 +53,24 @@ fn impl_getcore_macro(ast: &syn::DeriveInput) -> TokenStream {
     gen.into()
 }
 
-fn find_core(ast: &syn::DeriveInput) -> &Field {
+fn find_field<'a>(ast: &'a syn::DeriveInput, attr_name: &'static str) -> Option<&'a Field> {
     match ast.data {
         Struct(ref ds) => match ds.fields {
-            Fields::Named(ref fields) => match &fields
+            Fields::Named(ref fields) => fields
                 .named
                 .iter()
-                .filter(|field| attrs_contains_core(&field.attrs))
-                .next()
-            {
-                Some(result) => result,
-                _ => panic!("getcore cannot find core"),
-            },
-            _ => panic!("getcore error"),
+                .filter(|field| attrs_contains(&field.attrs, attr_name))
+                .next(),
+            _ => None,
         },
-        _ => panic!("getcore error"),
+        _ => None,
     }
 }
 
-fn attrs_contains_core(attrs: &Vec<Attribute>) -> bool {
+fn attrs_contains(attrs: &Vec<Attribute>, attr_name: &'static str) -> bool {
     attrs
         .iter()
-        .filter(|attr| attr.path.segments[0].ident == "core")
+        .filter(|attr| attr.path.segments[0].ident == attr_name)
         .next()
         .is_some()
 }
