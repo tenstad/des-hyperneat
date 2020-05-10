@@ -1,9 +1,13 @@
 use crate::sideshyperneat::state::State;
-use evolution::neat::{genome::Link as NeatLink, link::LinkCore};
+use evolution::neat::{
+    genome::{GetCore, Link as NeatLink},
+    link::LinkCore,
+};
 use rand::Rng;
 
-#[derive(Clone, new)]
+#[derive(Clone, GetCore, new)]
 pub struct Link {
+    #[core]
     pub core: LinkCore,
     pub depth: usize,
     pub cppn_output_id: usize,
@@ -35,14 +39,6 @@ impl NeatLink for Link {
 
     fn clone_with(&self, core: LinkCore, _: &mut Self::State) -> Self {
         Self::new(core, self.depth, self.cppn_output_id, self.is_identity)
-    }
-
-    fn get_core(&self) -> &LinkCore {
-        &self.core
-    }
-
-    fn get_core_mut(&mut self) -> &mut LinkCore {
-        &mut self.core
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {

@@ -17,6 +17,9 @@ extern crate envconfig;
 #[macro_use]
 extern crate derive_new;
 
+#[macro_use]
+extern crate neat_macro;
+
 use algorithm::Algorithm;
 use conf::EVOLUTION;
 use environment::Environment;

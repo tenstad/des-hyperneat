@@ -1,3 +1,4 @@
+use crate::genome::{GenericGenome as GenericEvolutionGenome, Genome as EvolutionGenome};
 use crate::neat::{
     genome_core::GenomeCore,
     link::LinkCore,
@@ -6,9 +7,14 @@ use crate::neat::{
 };
 
 pub type DefaultNeatGenome = GenomeCore<NodeCore, LinkCore>;
-impl crate::genome::Genome for DefaultNeatGenome {
+impl EvolutionGenome for DefaultNeatGenome {
     type InitConfig = InitConfig;
     type State = StateCore;
+}
+
+pub trait GetCore<T> {
+    fn get_core(&self) -> &T;
+    fn get_core_mut(&mut self) -> &mut T;
 }
 
 pub trait Genome<
@@ -16,44 +22,39 @@ pub trait Genome<
         <<Self as Genome<S>>::Node as Node>::State,
         <<Self as Genome<S>>::Link as Link>::State,
     >,
->: Clone + Send
+>:
+    GetCore<GenomeCore<<Self as Genome<S>>::Node, <Self as Genome<S>>::Link>> + Clone + Send
 {
     type Init;
     type Node: Node;
     type Link: Link;
 
     fn new(init_config: &Self::Init, state: &mut S) -> Self;
-    fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link>;
-    fn get_core_mut(&mut self) -> &mut GenomeCore<Self::Node, Self::Link>;
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
     fn mutate(&mut self, state: &mut S);
     fn distance(&self, other: &Self) -> f64;
 }
 
-pub trait Node: Clone + Send {
+pub trait Node: GetCore<NodeCore> + Clone + Send {
     type State;
 
     fn new(core: NodeCore, state: &mut Self::State) -> Self;
-    fn get_core(&self) -> &NodeCore;
-    fn get_core_mut(&mut self) -> &mut NodeCore;
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
     fn distance(&self, other: &Self) -> f64;
 }
 
-pub trait Link: Clone + Send {
+pub trait Link: GetCore<LinkCore> + Clone + Send {
     type State;
 
     fn new(core: LinkCore, state: &mut Self::State) -> Self;
     fn identity(core: LinkCore, state: &mut Self::State) -> Self;
     fn clone_with(&self, core: LinkCore, state: &mut Self::State) -> Self;
-    fn get_core(&self) -> &LinkCore;
-    fn get_core_mut(&mut self) -> &mut LinkCore;
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
     fn distance(&self, other: &Self) -> f64;
 }
 
 impl<N: Node, L: Link, S: StateProvider<N::State, L::State>, G: Genome<S, Node = N, Link = L>>
-    crate::genome::GenericGenome<S, G::Init> for G
+    GenericEvolutionGenome<S, G::Init> for G
 {
     fn new(init_config: &G::Init, state: &mut S) -> Self {
         G::new(init_config, state)

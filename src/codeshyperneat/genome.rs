@@ -2,7 +2,10 @@ use crate::codeshyperneat::{link::Link, node::Node, state::State};
 use crate::cppn::genome::Genome as CppnGenome;
 use evolution::{
     neat::{
-        genome::Genome as NeatGenome, genome_core::GenomeCore, node::NodeRef, state::InitConfig,
+        genome::{Genome as NeatGenome, GetCore},
+        genome_core::GenomeCore,
+        node::NodeRef,
+        state::InitConfig,
     },
     population::Population,
 };
@@ -16,8 +19,9 @@ impl evolution::genome::Genome for Genome {
     type State = State;
 }
 
-#[derive(Clone)]
+#[derive(Clone, GetCore)]
 pub struct Genome {
+    #[core]
     pub core: NeatCore,
 }
 
@@ -30,14 +34,6 @@ impl NeatGenome<State> for Genome {
         Self {
             core: GenomeCore::<Self::Node, Self::Link>::new(init_config, state),
         }
-    }
-
-    fn get_core(&self) -> &NeatCore {
-        &self.core
-    }
-
-    fn get_core_mut(&mut self) -> &mut NeatCore {
-        &mut self.core
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {

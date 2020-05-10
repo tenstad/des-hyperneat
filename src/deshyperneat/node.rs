@@ -1,14 +1,15 @@
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::{conf::DESHYPERNEAT, state::CustomState};
 use evolution::neat::{
-    genome::{Genome, Node as NeatNode},
+    genome::{Genome, GetCore, Node as NeatNode},
     node::NodeCore,
     state::{InitConfig, StateCore},
 };
 use rand::Rng;
 
-#[derive(Clone, new)]
+#[derive(Clone, GetCore, new)]
 pub struct Node {
+    #[core]
     pub core: NodeCore,
     pub cppn: CppnGenome,
     pub depth: usize,
@@ -37,14 +38,6 @@ impl NeatNode for Node {
         };
 
         Self::new(core, cppn, 1)
-    }
-
-    fn get_core(&self) -> &NodeCore {
-        &self.core
-    }
-
-    fn get_core_mut(&mut self) -> &mut NodeCore {
-        &mut self.core
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {

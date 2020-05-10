@@ -1,7 +1,7 @@
 use crate::develop::Develop;
 use crate::environment::EnvironmentDescription;
 use crate::neat::{
-    genome::{Genome, Link},
+    genome::{Genome, GetCore},
     link::LinkCore,
     node::{NodeCore, NodeRef},
     state::StateCore,

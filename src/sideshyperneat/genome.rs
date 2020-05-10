@@ -3,7 +3,7 @@ use crate::deshyperneat::genome::Genome as DesGenome;
 use crate::eshyperneat::genome::insert_identity;
 use crate::sideshyperneat::{conf::SIDESHYPERNEAT, link::Link, node::Node, state::State};
 use evolution::neat::{
-    genome::{Genome as NeatGenome, Node as NeatNode},
+    genome::{Genome as NeatGenome, GetCore, Node as NeatNode},
     genome_core::GenomeCore,
     link::LinkCore,
     node::{NodeCore, NodeRef},
@@ -46,14 +46,6 @@ impl NeatGenome<State> for Genome {
             topology,
             des_genome: None,
         }
-    }
-
-    fn get_core(&self) -> &CppnCore {
-        &self.cppn.core
-    }
-
-    fn get_core_mut(&mut self) -> &mut CppnCore {
-        &mut self.cppn.core
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
@@ -105,7 +97,6 @@ impl NeatGenome<State> for Genome {
         if rng.gen::<f64>() < SIDESHYPERNEAT.cppn_mutation_probability {
             self.cppn.mutate(&mut state.cppn_state);
         }
-        
         /*println!("{:?}", self.topology.links.keys().collect::<Vec<_>>());
         println!("{:?}", self.cppn.core.links.keys().collect::<Vec<_>>());
         println!("");*/
@@ -113,6 +104,16 @@ impl NeatGenome<State> for Genome {
 
     fn distance(&self, other: &Self) -> f64 {
         0.5 * self.cppn.distance(&other.cppn) + 0.5 * self.topology.distance(&other.topology)
+    }
+}
+
+impl GetCore<GenomeCore<CppnNode, LinkCore>> for Genome {
+    fn get_core(&self) -> &CppnCore {
+        &self.cppn.core
+    }
+
+    fn get_core_mut(&mut self) -> &mut CppnCore {
+        &mut self.cppn.core
     }
 }
 

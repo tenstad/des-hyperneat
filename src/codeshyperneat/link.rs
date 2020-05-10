@@ -1,9 +1,13 @@
 use crate::codeshyperneat::state::CustomState;
-use evolution::neat::{genome::Link as NeatLink, link::LinkCore};
+use evolution::neat::{
+    genome::{GetCore, Link as NeatLink},
+    link::LinkCore,
+};
 use rand::Rng;
 
-#[derive(Clone)]
+#[derive(Clone, GetCore)]
 pub struct Link {
+    #[core]
     pub core: LinkCore,
     pub module_species: usize,
 }
@@ -34,14 +38,6 @@ impl NeatLink for Link {
             core,
             module_species: self.module_species,
         }
-    }
-
-    fn get_core(&self) -> &LinkCore {
-        &self.core
-    }
-
-    fn get_core_mut(&mut self) -> &mut LinkCore {
-        &mut self.core
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {

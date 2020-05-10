@@ -1,6 +1,6 @@
 use crate::cppn::{genome::Genome, node::Node as CppnNode};
 use evolution::neat::{
-    genome::{Genome as NeatGenome, Node as NeatNode},
+    genome::{Genome as NeatGenome, GetCore, Node as NeatNode},
     link::LinkCore,
     node::{NodeCore, NodeRef},
     state::{InitConfig, StateCore, StateProvider},

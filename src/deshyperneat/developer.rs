@@ -5,7 +5,7 @@ use crate::hyperneat::substrate;
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
-    neat::{genome::Link, node::NodeRef},
+    neat::{genome::GetCore, node::NodeRef},
 };
 use network::{
     connection,

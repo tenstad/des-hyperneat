@@ -1,7 +1,8 @@
-use crate::neat::genome::Node;
+use crate::neat::genome::{GetCore, Node};
 use std::fmt;
 
-#[derive(Copy, Clone, new)]
+#[derive(Copy, Clone, GetCore, new)]
+#[core]
 pub struct NodeCore {
     pub node_ref: NodeRef,
 }
@@ -24,14 +25,6 @@ impl Node for NodeCore {
 
     fn new(core: NodeCore, _: &mut Self::State) -> Self {
         core
-    }
-
-    fn get_core(&self) -> &NodeCore {
-        self
-    }
-
-    fn get_core_mut(&mut self) -> &mut NodeCore {
-        self
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {

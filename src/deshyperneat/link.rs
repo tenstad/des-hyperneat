@@ -2,14 +2,15 @@ use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::state::CustomState;
 use crate::eshyperneat::genome::identity_genome;
 use evolution::neat::{
-    genome::{Genome, Link as NeatLink},
+    genome::{Genome, GetCore, Link as NeatLink},
     link::LinkCore,
     state::{InitConfig, StateCore},
 };
 use rand::Rng;
 
-#[derive(Clone, new)]
+#[derive(Clone, GetCore, new)]
 pub struct Link {
+    #[core]
     pub core: LinkCore,
     pub cppn: CppnGenome,
     pub depth: usize,
@@ -61,14 +62,6 @@ impl NeatLink for Link {
         }
 
         Self::new(core, self.cppn.clone(), self.depth)
-    }
-
-    fn get_core(&self) -> &LinkCore {
-        &self.core
-    }
-
-    fn get_core_mut(&mut self) -> &mut LinkCore {
-        &mut self.core
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {

@@ -1,7 +1,11 @@
-use crate::neat::{genome::Link, node::NodeRef};
+use crate::neat::{
+    genome::{GetCore, Link},
+    node::NodeRef,
+};
 
 /// Link between two nodes
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, GetCore)]
+#[core]
 pub struct LinkCore {
     pub from: NodeRef,
     pub to: NodeRef,
@@ -56,14 +60,6 @@ impl Link for LinkCore {
 
     fn clone_with(&self, core: LinkCore, _: &mut Self::State) -> Self {
         core
-    }
-
-    fn get_core(&self) -> &LinkCore {
-        self
-    }
-
-    fn get_core_mut(&mut self) -> &mut LinkCore {
-        self
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {

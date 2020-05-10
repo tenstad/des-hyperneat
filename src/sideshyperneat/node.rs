@@ -1,12 +1,13 @@
 use crate::sideshyperneat::state::State;
 use evolution::neat::{
-    genome::Node as NeatNode,
+    genome::{GetCore, Node as NeatNode},
     node::{NodeCore, NodeRef},
 };
 use rand::Rng;
 
-#[derive(Clone, new)]
+#[derive(Clone, GetCore, new)]
 pub struct Node {
+    #[core]
     pub core: NodeCore,
     pub depth: usize,
     pub cppn_output_id: usize,
@@ -36,14 +37,6 @@ impl NeatNode for Node {
         };
 
         Self::new(core, 1, innovation)
-    }
-
-    fn get_core(&self) -> &NodeCore {
-        &self.core
-    }
-
-    fn get_core_mut(&mut self) -> &mut NodeCore {
-        &mut self.core
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {

@@ -1,13 +1,14 @@
 use crate::cppn::conf::CPPN;
 use evolution::neat::{
-    genome::Node as NeatNode,
+    genome::{GetCore, Node as NeatNode},
     node::{NodeCore, NodeRef},
 };
 use network::activation::Activation;
 use rand::Rng;
 
-#[derive(Clone)]
+#[derive(Clone, GetCore)]
 pub struct Node {
+    #[core]
     pub core: NodeCore,
     pub activation: Activation,
     pub bias: f64,
@@ -26,14 +27,6 @@ impl NeatNode for Node {
                 NodeRef::Output(_) => CPPN.output_activations.random(),
             },
         }
-    }
-
-    fn get_core(&self) -> &NodeCore {
-        &self.core
-    }
-
-    fn get_core_mut(&mut self) -> &mut NodeCore {
-        &mut self.core
     }
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {

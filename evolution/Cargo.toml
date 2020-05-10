@@ -12,3 +12,4 @@ envconfig = "0.6.0"
 envconfig_derive = "0.6.0"
 crossbeam = "0.7.3"
 network = {path = "../network"}
+neat_macro = {path = "src/neat/neat_macro"}

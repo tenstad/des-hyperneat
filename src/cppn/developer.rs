@@ -2,7 +2,7 @@ use crate::cppn::{conf::CPPN, Genome};
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
-    neat::{genome::Genome as NeatGenome, node::NodeRef},
+    neat::{genome::GetCore, node::NodeRef},
 };
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;

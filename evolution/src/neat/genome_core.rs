@@ -1,6 +1,6 @@
 use crate::neat::{
     conf::NEAT,
-    genome::{Genome, Link, Node},
+    genome::{Genome, GetCore, Link, Node},
     link::LinkCore,
     node::{NodeCore, NodeRef},
     state::{InitConfig, StateProvider},
@@ -28,14 +28,6 @@ where
     type Init = InitConfig;
     type Node = N;
     type Link = L;
-
-    fn get_core(&self) -> &Self {
-        self
-    }
-
-    fn get_core_mut(&mut self) -> &mut Self {
-        self
-    }
 
     fn mutate(&mut self, state: &mut S) {
         let mut rng = rand::thread_rng();
@@ -95,6 +87,16 @@ where
 
     fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
         Self::crossover(self, other, fitness, other_fitness)
+    }
+}
+
+impl<N, L> GetCore<Self> for GenomeCore<N, L> {
+    fn get_core(&self) -> &Self {
+        self
+    }
+
+    fn get_core_mut(&mut self) -> &mut Self {
+        self
     }
 }
 
