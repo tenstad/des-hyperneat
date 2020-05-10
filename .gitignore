@@ -2,8 +2,10 @@
 .VSCodeCounter/
 .editorconfig*
 
+log.txt
 tmp.*
 g.*
+*.dot
 *.png
 flamegraph*svg
 

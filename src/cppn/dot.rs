@@ -1,7 +1,12 @@
 use crate::cppn::genome::Genome as CppnGenome;
-use std::{fs::File, io::prelude::Write};
+use std::{fs::File, io::prelude::Write, path::Path};
 
-pub fn genome_to_dot(fname: String, genome: &CppnGenome) -> std::io::Result<()> {
+pub fn genome_to_dot<P: AsRef<Path>>(fname: P, genome: &CppnGenome) -> std::io::Result<()> {
+    let mut fname = String::from(fname.as_ref().to_str().unwrap());
+    if !fname.ends_with(".dot") {
+        fname.push_str(".dot");
+    }
+
     let mut file = File::create(fname)?;
     file.write_all(b"digraph g {\n")?;
 

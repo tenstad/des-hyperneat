@@ -1,4 +1,5 @@
-use crate::cppn::{dot::genome_to_dot, genome::Genome};
+use crate::deshyperneat::log::Logger as DeshyperneatLogger;
+use crate::sideshyperneat::{dot::genome_to_dot, genome::Genome};
 use evolution::{
     environment::{EnvironmentDescription, Stats},
     log,
@@ -6,14 +7,14 @@ use evolution::{
 };
 
 pub struct Logger {
-    default_logger: log::Logger,
+    deshyperneat_logger: DeshyperneatLogger,
     log_interval: usize,
 }
 
 impl From<EnvironmentDescription> for Logger {
     fn from(description: EnvironmentDescription) -> Self {
         Self {
-            default_logger: log::Logger::from(description),
+            deshyperneat_logger: DeshyperneatLogger::from(description),
             log_interval: 10,
         }
     }
@@ -21,7 +22,7 @@ impl From<EnvironmentDescription> for Logger {
 
 impl<S: Stats> log::Log<Genome, S> for Logger {
     fn log(&mut self, iteration: usize, population: &Population<Genome, S>) {
-        self.default_logger.log(iteration, population);
+        self.deshyperneat_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {
             if let Some(best) = &population.best() {

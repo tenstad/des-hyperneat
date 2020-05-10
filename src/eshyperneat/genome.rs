@@ -1,9 +1,9 @@
-use crate::cppn::genome::Genome;
+use crate::cppn::{genome::Genome, node::Node as CppnNode};
 use evolution::neat::{
-    genome::Genome as NeatGenome,
+    genome::{Genome as NeatGenome, Node as NeatNode},
     link::LinkCore,
-    node::NodeRef,
-    state::{InitConfig, StateCore},
+    node::{NodeCore, NodeRef},
+    state::{InitConfig, StateCore, StateProvider},
 };
 use network::activation::Activation;
 
@@ -72,32 +72,40 @@ fn split_link(
     new_node
 }
 
-pub fn identity_genome() -> (Genome, StateCore) {
-    let init_config = InitConfig::new(4, 2);
-    let mut state = StateCore::default();
-    let mut genome = Genome::new(&init_config, &mut state);
-
+pub fn insert_identity(genome: &mut Genome, state: &mut StateCore, output_id: usize) {
+    if !genome
+        .core
+        .outputs
+        .contains_key(&NodeRef::Output(output_id))
+    {
+        genome.core.outputs.insert(
+            NodeRef::Output(output_id),
+            CppnNode::new(
+                NodeCore::new(NodeRef::Output(output_id)),
+                state.get_node_state_mut(),
+            ),
+        );
+    }
     insert_link(
-        &mut genome,
-        &mut state,
+        genome,
+        state,
         NodeRef::Input(0),
-        NodeRef::Output(0),
+        NodeRef::Output(output_id),
         0.0,
     );
-
     insert_link(
-        &mut genome,
-        &mut state,
+        genome,
+        state,
         NodeRef::Input(1),
-        NodeRef::Output(0),
+        NodeRef::Output(output_id),
         0.0,
     );
 
     let hidden_x = split_link(
-        &mut genome,
-        &mut state,
+        genome,
+        state,
         NodeRef::Input(0),
-        NodeRef::Output(0),
+        NodeRef::Output(output_id),
         7.5,
         7.5,
         Activation::Square,
@@ -105,26 +113,34 @@ pub fn identity_genome() -> (Genome, StateCore) {
     );
 
     let hidden_y = split_link(
-        &mut genome,
-        &mut state,
+        genome,
+        state,
         NodeRef::Input(1),
-        NodeRef::Output(0),
+        NodeRef::Output(output_id),
         7.5,
         7.5,
         Activation::Square,
         0.0,
     );
 
-    insert_link(&mut genome, &mut state, NodeRef::Input(2), hidden_x, -7.5);
-    insert_link(&mut genome, &mut state, NodeRef::Input(3), hidden_y, -7.5);
+    insert_link(genome, state, NodeRef::Input(2), hidden_x, -7.5);
+    insert_link(genome, state, NodeRef::Input(3), hidden_y, -7.5);
 
     let output = genome
         .get_core_mut()
         .outputs
-        .get_mut(&NodeRef::Output(0))
+        .get_mut(&NodeRef::Output(output_id))
         .unwrap();
     output.activation = Activation::Gaussian;
     output.bias = 0.0;
+}
+
+pub fn identity_genome() -> (Genome, StateCore) {
+    let init_config = InitConfig::new(4, 2);
+    let mut state = StateCore::default();
+    let mut genome = Genome::new(&init_config, &mut state);
+
+    insert_identity(&mut genome, &mut state, 0);
 
     (genome, state)
 }

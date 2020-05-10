@@ -27,6 +27,9 @@ pub struct Conf {
 
     #[envconfig(from = "OUTPUT_ACTIVATIONS", default = "All")]
     pub output_activations: Activations,
+
+    #[envconfig(from = "PAD_MISSING_OUTPUTS", default = "false")]
+    pub pad_missing_outputs: bool,
 }
 
 lazy_static! {

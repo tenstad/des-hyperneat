@@ -1,4 +1,4 @@
-use crate::cppn::Genome;
+use crate::cppn::{conf::CPPN, Genome};
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
@@ -7,15 +7,11 @@ use evolution::{
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
-pub struct Developer {
-    pub pad_missing_outputs: bool,
-}
+pub struct Developer {}
 
 impl From<EnvironmentDescription> for Developer {
     fn from(_: EnvironmentDescription) -> Self {
-        Developer {
-            pad_missing_outputs: false,
-        }
+        Developer {}
     }
 }
 
@@ -53,7 +49,7 @@ impl Develop<Genome, Executor> for Developer {
 
         // Example with pad_missing_outputs = false and nodes Output(0), Output(2)
         // Output of netowork will be padded with missing output nodes: [O0, O1, O2]
-        let output_nodes = if self.pad_missing_outputs {
+        let output_nodes = if CPPN.pad_missing_outputs {
             let num_output_nodes = genome
                 .get_core()
                 .outputs

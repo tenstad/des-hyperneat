@@ -11,6 +11,7 @@ mod dataset_environment;
 mod deshyperneat;
 mod eshyperneat;
 mod hyperneat;
+mod sideshyperneat;
 
 use codeshyperneat::codeshyperneat;
 use cppn::cppn;
@@ -19,6 +20,7 @@ use deshyperneat::deshyperneat;
 use eshyperneat::eshyperneat;
 use evolution::neat::neat;
 use hyperneat::hyperneat;
+use sideshyperneat::sideshyperneat;
 
 fn main() {
     match &conf::CONF.method[..] {
@@ -28,6 +30,7 @@ fn main() {
         "ES-HyperNEAT" => eshyperneat::<DatasetEnvironment>(),
         "DES-HyperNEAT" => deshyperneat::<DatasetEnvironment>(),
         "CoDES-HyperNEAT" => codeshyperneat::<DatasetEnvironment>(),
+        "SiDES-HyperNEAT" => sideshyperneat::<DatasetEnvironment>(),
         _ => println!("Unknown method method"),
     }
 }
