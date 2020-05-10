@@ -59,13 +59,12 @@ impl DatasetEnvironment {
 
     fn fitness(&self, targets: &Vec<Vec<f64>>, predictions: &Vec<Vec<f64>>) -> f64 {
         let norm = self.dataset.is_classification && self.dataset.one_hot_output;
-        1.0 - error::mse(targets, predictions, norm)
 
-        /*if self.dataset.is_classification && self.dataset.one_hot_output {
-            (3.0 - error::crossentropy(targets, predictions, norm)).max(0.0) / 3.0
+        if self.dataset.is_classification && self.dataset.one_hot_output {
+            (-error::crossentropy(targets, predictions, norm)).exp()
         } else {
             1.0 - error::mse(targets, predictions, norm)
-        }*/
+        }
     }
 }
 
