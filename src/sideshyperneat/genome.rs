@@ -105,9 +105,6 @@ impl NeatGenome<State> for Genome {
         if rng.gen::<f64>() < SIDESHYPERNEAT.cppn_mutation_probability {
             self.cppn.mutate(&mut state.cppn_state);
         }
-        /*println!("{:?}", self.topology.links.keys().collect::<Vec<_>>());
-        println!("{:?}", self.cppn.core.links.keys().collect::<Vec<_>>());
-        println!("");*/
     }
 
     fn distance(&self, other: &Self) -> f64 {
