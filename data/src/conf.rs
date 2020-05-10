@@ -3,7 +3,7 @@ use lazy_static::lazy_static;
 
 #[derive(Envconfig)]
 pub struct Conf {
-    #[envconfig(from = "DATASET", default = "datasets/wine")]
+    #[envconfig(from = "DATASET", default = "datasets/generated/wine")]
     pub dataset: String,
 
     #[envconfig(from = "SEED", default = "0")]

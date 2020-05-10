@@ -8,7 +8,7 @@ print(x_train.shape, y_train.shape)
 n = 1000
 size = (8,8)
 
-with open('mnist', 'w') as f:
+with open('generated/mnist', 'w') as f:
 	f.write('true\ntrue\n\n')
 
 	for i in range(n):

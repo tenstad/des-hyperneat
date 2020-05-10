@@ -1,7 +1,7 @@
 with open('iris.data') as f:
     lines = f.readlines()
 
-with open('iris', 'w') as f:
+with open('generated/iris', 'w') as f:
     f.write('true\ntrue\n\n')
 
     for line in lines:
