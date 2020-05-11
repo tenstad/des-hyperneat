@@ -34,19 +34,19 @@ impl Default for NeatConfig {
 }
 
 pub trait ConfigProvider<N, L>: Clone {
-    fn get_core(&self) -> &NeatConfig;
-    fn get_node_config(&self) -> &N;
-    fn get_link_config(&self) -> &L;
+    fn neat(&self) -> &NeatConfig;
+    fn neat_node(&self) -> &N;
+    fn neat_link(&self) -> &L;
 }
 
 impl ConfigProvider<(), ()> for NeatConfig {
-    fn get_core(&self) -> &NeatConfig {
+    fn neat(&self) -> &NeatConfig {
         self
     }
-    fn get_node_config(&self) -> &() {
+    fn neat_node(&self) -> &() {
         &()
     }
-    fn get_link_config(&self) -> &() {
+    fn neat_link(&self) -> &() {
         &()
     }
 }

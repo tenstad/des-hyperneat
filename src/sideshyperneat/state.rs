@@ -1,55 +1,55 @@
 use evolution::neat::{
     node::NodeRef,
-    state::{StateCore, StateProvider},
+    state::{NeatState, StateProvider},
 };
 use std::collections::HashMap;
 
 #[derive(Clone, Default)]
 pub struct State {
-    pub cppn_state: StateCore,
-    pub topology_state: StateCore,
+    pub cppn_state: NeatState,
+    pub topology_state: NeatState,
     pub output_id_innovation_offset: usize,
     pub io_output_id: HashMap<NodeRef, usize>,
 }
 
 impl StateProvider<(), ()> for State {
-    fn get_core(&self) -> &StateCore {
+    fn neat(&self) -> &NeatState {
         &self.cppn_state
     }
-    fn get_core_mut(&mut self) -> &mut StateCore {
+    fn neat_mut(&mut self) -> &mut NeatState {
         &mut self.cppn_state
     }
-    fn get_node_state(&self) -> &() {
+    fn node(&self) -> &() {
         &self.cppn_state.node_state
     }
-    fn get_node_state_mut(&mut self) -> &mut () {
+    fn node_mut(&mut self) -> &mut () {
         &mut self.cppn_state.node_state
     }
-    fn get_link_state(&self) -> &() {
+    fn link(&self) -> &() {
         &self.cppn_state.link_state
     }
-    fn get_link_state_mut(&mut self) -> &mut () {
+    fn link_mut(&mut self) -> &mut () {
         &mut self.cppn_state.link_state
     }
 }
 
 impl StateProvider<State, State> for State {
-    fn get_core(&self) -> &StateCore {
+    fn neat(&self) -> &NeatState {
         &self.topology_state
     }
-    fn get_core_mut(&mut self) -> &mut StateCore {
+    fn neat_mut(&mut self) -> &mut NeatState {
         &mut self.topology_state
     }
-    fn get_node_state(&self) -> &State {
+    fn node(&self) -> &State {
         self
     }
-    fn get_node_state_mut(&mut self) -> &mut State {
+    fn node_mut(&mut self) -> &mut State {
         self
     }
-    fn get_link_state(&self) -> &State {
+    fn link(&self) -> &State {
         self
     }
-    fn get_link_state_mut(&mut self) -> &mut State {
+    fn link_mut(&mut self) -> &mut State {
         self
     }
 }

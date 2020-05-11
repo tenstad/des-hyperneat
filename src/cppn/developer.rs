@@ -14,10 +14,10 @@ impl From<EnvironmentDescription> for Developer {
 impl Develop<Genome, Executor> for Developer {
     fn develop(&self, genome: Genome) -> Executor {
         // Sort genomes netowrk topologically
-        let order = genome.core.connections.sort_topologically();
+        let order = genome.neat.connections.sort_topologically();
 
         // Create vector of all input node indexes, for insertion of nerual network inputs
-        let num_input_nodes = genome.core.inputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
+        let num_input_nodes = genome.neat.inputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
         let inputs = (0..num_input_nodes).collect::<Vec<usize>>();
 
         // Prepend input nodes to extraction of hidden nodes from topological sorting
@@ -40,14 +40,14 @@ impl Develop<Genome, Executor> for Developer {
         // Output of netowork will be padded with missing output nodes: [O0, O1, O2]
         let output_nodes = if CPPN.pad_missing_outputs {
             let num_output_nodes =
-                genome.core.outputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
+                genome.neat.outputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
 
             (0..(num_output_nodes))
                 .map(|i| NodeRef::Output(i))
                 .collect()
         } else {
             let mut output_nodes = genome
-                .core
+                .neat
                 .outputs
                 .keys()
                 .cloned()
@@ -77,7 +77,7 @@ impl Develop<Genome, Executor> for Developer {
             .iter()
             .filter_map(|action| match action {
                 connection::OrderedAction::Edge(from, to, _) => {
-                    let link = genome.core.links.get(&(*from, *to)).unwrap();
+                    let link = genome.neat.links.get(&(*from, *to)).unwrap();
                     if link.enabled {
                         Some(execute::Action::Link(
                             *node_mapping.get(from).unwrap(),
@@ -105,40 +105,42 @@ impl Develop<Genome, Executor> for Developer {
 mod tests {
     use super::*;
     use crate::cppn::genome::Genome as CppnGenome;
-    use evolution::neat::{
-        conf::NeatConfig,
-        genome::Genome,
-        link::LinkCore,
-        state::{InitConfig, StateCore},
+    use evolution::{
+        genome::GenericGenome,
+        neat::{
+            conf::NeatConfig,
+            link::NeatLink,
+            state::{InitConfig, NeatState},
+        },
     };
     use network::activation::Activation;
 
     #[test]
     fn test_develop() {
-        let mut state = StateCore::default();
+        let mut state = NeatState::default();
         let config = NeatConfig::default();
         let mut genome = CppnGenome::new(&config, &InitConfig::new(4, 2), &mut state);
-        let link = LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
+        let link = NeatLink::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
 
-        genome.core.insert_link(link.clone());
+        genome.neat.insert_link(link.clone());
         genome
-            .core
+            .neat
             .split_link(&config, link.from, link.to, 0, 1, &mut state);
 
         genome
-            .core
+            .neat
             .inputs
             .get_mut(&NodeRef::Input(1))
             .unwrap()
             .activation = Activation::None;
         genome
-            .core
+            .neat
             .hidden_nodes
             .get_mut(&NodeRef::Hidden(0))
             .unwrap()
             .activation = Activation::Exp;
         genome
-            .core
+            .neat
             .outputs
             .get_mut(&NodeRef::Output(1))
             .unwrap()

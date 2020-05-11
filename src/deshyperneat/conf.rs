@@ -19,13 +19,13 @@ pub struct Config {
 }
 
 impl ConfigProvider<NeatConfig, NeatConfig> for Config {
-    fn get_core(&self) -> &NeatConfig {
+    fn neat(&self) -> &NeatConfig {
         &self.topology
     }
-    fn get_node_config(&self) -> &NeatConfig {
+    fn neat_node(&self) -> &NeatConfig {
         &self.cppn
     }
-    fn get_link_config(&self) -> &NeatConfig {
+    fn neat_link(&self) -> &NeatConfig {
         &self.cppn
     }
 }

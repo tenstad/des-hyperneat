@@ -1,16 +1,31 @@
-use crate::neat::genome::{GetCore, Node};
+use crate::neat::genome::GetNeat;
 use std::fmt;
 
-#[derive(Copy, Clone, GetCore, new)]
-#[core]
-pub struct NodeCore {
+pub trait NodeExtension: GetNeat<NeatNode> + Clone + Send {
+    type Config;
+    type State;
+
+    fn new(config: &Self::Config, neat: NeatNode, state: &mut Self::State) -> Self;
+    fn crossover(
+        &self,
+        config: &Self::Config,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self;
+    fn distance(&self, config: &Self::Config, other: &Self) -> f64;
+}
+
+#[derive(Copy, Clone, GetNeat, new)]
+#[neat]
+pub struct NeatNode {
     pub node_ref: NodeRef,
 }
 
-impl NodeCore {
+impl NeatNode {
     pub fn crossover(&self, other: &Self, _fitness: &f64, _other_fitness: &f64) -> Self {
         assert_eq!(self.node_ref, other.node_ref);
-        NodeCore {
+        NeatNode {
             node_ref: self.node_ref,
         }
     }
@@ -20,12 +35,12 @@ impl NodeCore {
     }
 }
 
-impl Node for NodeCore {
+impl NodeExtension for NeatNode {
     type Config = ();
     type State = ();
 
-    fn new(_: &Self::Config, core: NodeCore, _: &mut Self::State) -> Self {
-        core
+    fn new(_: &Self::Config, neat: NeatNode, _: &mut Self::State) -> Self {
+        neat
     }
 
     fn crossover(

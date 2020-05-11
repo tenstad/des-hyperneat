@@ -1,7 +1,7 @@
 use crate::codeshyperneat::{genome::Genome as BlueprintGenome, link::Link, node::Node};
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::desgenome::DesGenome;
-use evolution::neat::{genome_core::GenomeCore, node::NodeRef};
+use evolution::neat::{genome::NeatGenome, node::NodeRef};
 use std::collections::HashMap;
 
 #[derive(new, Clone)]
@@ -17,7 +17,7 @@ impl DesGenome for CombinedGenome {
     fn get_node_cppn(&self, node: &NodeRef) -> &CppnGenome {
         &self
             .modules
-            .get(&self.blueprint.core.get_node(node).unwrap().module_species)
+            .get(&self.blueprint.neat.get_node(node).unwrap().module_species)
             .unwrap()
             .1
     }
@@ -28,7 +28,7 @@ impl DesGenome for CombinedGenome {
             .get(
                 &&self
                     .blueprint
-                    .core
+                    .neat
                     .links
                     .get(&(source, target))
                     .unwrap()
@@ -39,10 +39,10 @@ impl DesGenome for CombinedGenome {
     }
 
     fn get_depth(&self, node: &NodeRef) -> usize {
-        self.blueprint.core.get_node(node).unwrap().depth
+        self.blueprint.neat.get_node(node).unwrap().depth
     }
 
-    fn get_core(&self) -> &GenomeCore<Self::Node, Self::Link> {
-        &self.blueprint.core
+    fn get_neat(&self) -> &NeatGenome<Self::Node, Self::Link> {
+        &self.blueprint.neat
     }
 }

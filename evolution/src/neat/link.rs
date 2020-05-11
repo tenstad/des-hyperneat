@@ -1,12 +1,26 @@
-use crate::neat::{
-    genome::{GetCore, Link},
-    node::NodeRef,
-};
+use crate::neat::{genome::GetNeat, node::NodeRef};
+
+pub trait LinkExtension: GetNeat<NeatLink> + Clone + Send {
+    type Config;
+    type State;
+
+    fn new(config: &Self::Config, neat: NeatLink, state: &mut Self::State) -> Self;
+    fn identity(config: &Self::Config, neat: NeatLink, state: &mut Self::State) -> Self;
+    fn clone_with(&self, config: &Self::Config, neat: NeatLink, state: &mut Self::State) -> Self;
+    fn crossover(
+        &self,
+        config: &Self::Config,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self;
+    fn distance(&self, config: &Self::Config, other: &Self) -> f64;
+}
 
 /// Link between two nodes
-#[derive(Clone, Debug, GetCore)]
-#[core]
-pub struct LinkCore {
+#[derive(Clone, Debug, GetNeat)]
+#[neat]
+pub struct NeatLink {
     pub from: NodeRef,
     pub to: NodeRef,
     pub weight: f64,
@@ -15,7 +29,7 @@ pub struct LinkCore {
     pub innovation: usize, // Global innovation number
 }
 
-impl LinkCore {
+impl NeatLink {
     pub fn new(from: NodeRef, to: NodeRef, weight: f64, innovation: usize) -> Self {
         Self {
             from,
@@ -47,20 +61,20 @@ impl LinkCore {
     }
 }
 
-impl Link for LinkCore {
+impl LinkExtension for NeatLink {
     type Config = ();
     type State = ();
 
-    fn new(_: &Self::Config, core: LinkCore, _: &mut Self::State) -> Self {
-        core
+    fn new(_: &Self::Config, neat: NeatLink, _: &mut Self::State) -> Self {
+        neat
     }
 
-    fn identity(_: &Self::Config, core: LinkCore, _: &mut Self::State) -> Self {
-        core
+    fn identity(_: &Self::Config, neat: NeatLink, _: &mut Self::State) -> Self {
+        neat
     }
 
-    fn clone_with(&self, _: &Self::Config, core: LinkCore, _: &mut Self::State) -> Self {
-        core
+    fn clone_with(&self, _: &Self::Config, neat: NeatLink, _: &mut Self::State) -> Self {
+        neat
     }
 
     fn crossover(

@@ -1,40 +1,28 @@
 use crate::codeshyperneat::{link::Link, node::Node, state::State};
 use crate::cppn::genome::Genome as CppnGenome;
 use evolution::{
-    neat::{
-        conf::NeatConfig,
-        genome::{Genome as NeatGenome, GetCore},
-        genome_core::GenomeCore,
-        node::NodeRef,
-        state::InitConfig,
-    },
+    genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
+    neat::{conf::NeatConfig, genome::NeatGenome, node::NodeRef, state::InitConfig},
     population::Population,
 };
 use rand::{seq::SliceRandom, Rng};
 use std::collections::HashMap;
 
-type NeatCore = GenomeCore<Node, Link>;
+#[derive(Clone)]
+pub struct Genome {
+    pub neat: NeatGenome<Node, Link>,
+}
 
-impl evolution::genome::Genome for Genome {
+impl EvolvableGenome for Genome {
     type Config = NeatConfig;
     type InitConfig = InitConfig;
     type State = State;
 }
 
-#[derive(Clone, GetCore)]
-pub struct Genome {
-    #[core]
-    pub core: NeatCore,
-}
-
-impl NeatGenome<NeatConfig, State> for Genome {
-    type Init = InitConfig;
-    type Node = Node;
-    type Link = Link;
-
-    fn new(config: &NeatConfig, init_config: &Self::Init, state: &mut State) -> Self {
+impl GenericEvolvableGenome<NeatConfig, State, InitConfig> for Genome {
+    fn new(config: &NeatConfig, init_config: &InitConfig, state: &mut State) -> Self {
         Self {
-            core: GenomeCore::<Self::Node, Self::Link>::new(config, init_config, state),
+            neat: NeatGenome::<Node, Link>::new(config, init_config, state),
         }
     }
 
@@ -46,42 +34,42 @@ impl NeatGenome<NeatConfig, State> for Genome {
         other_fitness: &f64,
     ) -> Self {
         Self {
-            core: self
-                .core
-                .crossover(config, &other.core, fitness, other_fitness),
+            neat: self
+                .neat
+                .crossover(config, &other.neat, fitness, other_fitness),
         }
     }
 
     fn mutate(&mut self, config: &NeatConfig, state: &mut State) {
-        self.core.mutate(config, state);
+        self.neat.mutate(config, state);
 
         let mut rng = rand::thread_rng();
 
         if state.custom.species > 0 {
             if rng.gen::<f64>() < 0.05 {
                 if let Some(key) = self
-                    .core
+                    .neat
                     .links
                     .keys()
                     .cloned()
                     .collect::<Vec<(NodeRef, NodeRef)>>()
                     .choose(&mut rng)
                 {
-                    self.core.links.get_mut(&key).unwrap().module_species =
+                    self.neat.links.get_mut(&key).unwrap().module_species =
                         rng.gen_range(0, state.custom.species);
                 }
             }
 
             if rng.gen::<f64>() < 0.05 {
                 if let Some(key) = self
-                    .core
+                    .neat
                     .hidden_nodes
                     .keys()
                     .cloned()
                     .collect::<Vec<NodeRef>>()
                     .choose(&mut rng)
                 {
-                    self.core.hidden_nodes.get_mut(&key).unwrap().module_species =
+                    self.neat.hidden_nodes.get_mut(&key).unwrap().module_species =
                         rng.gen_range(0, state.custom.species);
                 }
             }
@@ -89,14 +77,14 @@ impl NeatGenome<NeatConfig, State> for Genome {
 
         if rng.gen::<f64>() < 0.05 {
             if let Some(key) = self
-                .core
+                .neat
                 .hidden_nodes
                 .keys()
                 .cloned()
                 .collect::<Vec<NodeRef>>()
                 .choose(&mut rng)
             {
-                let mut node = self.core.hidden_nodes.get_mut(&key).unwrap();
+                let mut node = self.neat.hidden_nodes.get_mut(&key).unwrap();
                 if node.depth == 0 {
                     node.depth = 1;
                 } else {
@@ -111,7 +99,7 @@ impl NeatGenome<NeatConfig, State> for Genome {
     }
 
     fn distance(&self, config: &NeatConfig, other: &Self) -> f64 {
-        self.core.distance(config, &other.core)
+        self.neat.distance(config, &other.neat)
     }
 }
 
@@ -124,13 +112,13 @@ impl Genome {
         let mut genomes = HashMap::<usize, (usize, CppnGenome)>::new();
 
         for module_species in self
-            .core
+            .neat
             .inputs
             .values()
-            .chain(self.core.hidden_nodes.values())
-            .chain(self.core.outputs.values())
+            .chain(self.neat.hidden_nodes.values())
+            .chain(self.neat.outputs.values())
             .map(|node| node.module_species)
-            .chain(self.core.links.values().map(|link| link.module_species))
+            .chain(self.neat.links.values().map(|link| link.module_species))
         {
             if !genomes.contains_key(&module_species) {
                 let species = modules

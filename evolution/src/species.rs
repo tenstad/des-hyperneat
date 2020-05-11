@@ -75,7 +75,7 @@ impl<G: Genome, S> Species<G, S> {
         self.organisms.iter_mut().take(len)
     }
 
-    /// Get a random organism. Adheres to lock.
+    /// Get random organism. Adheres to lock.
     pub fn random_organism(&self) -> Option<&Organism<G, S>> {
         self.iter()
             .skip(rand::thread_rng().gen_range(0, self.len()))

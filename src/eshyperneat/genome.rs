@@ -1,30 +1,32 @@
 use crate::cppn::{genome::Genome, node::Node as CppnNode};
-use evolution::neat::{
-    conf::{ConfigProvider, NeatConfig},
-    genome::{Genome as NeatGenome, Node as NeatNode},
-    link::LinkCore,
-    node::{NodeCore, NodeRef},
-    state::{InitConfig, StateCore, StateProvider},
+use evolution::{
+    genome::GenericGenome,
+    neat::{
+        conf::{ConfigProvider, NeatConfig},
+        link::NeatLink,
+        node::{NeatNode, NodeExtension, NodeRef},
+        state::{InitConfig, NeatState, StateProvider},
+    },
 };
 use network::activation::Activation;
 
 fn insert_link(
     genome: &mut Genome,
-    state: &mut StateCore,
+    state: &mut NeatState,
     from: NodeRef,
     to: NodeRef,
     weight: f64,
 ) {
     let innovation = state.get_connect_innovation(from, to);
     genome
-        .core
-        .insert_link(LinkCore::new(from, to, weight, innovation));
+        .neat
+        .insert_link(NeatLink::new(from, to, weight, innovation));
 }
 
 fn split_link(
     config: &NeatConfig,
     genome: &mut Genome,
-    state: &mut StateCore,
+    state: &mut NeatState,
     from: NodeRef,
     to: NodeRef,
     weight: f64,
@@ -34,7 +36,7 @@ fn split_link(
 ) -> NodeRef {
     let innovation = state.get_split_innovation(
         genome
-            .core
+            .neat
             .links
             .get(&(from, to))
             .expect("cannot split nonexisting link")
@@ -42,7 +44,7 @@ fn split_link(
     );
     let new_node = NodeRef::Hidden(innovation.node_number);
 
-    genome.core.split_link(
+    genome.neat.split_link(
         config,
         from,
         to,
@@ -50,13 +52,13 @@ fn split_link(
         innovation.innovation_number,
         state,
     );
-    let hidden_node = genome.core.hidden_nodes.get_mut(&new_node).unwrap();
+    let hidden_node = genome.neat.hidden_nodes.get_mut(&new_node).unwrap();
     hidden_node.activation = activation;
     hidden_node.bias = bias;
 
-    genome.core.links.get_mut(&(from, new_node)).unwrap().weight = weight;
+    genome.neat.links.get_mut(&(from, new_node)).unwrap().weight = weight;
 
-    genome.core.links.get_mut(&(new_node, to)).unwrap().weight = weight2;
+    genome.neat.links.get_mut(&(new_node, to)).unwrap().weight = weight2;
 
     new_node
 }
@@ -64,20 +66,20 @@ fn split_link(
 pub fn insert_identity(
     config: &NeatConfig,
     genome: &mut Genome,
-    state: &mut StateCore,
+    state: &mut NeatState,
     output_id: usize,
 ) {
     if !genome
-        .core
+        .neat
         .outputs
         .contains_key(&NodeRef::Output(output_id))
     {
-        genome.core.outputs.insert(
+        genome.neat.outputs.insert(
             NodeRef::Output(output_id),
             CppnNode::new(
-                config.get_node_config(),
-                NodeCore::new(NodeRef::Output(output_id)),
-                state.get_node_state_mut(),
+                config.neat_node(),
+                NeatNode::new(NodeRef::Output(output_id)),
+                state.node_mut(),
             ),
         );
     }
@@ -124,7 +126,7 @@ pub fn insert_identity(
     insert_link(genome, state, NodeRef::Input(3), hidden_y, -7.5);
 
     let output = genome
-        .core
+        .neat
         .outputs
         .get_mut(&NodeRef::Output(output_id))
         .unwrap();
@@ -132,10 +134,10 @@ pub fn insert_identity(
     output.bias = 0.0;
 }
 
-pub fn identity_genome() -> (Genome, StateCore) {
+pub fn identity_genome() -> (Genome, NeatState) {
     let config = NeatConfig::default();
     let init_config = InitConfig::new(4, 2);
-    let mut state = StateCore::default();
+    let mut state = NeatState::default();
     let mut genome = Genome::new(&config, &init_config, &mut state);
 
     insert_identity(&config, &mut genome, &mut state, 0);

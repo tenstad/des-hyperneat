@@ -5,7 +5,7 @@ use crate::hyperneat::substrate;
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
-    neat::{genome::GetCore, node::NodeRef},
+    neat::{genome::GetNeat, node::NodeRef},
 };
 use network::{
     connection,
@@ -92,12 +92,12 @@ impl Developer {
             );
         }
         // All hidden substrates are empty
-        for node_ref in genome.get_core().hidden_nodes.keys() {
+        for node_ref in genome.get_neat().hidden_nodes.keys() {
             substrate_nodes.insert(*node_ref, HashSet::new());
         }
 
         // Iterative network completion in topologically sorted order
-        let order = genome.get_core().connections.sort_topologically();
+        let order = genome.get_neat().connections.sort_topologically();
         for element in order.iter() {
             match element {
                 connection::OrderedAction::Edge(from, to, _) => {
@@ -227,12 +227,12 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
             );
         }
         // All hidden substrates are empty
-        for node_ref in genome.get_core().hidden_nodes.keys() {
+        for node_ref in genome.get_neat().hidden_nodes.keys() {
             substrate_nodes.insert(*node_ref, HashSet::new());
         }
 
         // Iterative network completion in topologically sorted order
-        let order = genome.get_core().connections.sort_topologically();
+        let order = genome.get_neat().connections.sort_topologically();
         for element in order.iter() {
             match element {
                 connection::OrderedAction::Edge(from, to, _) => {
@@ -287,11 +287,11 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                             (*to, connection.to.0, connection.to.1),
                             connection.edge
                                 * genome
-                                    .get_core()
+                                    .get_neat()
                                     .links
                                     .get(&(*from, *to))
                                     .unwrap()
-                                    .get_core()
+                                    .neat()
                                     .weight,
                         );
                     }
@@ -342,7 +342,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
 
         // Collect all hidden nodes (in all hidden substrates)
         let mut hidden_nodes = Vec::<(NodeRef, i64, i64)>::new();
-        for node_ref in genome.get_core().hidden_nodes.keys() {
+        for node_ref in genome.get_neat().hidden_nodes.keys() {
             hidden_nodes.extend(
                 substrate_nodes
                     .get(node_ref)

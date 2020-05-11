@@ -1,45 +1,45 @@
 use crate::sideshyperneat::state::State;
 use evolution::neat::{
-    genome::{GetCore, Link as NeatLink},
-    link::LinkCore,
+    genome::GetNeat,
+    link::{LinkExtension, NeatLink},
 };
 use rand::Rng;
 
-#[derive(Clone, GetCore, new)]
+#[derive(Clone, GetNeat, new)]
 pub struct Link {
-    #[core]
-    pub core: LinkCore,
+    #[neat]
+    pub neat: NeatLink,
     pub depth: usize,
     pub cppn_output_id: usize,
     pub is_identity: bool,
 }
 
-impl NeatLink for Link {
+impl LinkExtension for Link {
     type Config = ();
     type State = State;
 
-    fn new(_: &Self::Config, core: LinkCore, state: &mut Self::State) -> Self {
-        let innovation = core.innovation;
+    fn new(_: &Self::Config, neat: NeatLink, state: &mut Self::State) -> Self {
+        let innovation = neat.innovation;
         Self::new(
-            core,
+            neat,
             1,
             state.output_id_innovation_offset + innovation,
             false,
         )
     }
 
-    fn identity(_: &Self::Config, core: LinkCore, state: &mut Self::State) -> Self {
-        let innovation = core.innovation;
+    fn identity(_: &Self::Config, neat: NeatLink, state: &mut Self::State) -> Self {
+        let innovation = neat.innovation;
         Self::new(
-            core,
+            neat,
             1,
             state.output_id_innovation_offset + innovation,
             true,
         )
     }
 
-    fn clone_with(&self, _: &Self::Config, core: LinkCore, _: &mut Self::State) -> Self {
-        Self::new(core, self.depth, self.cppn_output_id, self.is_identity)
+    fn clone_with(&self, _: &Self::Config, neat: NeatLink, _: &mut Self::State) -> Self {
+        Self::new(neat, self.depth, self.cppn_output_id, self.is_identity)
     }
 
     fn crossover(
@@ -53,7 +53,7 @@ impl NeatLink for Link {
         assert_eq!(self.is_identity, other.is_identity);
 
         Self {
-            core: self.core.crossover(&other.core, fitness, other_fitness),
+            neat: self.neat.crossover(&other.neat, fitness, other_fitness),
             depth: if rand::thread_rng().gen::<bool>() {
                 self.depth
             } else {
@@ -65,7 +65,7 @@ impl NeatLink for Link {
     }
 
     fn distance(&self, _: &Self::Config, other: &Self) -> f64 {
-        let mut distance = self.core.distance(&other.core);
+        let mut distance = self.neat.distance(&other.neat);
         distance += (self.depth as f64 - other.depth as f64).abs().tanh();
         distance
     }

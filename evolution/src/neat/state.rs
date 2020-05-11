@@ -26,7 +26,7 @@ pub struct Innovation {
 }
 
 #[derive(Default, Clone)]
-pub struct StateCore {
+pub struct NeatState {
     pub innovation_log: InnovationLog,
     pub next_innovation: Innovation,
     pub node_state: (),
@@ -34,36 +34,36 @@ pub struct StateCore {
 }
 
 pub trait StateProvider<N, L>: Clone + Send + Default {
-    fn get_core(&self) -> &StateCore;
-    fn get_core_mut(&mut self) -> &mut StateCore;
-    fn get_node_state(&self) -> &N;
-    fn get_node_state_mut(&mut self) -> &mut N;
-    fn get_link_state(&self) -> &L;
-    fn get_link_state_mut(&mut self) -> &mut L;
+    fn neat(&self) -> &NeatState;
+    fn neat_mut(&mut self) -> &mut NeatState;
+    fn node(&self) -> &N;
+    fn node_mut(&mut self) -> &mut N;
+    fn link(&self) -> &L;
+    fn link_mut(&mut self) -> &mut L;
 }
 
-impl StateProvider<(), ()> for StateCore {
-    fn get_core(&self) -> &StateCore {
+impl StateProvider<(), ()> for NeatState {
+    fn neat(&self) -> &NeatState {
         self
     }
-    fn get_core_mut(&mut self) -> &mut StateCore {
+    fn neat_mut(&mut self) -> &mut NeatState {
         self
     }
-    fn get_node_state(&self) -> &() {
+    fn node(&self) -> &() {
         &self.node_state
     }
-    fn get_node_state_mut(&mut self) -> &mut () {
+    fn node_mut(&mut self) -> &mut () {
         &mut self.node_state
     }
-    fn get_link_state(&self) -> &() {
+    fn link(&self) -> &() {
         &self.link_state
     }
-    fn get_link_state_mut(&mut self) -> &mut () {
+    fn link_mut(&mut self) -> &mut () {
         &mut self.link_state
     }
 }
 
-impl StateCore {
+impl NeatState {
     pub fn get_split_innovation(&mut self, link_innovation: usize) -> &Innovation {
         if !self
             .innovation_log

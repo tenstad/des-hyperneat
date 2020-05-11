@@ -7,38 +7,34 @@ use crate::sideshyperneat::{
     node::Node,
     state::State,
 };
-use evolution::neat::{
-    conf::ConfigProvider,
-    genome::{Genome as NeatGenome, Node as NeatNode},
-    genome_core::GenomeCore,
-    link::LinkCore,
-    node::{NodeCore, NodeRef},
-    state::{InitConfig, StateProvider},
+use evolution::{
+    genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
+    neat::{
+        conf::ConfigProvider,
+        genome::NeatGenome,
+        node::{NeatNode, NodeExtension, NodeRef},
+        state::{InitConfig, StateProvider},
+    },
 };
 use rand::Rng;
 
-impl evolution::genome::Genome for Genome {
+#[derive(Clone)]
+pub struct Genome {
+    pub cppn: CppnGenome,
+    pub topology: NeatGenome<Node, Link>,
+    pub des_genome: Option<DesGenome>,
+}
+
+impl EvolvableGenome for Genome {
     type Config = Config;
     type InitConfig = InitConfig;
     type State = State;
 }
 
-pub type TopologyCore = GenomeCore<Node, Link>;
-
-#[derive(Clone)]
-pub struct Genome {
-    pub cppn: CppnGenome,
-    pub topology: TopologyCore,
-    pub des_genome: Option<DesGenome>,
-}
-
-impl NeatGenome<Config, State> for Genome {
-    type Init = InitConfig;
-    type Node = CppnNode;
-    type Link = LinkCore;
-
-    fn new(config: &Config, _init_config: &Self::Init, state: &mut State) -> Self {
-        let mut topology = TopologyCore::new(&config.topology, &InitConfig::new(3, 1), state);
+impl GenericEvolvableGenome<Config, State, InitConfig> for Genome {
+    fn new(config: &Config, _init_config: &InitConfig, state: &mut State) -> Self {
+        let mut topology =
+            NeatGenome::<Node, Link>::new(&config.topology, &InitConfig::new(3, 1), state);
         topology
             .get_node_mut(&NodeRef::Input(0))
             .unwrap()
@@ -101,7 +97,7 @@ impl NeatGenome<Config, State> for Genome {
         {
             if !self
                 .cppn
-                .core
+                .neat
                 .outputs
                 .contains_key(&NodeRef::Output(*output_id))
             {
@@ -132,12 +128,12 @@ impl NeatGenome<Config, State> for Genome {
 impl Genome {
     fn add_cppn_output(&mut self, config: &Config, id: usize, state: &mut State) {
         let node_ref = NodeRef::Output(id);
-        self.cppn.core.outputs.insert(
+        self.cppn.neat.outputs.insert(
             node_ref,
             CppnNode::new(
-                &config.cppn.get_node_config(),
-                NodeCore::new(NodeRef::Output(id)),
-                state.cppn_state.get_node_state_mut(),
+                &config.cppn.neat_node(),
+                NeatNode::new(NodeRef::Output(id)),
+                state.cppn_state.node_mut(),
             ),
         );
     }

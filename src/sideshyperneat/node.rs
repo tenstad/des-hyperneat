@@ -1,24 +1,24 @@
 use crate::sideshyperneat::state::State;
 use evolution::neat::{
-    genome::{GetCore, Node as NeatNode},
-    node::{NodeCore, NodeRef},
+    genome::GetNeat,
+    node::{NeatNode, NodeExtension, NodeRef},
 };
 use rand::Rng;
 
-#[derive(Clone, GetCore, new)]
+#[derive(Clone, GetNeat, new)]
 pub struct Node {
-    #[core]
-    pub core: NodeCore,
+    #[neat]
+    pub neat: NeatNode,
     pub depth: usize,
     pub cppn_output_id: usize,
 }
 
-impl NeatNode for Node {
+impl NodeExtension for Node {
     type Config = ();
     type State = State;
 
-    fn new(_: &Self::Config, core: NodeCore, state: &mut Self::State) -> Self {
-        let innovation = if let NodeRef::Hidden(id) = core.node_ref {
+    fn new(_: &Self::Config, neat: NeatNode, state: &mut Self::State) -> Self {
+        let innovation = if let NodeRef::Hidden(id) = neat.node_ref {
             state
                 .topology_state
                 .innovation_log
@@ -28,16 +28,16 @@ impl NeatNode for Node {
                 .innovation_number
                 + state.output_id_innovation_offset
                 + 2
-        } else if let Some(innovation) = state.io_output_id.get(&core.node_ref) {
+        } else if let Some(innovation) = state.io_output_id.get(&neat.node_ref) {
             *innovation
         } else {
             let innovation = state.output_id_innovation_offset;
-            state.io_output_id.insert(core.node_ref, innovation);
+            state.io_output_id.insert(neat.node_ref, innovation);
             state.output_id_innovation_offset += 1;
             innovation
         };
 
-        Self::new(core, 1, innovation)
+        Self::new(neat, 1, innovation)
     }
 
     fn crossover(
@@ -50,7 +50,7 @@ impl NeatNode for Node {
         assert_eq!(self.cppn_output_id, other.cppn_output_id);
 
         Self {
-            core: self.core.crossover(&other.core, fitness, other_fitness),
+            neat: self.neat.crossover(&other.neat, fitness, other_fitness),
             depth: if rand::thread_rng().gen::<bool>() {
                 self.depth
             } else {
@@ -61,7 +61,7 @@ impl NeatNode for Node {
     }
 
     fn distance(&self, _: &Self::Config, other: &Self) -> f64 {
-        let mut distance = self.core.distance(&other.core);
+        let mut distance = self.neat.distance(&other.neat);
         distance += (self.depth as f64 - other.depth as f64).abs().tanh();
         distance
     }

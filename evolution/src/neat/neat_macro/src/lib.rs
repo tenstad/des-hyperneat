@@ -6,26 +6,26 @@ use syn;
 use syn::Data::Struct;
 use syn::{Attribute, DeriveInput, Field, Fields};
 
-#[proc_macro_derive(GetCore, attributes(core))]
+#[proc_macro_derive(GetNeat, attributes(neat))]
 pub fn derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
 
-    if attrs_contains(&ast.attrs, "core") {
-        impl_getcore_self_macro(&ast)
+    if attrs_contains(&ast.attrs, "neat") {
+        impl_getneat_self_macro(&ast)
     } else {
-        impl_getcore_macro(&ast)
+        impl_getneat_macro(&ast)
     }
 }
 
-fn impl_getcore_self_macro(ast: &syn::DeriveInput) -> TokenStream {
+fn impl_getneat_self_macro(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
     let gen = quote! {
-        impl GetCore<Self> for #name {
-            fn get_core(&self) -> &Self {
+        impl GetNeat<Self> for #name {
+            fn neat(&self) -> &Self {
                 self
             }
 
-            fn get_core_mut(&mut self) -> &mut Self {
+            fn neat_mut(&mut self) -> &mut Self {
                 self
             }
         }
@@ -33,19 +33,19 @@ fn impl_getcore_self_macro(ast: &syn::DeriveInput) -> TokenStream {
     gen.into()
 }
 
-fn impl_getcore_macro(ast: &syn::DeriveInput) -> TokenStream {
-    let field = find_field(ast, "core").expect("no field declared as core");
+fn impl_getneat_macro(ast: &syn::DeriveInput) -> TokenStream {
+    let field = find_field(ast, "neat").expect("no field declared as neat");
     let field_name = field.ident.as_ref().unwrap();
     let field_type = &field.ty;
 
     let name = &ast.ident;
     let gen = quote! {
-        impl GetCore<#field_type> for #name {
-            fn get_core(&self) -> &#field_type {
+        impl GetNeat<#field_type> for #name {
+            fn neat(&self) -> &#field_type {
                 &self.#field_name
             }
 
-            fn get_core_mut(&mut self) -> &mut #field_type {
+            fn neat_mut(&mut self) -> &mut #field_type {
                 &mut self.#field_name
             }
         }

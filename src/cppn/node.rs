@@ -1,28 +1,28 @@
 use crate::cppn::conf::CPPN;
 use evolution::neat::{
-    genome::{GetCore, Node as NeatNode},
-    node::{NodeCore, NodeRef},
+    genome::GetNeat,
+    node::{NeatNode, NodeExtension, NodeRef},
 };
 use network::activation::Activation;
 use rand::Rng;
 
-#[derive(Clone, GetCore)]
+#[derive(Clone, GetNeat)]
 pub struct Node {
-    #[core]
-    pub core: NodeCore,
+    #[neat]
+    pub neat: NeatNode,
     pub activation: Activation,
     pub bias: f64,
 }
 
-impl NeatNode for Node {
+impl NodeExtension for Node {
     type Config = ();
     type State = ();
 
-    fn new(_: &Self::Config, core: NodeCore, _: &mut Self::State) -> Self {
+    fn new(_: &Self::Config, neat: NeatNode, _: &mut Self::State) -> Self {
         Self {
-            core,
+            neat,
             bias: 0.0,
-            activation: match core.node_ref {
+            activation: match neat.node_ref {
                 NodeRef::Input(_) => Activation::None,
                 NodeRef::Hidden(_) => CPPN.hidden_activations.random(),
                 NodeRef::Output(_) => CPPN.output_activations.random(),
@@ -38,7 +38,7 @@ impl NeatNode for Node {
         other_fitness: &f64,
     ) -> Self {
         Self {
-            core: self.core.crossover(&other.core, fitness, other_fitness),
+            neat: self.neat.crossover(&other.neat, fitness, other_fitness),
             bias: (self.bias + other.bias) / 2.0,
             activation: if rand::thread_rng().gen::<bool>() {
                 self.activation
@@ -49,7 +49,7 @@ impl NeatNode for Node {
     }
 
     fn distance(&self, _: &Self::Config, other: &Self) -> f64 {
-        let mut distance = self.core.distance(&other.core);
+        let mut distance = self.neat.distance(&other.neat);
         distance += 0.5 * ((self.activation != other.activation) as u8) as f64;
         distance += 0.5 * (self.bias - other.bias).abs().tanh();
         distance
