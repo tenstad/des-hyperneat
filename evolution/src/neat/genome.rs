@@ -14,11 +14,6 @@ impl EvolutionGenome for DefaultNeatGenome {
     type Config = NeatConfig;
 }
 
-pub trait GetCore<T> {
-    fn get_core(&self) -> &T;
-    fn get_core_mut(&mut self) -> &mut T;
-}
-
 pub trait Genome<
     C: ConfigProvider<
         <<Self as Genome<C, S>>::Node as Node>::Config,
@@ -28,8 +23,7 @@ pub trait Genome<
         <<Self as Genome<C, S>>::Node as Node>::State,
         <<Self as Genome<C, S>>::Link as Link>::State,
     >,
->:
-    GetCore<GenomeCore<<Self as Genome<C, S>>::Node, <Self as Genome<C, S>>::Link>> + Clone + Send
+>: Clone + Send
 {
     type Init;
     type Node: Node;
@@ -39,6 +33,11 @@ pub trait Genome<
     fn crossover(&self, config: &C, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
     fn mutate(&mut self, config: &C, state: &mut S);
     fn distance(&self, config: &C, other: &Self) -> f64;
+}
+
+pub trait GetCore<T> {
+    fn get_core(&self) -> &T;
+    fn get_core_mut(&mut self) -> &mut T;
 }
 
 pub trait Node: GetCore<NodeCore> + Clone + Send {

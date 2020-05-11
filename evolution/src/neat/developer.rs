@@ -1,11 +1,9 @@
 use crate::develop::Develop;
 use crate::environment::EnvironmentDescription;
 use crate::neat::{
-    conf::NeatConfig,
-    genome::{Genome, GetCore},
+    genome_core::GenomeCore,
     link::LinkCore,
     node::{NodeCore, NodeRef},
-    state::StateCore,
 };
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
@@ -18,23 +16,13 @@ impl From<EnvironmentDescription> for Developer {
     }
 }
 
-impl<G> Develop<G, Executor> for Developer
-where
-    G: Genome<NeatConfig, StateCore, Node = NodeCore, Link = LinkCore>,
-{
-    fn develop(&self, genome: G) -> Executor {
+impl Develop<GenomeCore<NodeCore, LinkCore>, Executor> for Developer {
+    fn develop(&self, genome: GenomeCore<NodeCore, LinkCore>) -> Executor {
         // Sort genomes netowrk topologically
-        let order = genome.get_core().connections.sort_topologically();
+        let order = genome.connections.sort_topologically();
 
         // Create vector of all input node indexes, for insertion of nerual network inputs
-        let num_input_nodes = genome
-            .get_core()
-            .inputs
-            .keys()
-            .map(|n| n.id())
-            .max()
-            .unwrap() as usize
-            + 1;
+        let num_input_nodes = genome.inputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
         let inputs = (0..num_input_nodes).collect::<Vec<usize>>();
 
         // Prepend input nodes to extraction of hidden nodes from topological sorting
@@ -48,14 +36,7 @@ where
             .collect::<Vec<NodeRef>>();
 
         // Create vector of all output node indexes, for extraction of nerual network execution result
-        let num_output_nodes = genome
-            .get_core()
-            .outputs
-            .keys()
-            .map(|n| n.id())
-            .max()
-            .unwrap() as usize
-            + 1;
+        let num_output_nodes = genome.outputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
         let outputs = (nodes.len()..(nodes.len() + num_output_nodes)).collect();
 
         // Append all output nodes. Disconnected nodes (not present in topological sorting)
@@ -76,12 +57,12 @@ where
             .iter()
             .filter_map(|action| match action {
                 connection::OrderedAction::Edge(from, to, _) => {
-                    let link = genome.get_core().links.get(&(*from, *to)).unwrap();
-                    if link.get_core().enabled {
+                    let link = genome.links.get(&(*from, *to)).unwrap();
+                    if link.enabled {
                         Some(execute::Action::Link(
                             *node_mapping.get(from).unwrap(),
                             *node_mapping.get(to).unwrap(),
-                            link.get_core().weight,
+                            link.weight,
                         ))
                     } else {
                         None

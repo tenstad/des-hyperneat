@@ -9,7 +9,7 @@ use crate::sideshyperneat::{
 };
 use evolution::neat::{
     conf::ConfigProvider,
-    genome::{Genome as NeatGenome, GetCore, Node as NeatNode},
+    genome::{Genome as NeatGenome, Node as NeatNode},
     genome_core::GenomeCore,
     link::LinkCore,
     node::{NodeCore, NodeRef},
@@ -24,7 +24,6 @@ impl evolution::genome::Genome for Genome {
 }
 
 pub type TopologyCore = GenomeCore<Node, Link>;
-pub type CppnCore = GenomeCore<CppnNode, LinkCore>;
 
 #[derive(Clone)]
 pub struct Genome {
@@ -127,16 +126,6 @@ impl NeatGenome<Config, State> for Genome {
     fn distance(&self, config: &Config, other: &Self) -> f64 {
         0.5 * self.cppn.distance(&config.cppn, &other.cppn)
             + 0.5 * self.topology.distance(&config.topology, &other.topology)
-    }
-}
-
-impl GetCore<GenomeCore<CppnNode, LinkCore>> for Genome {
-    fn get_core(&self) -> &CppnCore {
-        &self.cppn.core
-    }
-
-    fn get_core_mut(&mut self) -> &mut CppnCore {
-        &mut self.cppn.core
     }
 }
 

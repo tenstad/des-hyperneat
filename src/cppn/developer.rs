@@ -1,9 +1,5 @@
 use crate::cppn::{conf::CPPN, Genome};
-use evolution::{
-    develop::Develop,
-    environment::EnvironmentDescription,
-    neat::{genome::GetCore, node::NodeRef},
-};
+use evolution::{develop::Develop, environment::EnvironmentDescription, neat::node::NodeRef};
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
@@ -18,17 +14,10 @@ impl From<EnvironmentDescription> for Developer {
 impl Develop<Genome, Executor> for Developer {
     fn develop(&self, genome: Genome) -> Executor {
         // Sort genomes netowrk topologically
-        let order = genome.get_core().connections.sort_topologically();
+        let order = genome.core.connections.sort_topologically();
 
         // Create vector of all input node indexes, for insertion of nerual network inputs
-        let num_input_nodes = genome
-            .get_core()
-            .inputs
-            .keys()
-            .map(|n| n.id())
-            .max()
-            .unwrap() as usize
-            + 1;
+        let num_input_nodes = genome.core.inputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
         let inputs = (0..num_input_nodes).collect::<Vec<usize>>();
 
         // Prepend input nodes to extraction of hidden nodes from topological sorting
@@ -50,21 +39,15 @@ impl Develop<Genome, Executor> for Developer {
         // Example with pad_missing_outputs = false and nodes Output(0), Output(2)
         // Output of netowork will be padded with missing output nodes: [O0, O1, O2]
         let output_nodes = if CPPN.pad_missing_outputs {
-            let num_output_nodes = genome
-                .get_core()
-                .outputs
-                .keys()
-                .map(|n| n.id())
-                .max()
-                .unwrap() as usize
-                + 1;
+            let num_output_nodes =
+                genome.core.outputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
 
             (0..(num_output_nodes))
                 .map(|i| NodeRef::Output(i))
                 .collect()
         } else {
             let mut output_nodes = genome
-                .get_core()
+                .core
                 .outputs
                 .keys()
                 .cloned()
@@ -94,7 +77,7 @@ impl Develop<Genome, Executor> for Developer {
             .iter()
             .filter_map(|action| match action {
                 connection::OrderedAction::Edge(from, to, _) => {
-                    let link = genome.get_core().links.get(&(*from, *to)).unwrap();
+                    let link = genome.core.links.get(&(*from, *to)).unwrap();
                     if link.enabled {
                         Some(execute::Action::Link(
                             *node_mapping.get(from).unwrap(),
@@ -137,16 +120,26 @@ mod tests {
         let mut genome = CppnGenome::new(&config, &InitConfig::new(4, 2), &mut state);
         let link = LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
 
-        let core = genome.get_core_mut();
-        core.insert_link(link.clone());
-        core.split_link(&config, link.from, link.to, 0, 1, &mut state);
+        genome.core.insert_link(link.clone());
+        genome
+            .core
+            .split_link(&config, link.from, link.to, 0, 1, &mut state);
 
-        core.inputs.get_mut(&NodeRef::Input(1)).unwrap().activation = Activation::None;
-        core.hidden_nodes
+        genome
+            .core
+            .inputs
+            .get_mut(&NodeRef::Input(1))
+            .unwrap()
+            .activation = Activation::None;
+        genome
+            .core
+            .hidden_nodes
             .get_mut(&NodeRef::Hidden(0))
             .unwrap()
             .activation = Activation::Exp;
-        core.outputs
+        genome
+            .core
+            .outputs
             .get_mut(&NodeRef::Output(1))
             .unwrap()
             .activation = Activation::Sine;

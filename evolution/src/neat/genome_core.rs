@@ -1,6 +1,6 @@
 use crate::neat::{
     conf::ConfigProvider,
-    genome::{Genome, GetCore, Link, Node},
+    genome::{Genome, Link, Node},
     link::LinkCore,
     node::{NodeCore, NodeRef},
     state::{InitConfig, StateProvider},
@@ -96,16 +96,6 @@ where
 
     fn crossover(&self, config: &C, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
         Self::crossover(self, config, other, fitness, other_fitness)
-    }
-}
-
-impl<N, L> GetCore<Self> for GenomeCore<N, L> {
-    fn get_core(&self) -> &Self {
-        self
-    }
-
-    fn get_core_mut(&mut self) -> &mut Self {
-        self
     }
 }
 

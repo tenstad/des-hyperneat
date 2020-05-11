@@ -1,8 +1,5 @@
 use crate::cppn::genome::Genome as CppnGenome;
-use crate::deshyperneat::{
-    conf::{Config, DESHYPERNEAT},
-    state::CustomState,
-};
+use crate::deshyperneat::{conf::DESHYPERNEAT, state::CustomState};
 use evolution::neat::{
     conf::NeatConfig,
     genome::{Genome, GetCore, Node as NeatNode},

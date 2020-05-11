@@ -6,7 +6,7 @@ use crate::deshyperneat::{
 };
 use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::neat::{
-    genome::{Genome as NeatGenome, GetCore},
+    genome::{Genome as NeatGenome},
     genome_core::GenomeCore,
     node::NodeRef,
     state::InitConfig,
@@ -21,9 +21,8 @@ impl evolution::genome::Genome for Genome {
     type State = State;
 }
 
-#[derive(Clone, GetCore)]
+#[derive(Clone)]
 pub struct Genome {
-    #[core]
     pub core: NeatCore,
 }
 

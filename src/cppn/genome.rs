@@ -1,7 +1,7 @@
 use crate::cppn::{conf::CPPN, node::Node};
 use evolution::neat::{
     conf::NeatConfig,
-    genome::{Genome as NeatGenome, GetCore},
+    genome::Genome as NeatGenome,
     genome_core::GenomeCore,
     link::LinkCore,
     node::NodeRef,
@@ -12,9 +12,8 @@ use rand::Rng;
 
 pub type NeatCore = GenomeCore<Node, LinkCore>;
 
-#[derive(Clone, GetCore)]
+#[derive(Clone)]
 pub struct Genome {
-    #[core]
     pub core: NeatCore,
 }
 
@@ -72,7 +71,7 @@ impl NeatGenome<NeatConfig, StateCore> for Genome {
     }
 
     fn distance(&self, config: &NeatConfig, other: &Self) -> f64 {
-        self.get_core().distance(config, other.get_core())
+        self.core.distance(config, &other.core)
     }
 }
 

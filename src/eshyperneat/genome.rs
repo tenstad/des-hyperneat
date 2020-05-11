@@ -1,7 +1,7 @@
 use crate::cppn::{genome::Genome, node::Node as CppnNode};
 use evolution::neat::{
     conf::{ConfigProvider, NeatConfig},
-    genome::{Genome as NeatGenome, GetCore, Node as NeatNode},
+    genome::{Genome as NeatGenome, Node as NeatNode},
     link::LinkCore,
     node::{NodeCore, NodeRef},
     state::{InitConfig, StateCore, StateProvider},
@@ -17,7 +17,7 @@ fn insert_link(
 ) {
     let innovation = state.get_connect_innovation(from, to);
     genome
-        .get_core_mut()
+        .core
         .insert_link(LinkCore::new(from, to, weight, innovation));
 }
 
@@ -34,7 +34,7 @@ fn split_link(
 ) -> NodeRef {
     let innovation = state.get_split_innovation(
         genome
-            .get_core()
+            .core
             .links
             .get(&(from, to))
             .expect("cannot split nonexisting link")
@@ -42,7 +42,7 @@ fn split_link(
     );
     let new_node = NodeRef::Hidden(innovation.node_number);
 
-    genome.get_core_mut().split_link(
+    genome.core.split_link(
         config,
         from,
         to,
@@ -50,27 +50,13 @@ fn split_link(
         innovation.innovation_number,
         state,
     );
-    let hidden_node = genome
-        .get_core_mut()
-        .hidden_nodes
-        .get_mut(&new_node)
-        .unwrap();
+    let hidden_node = genome.core.hidden_nodes.get_mut(&new_node).unwrap();
     hidden_node.activation = activation;
     hidden_node.bias = bias;
 
-    genome
-        .get_core_mut()
-        .links
-        .get_mut(&(from, new_node))
-        .unwrap()
-        .weight = weight;
+    genome.core.links.get_mut(&(from, new_node)).unwrap().weight = weight;
 
-    genome
-        .get_core_mut()
-        .links
-        .get_mut(&(new_node, to))
-        .unwrap()
-        .weight = weight2;
+    genome.core.links.get_mut(&(new_node, to)).unwrap().weight = weight2;
 
     new_node
 }
@@ -138,7 +124,7 @@ pub fn insert_identity(
     insert_link(genome, state, NodeRef::Input(3), hidden_y, -7.5);
 
     let output = genome
-        .get_core_mut()
+        .core
         .outputs
         .get_mut(&NodeRef::Output(output_id))
         .unwrap();
