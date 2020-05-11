@@ -11,9 +11,9 @@ pub struct Organism<G, S> {
 }
 
 impl<G: Genome, S> Organism<G, S> {
-    pub fn new(init_config: &G::InitConfig, state: &mut G::State) -> Self {
+    pub fn new(config: &G::Config, init_config: &G::InitConfig, state: &mut G::State) -> Self {
         Self {
-            genome: G::new(init_config, state),
+            genome: G::new(config, init_config, state),
             fitness: None,
             adjusted_fitness: None,
             stats: None,
@@ -22,9 +22,10 @@ impl<G: Genome, S> Organism<G, S> {
     }
 
     /// Breed organism with other organism
-    pub fn crossover(&self, other: &Self) -> Self {
+    pub fn crossover(&self, config: &G::Config, other: &Self) -> Self {
         Organism {
             genome: self.genome.crossover(
+                config,
                 &other.genome,
                 &self.fitness.unwrap(),
                 &other.fitness.unwrap(),
@@ -42,13 +43,13 @@ impl<G: Genome, S> Organism<G, S> {
     }
 
     /// Mutate organism
-    pub fn mutate(&mut self, state: &mut G::State) {
-        self.genome.mutate(state);
+    pub fn mutate(&mut self, config: &G::Config, state: &mut G::State) {
+        self.genome.mutate(config, state);
     }
 
     /// Genetic distance to other organism
-    pub fn distance(&self, other: &Self) -> f64 {
-        self.genome.distance(&other.genome)
+    pub fn distance(&self, config: &G::Config, other: &Self) -> f64 {
+        self.genome.distance(config, &other.genome)
     }
 
     /// Produce an elite for the next generation

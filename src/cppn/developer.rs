@@ -123,6 +123,7 @@ mod tests {
     use super::*;
     use crate::cppn::genome::Genome as CppnGenome;
     use evolution::neat::{
+        conf::NeatConfig,
         genome::Genome,
         link::LinkCore,
         state::{InitConfig, StateCore},
@@ -132,12 +133,13 @@ mod tests {
     #[test]
     fn test_develop() {
         let mut state = StateCore::default();
-        let mut genome = CppnGenome::new(&InitConfig::new(4, 2), &mut state);
+        let config = NeatConfig::default();
+        let mut genome = CppnGenome::new(&config, &InitConfig::new(4, 2), &mut state);
         let link = LinkCore::new(NodeRef::Input(1), NodeRef::Output(1), 3.0, 0);
 
         let core = genome.get_core_mut();
         core.insert_link(link.clone());
-        core.split_link(link.from, link.to, 0, 1, &mut state);
+        core.split_link(&config, link.from, link.to, 0, 1, &mut state);
 
         core.inputs.get_mut(&NodeRef::Input(1)).unwrap().activation = Activation::None;
         core.hidden_nodes

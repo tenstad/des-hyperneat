@@ -21,6 +21,10 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Neat {
     type Developer = Developer;
     type Logger = Logger;
 
+    fn genome_config(_: &EnvironmentDescription) -> conf::NeatConfig {
+        conf::NeatConfig::default()
+    }
+
     fn genome_init_config(e: &EnvironmentDescription) -> state::InitConfig {
         state::InitConfig::new(e.inputs, e.outputs)
     }

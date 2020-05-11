@@ -9,8 +9,10 @@ pub mod search;
 use crate::cppn::genome::Genome;
 use crate::eshyperneat::{developer::Developer, log::Logger};
 use evolution::{
-    algorithm::Algorithm, environment::Environment, environment::EnvironmentDescription, evolve,
-    neat::state::InitConfig,
+    algorithm::Algorithm,
+    environment::{Environment, EnvironmentDescription},
+    evolve,
+    neat::{conf::NeatConfig, state::InitConfig},
 };
 use network::execute::Executor;
 
@@ -20,6 +22,10 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Eshyperneat {
     type Genome = Genome;
     type Developer = Developer;
     type Logger = Logger;
+
+    fn genome_config(_: &EnvironmentDescription) -> NeatConfig {
+        NeatConfig::default()
+    }
 
     fn genome_init_config(_: &EnvironmentDescription) -> InitConfig {
         InitConfig::new(4, 2)

@@ -37,9 +37,14 @@ impl<G: Genome, S> Species<G, S> {
     }
 
     /// Determine wether a new organism is compatible
-    pub fn is_compatible(&mut self, other: &Organism<G, S>, config: &PopulationConfig) -> bool {
+    pub fn is_compatible(
+        &mut self,
+        population_config: &PopulationConfig,
+        genome_config: &G::Config,
+        other: &Organism<G, S>,
+    ) -> bool {
         if let Some(organism) = self.organisms.first() {
-            organism.distance(other) < config.speciation_threshold
+            organism.distance(genome_config, other) < population_config.speciation_threshold
         } else {
             true // All organisms are compatible if the species is empty
         }

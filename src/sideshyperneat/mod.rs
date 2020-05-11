@@ -23,6 +23,10 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Sideshyperneat {
     type Developer = Developer;
     type Logger = Logger;
 
+    fn genome_config(_: &EnvironmentDescription) -> conf::Config {
+        conf::Config::default()
+    }
+
     fn genome_init_config(_: &EnvironmentDescription) -> InitConfig {
         InitConfig::new(3, 1)
     }

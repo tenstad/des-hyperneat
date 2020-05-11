@@ -14,9 +14,10 @@ pub struct Node {
 }
 
 impl NeatNode for Node {
+    type Config = ();
     type State = State;
 
-    fn new(core: NodeCore, state: &mut Self::State) -> Self {
+    fn new(_: &Self::Config, core: NodeCore, state: &mut Self::State) -> Self {
         let innovation = if let NodeRef::Hidden(id) = core.node_ref {
             state
                 .topology_state
@@ -39,7 +40,13 @@ impl NeatNode for Node {
         Self::new(core, 1, innovation)
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(
+        &self,
+        _: &Self::Config,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self {
         assert_eq!(self.cppn_output_id, other.cppn_output_id);
 
         Self {
@@ -53,7 +60,7 @@ impl NeatNode for Node {
         }
     }
 
-    fn distance(&self, other: &Self) -> f64 {
+    fn distance(&self, _: &Self::Config, other: &Self) -> f64 {
         let mut distance = self.core.distance(&other.core);
         distance += (self.depth as f64 - other.depth as f64).abs().tanh();
         distance

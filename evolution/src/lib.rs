@@ -30,16 +30,19 @@ use population::Population;
 
 pub fn evolve<E: Environment + 'static, A: Algorithm<E>>() {
     let environment = &E::default();
+    let environment_description = environment.description();
 
-    let config = PopulationConfig::init().unwrap();
-    let init_config = A::genome_init_config(&environment.description());
-    let mut population = Population::<A::Genome, E::Stats>::new(config, &init_config);
+    let population_config = PopulationConfig::init().unwrap();
+    let genome_config = A::genome_config(&environment_description);
+    let init_config = A::genome_init_config(&environment_description);
+    let mut population =
+        Population::<A::Genome, E::Stats>::new(population_config, genome_config, &init_config);
 
     let evaluator = MultiEvaluator::<A::Genome, E>::new::<A::Developer>(
-        population.config.population_size,
+        population.population_config.population_size,
         EVOLUTION.thread_count,
     );
-    let mut logger = A::Logger::from(environment.description());
+    let mut logger = A::Logger::from(environment_description);
 
     for i in 1..EVOLUTION.iterations {
         population.evaluate(&evaluator);

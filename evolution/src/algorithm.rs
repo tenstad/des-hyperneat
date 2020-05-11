@@ -8,5 +8,6 @@ pub trait Algorithm<E: Environment> {
     type Developer: Develop<Self::Genome, E::Phenotype>;
     type Logger: Log<Self::Genome, E::Stats>;
 
+    fn genome_config(e: &EnvironmentDescription) -> <Self::Genome as Genome>::Config;
     fn genome_init_config(e: &EnvironmentDescription) -> <Self::Genome as Genome>::InitConfig;
 }

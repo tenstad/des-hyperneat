@@ -1,6 +1,7 @@
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::{
-    desgenome::DesGenome, genome::Genome as DesGenomeStruct, link::Link, node::Node, state::State,
+    conf::Config as DesConfig, desgenome::DesGenome, genome::Genome as DesGenomeStruct, link::Link,
+    node::Node, state::State,
 };
 use crate::sideshyperneat::genome::Genome;
 use evolution::{
@@ -14,8 +15,9 @@ impl DesGenome for Genome {
     type Link = Link;
 
     fn init_desgenome(&mut self) {
+        let config = DesConfig::default();
         let mut des_core =
-            GenomeCore::<Node, Link>::new(&InitConfig::new(0, 0), &mut State::default());
+            GenomeCore::<Node, Link>::new(&config, &InitConfig::new(0, 0), &mut State::default());
 
         des_core.connections = self.topology.connections.clone();
         des_core.inputs = self

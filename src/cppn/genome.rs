@@ -1,5 +1,6 @@
 use crate::cppn::{conf::CPPN, node::Node};
 use evolution::neat::{
+    conf::NeatConfig,
     genome::{Genome as NeatGenome, GetCore},
     genome_core::GenomeCore,
     link::LinkCore,
@@ -18,29 +19,38 @@ pub struct Genome {
 }
 
 impl evolution::genome::Genome for Genome {
+    type Config = NeatConfig;
     type InitConfig = InitConfig;
     type State = StateCore;
 }
 
-impl NeatGenome<StateCore> for Genome {
+impl NeatGenome<NeatConfig, StateCore> for Genome {
     type Init = InitConfig;
     type Node = Node;
     type Link = LinkCore;
 
-    fn new(init_config: &InitConfig, state: &mut StateCore) -> Self {
+    fn new(config: &NeatConfig, init_config: &InitConfig, state: &mut StateCore) -> Self {
         Self {
-            core: NeatCore::new(init_config, state),
+            core: NeatCore::new(config, init_config, state),
         }
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(
+        &self,
+        config: &NeatConfig,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self {
         Self {
-            core: self.core.crossover(&other.core, fitness, other_fitness),
+            core: self
+                .core
+                .crossover(config, &other.core, fitness, other_fitness),
         }
     }
 
-    fn mutate(&mut self, state: &mut StateCore) {
-        self.core.mutate(state);
+    fn mutate(&mut self, config: &NeatConfig, state: &mut StateCore) {
+        self.core.mutate(config, state);
 
         let mut rng = rand::thread_rng();
 
@@ -61,8 +71,8 @@ impl NeatGenome<StateCore> for Genome {
         }
     }
 
-    fn distance(&self, other: &Self) -> f64 {
-        self.get_core().distance(other.get_core())
+    fn distance(&self, config: &NeatConfig, other: &Self) -> f64 {
+        self.get_core().distance(config, other.get_core())
     }
 }
 

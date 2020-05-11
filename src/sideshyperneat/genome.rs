@@ -1,8 +1,14 @@
 use crate::cppn::{genome::Genome as CppnGenome, node::Node as CppnNode};
 use crate::deshyperneat::genome::Genome as DesGenome;
 use crate::eshyperneat::genome::insert_identity;
-use crate::sideshyperneat::{conf::SIDESHYPERNEAT, link::Link, node::Node, state::State};
+use crate::sideshyperneat::{
+    conf::{Config, SIDESHYPERNEAT},
+    link::Link,
+    node::Node,
+    state::State,
+};
 use evolution::neat::{
+    conf::ConfigProvider,
     genome::{Genome as NeatGenome, GetCore, Node as NeatNode},
     genome_core::GenomeCore,
     link::LinkCore,
@@ -12,6 +18,7 @@ use evolution::neat::{
 use rand::Rng;
 
 impl evolution::genome::Genome for Genome {
+    type Config = Config;
     type InitConfig = InitConfig;
     type State = State;
 }
@@ -26,13 +33,13 @@ pub struct Genome {
     pub des_genome: Option<DesGenome>,
 }
 
-impl NeatGenome<State> for Genome {
+impl NeatGenome<Config, State> for Genome {
     type Init = InitConfig;
     type Node = CppnNode;
     type Link = LinkCore;
 
-    fn new(_init_config: &Self::Init, state: &mut State) -> Self {
-        let mut topology = TopologyCore::new(&InitConfig::new(3, 1), state);
+    fn new(config: &Config, _init_config: &Self::Init, state: &mut State) -> Self {
+        let mut topology = TopologyCore::new(&config.topology, &InitConfig::new(3, 1), state);
         topology
             .get_node_mut(&NodeRef::Input(0))
             .unwrap()
@@ -50,27 +57,32 @@ impl NeatGenome<State> for Genome {
             .unwrap()
             .cppn_output_id = 3;
         Self {
-            cppn: CppnGenome::new(&InitConfig::new(4, 2), &mut state.cppn_state),
+            cppn: CppnGenome::new(&config.cppn, &InitConfig::new(4, 2), &mut state.cppn_state),
             topology,
             des_genome: None,
         }
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(&self, config: &Config, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
         Self {
-            cppn: self.cppn.crossover(&other.cppn, fitness, other_fitness),
-            topology: self
-                .topology
-                .crossover(&other.topology, fitness, other_fitness),
+            cppn: self
+                .cppn
+                .crossover(&config.cppn, &other.cppn, fitness, other_fitness),
+            topology: self.topology.crossover(
+                &config.topology,
+                &other.topology,
+                fitness,
+                other_fitness,
+            ),
             des_genome: None,
         }
     }
 
-    fn mutate(&mut self, state: &mut State) {
+    fn mutate(&mut self, config: &Config, state: &mut State) {
         let mut rng = rand::thread_rng();
 
         if rng.gen::<f64>() < SIDESHYPERNEAT.topology_mutation_probability {
-            self.topology.mutate(state);
+            self.topology.mutate(&config.topology, state);
         }
 
         // Add all missing cppn output nodes
@@ -95,20 +107,26 @@ impl NeatGenome<State> for Genome {
                 .contains_key(&NodeRef::Output(*output_id))
             {
                 if *is_identity {
-                    insert_identity(&mut self.cppn, &mut state.cppn_state, *output_id)
+                    insert_identity(
+                        &config.cppn,
+                        &mut self.cppn,
+                        &mut state.cppn_state,
+                        *output_id,
+                    )
                 } else {
-                    self.add_cppn_output(*output_id, state);
+                    self.add_cppn_output(config, *output_id, state);
                 }
             }
         }
 
         if rng.gen::<f64>() < SIDESHYPERNEAT.cppn_mutation_probability {
-            self.cppn.mutate(&mut state.cppn_state);
+            self.cppn.mutate(&config.cppn, &mut state.cppn_state);
         }
     }
 
-    fn distance(&self, other: &Self) -> f64 {
-        0.5 * self.cppn.distance(&other.cppn) + 0.5 * self.topology.distance(&other.topology)
+    fn distance(&self, config: &Config, other: &Self) -> f64 {
+        0.5 * self.cppn.distance(&config.cppn, &other.cppn)
+            + 0.5 * self.topology.distance(&config.topology, &other.topology)
     }
 }
 
@@ -123,11 +141,12 @@ impl GetCore<GenomeCore<CppnNode, LinkCore>> for Genome {
 }
 
 impl Genome {
-    fn add_cppn_output(&mut self, id: usize, state: &mut State) {
+    fn add_cppn_output(&mut self, config: &Config, id: usize, state: &mut State) {
         let node_ref = NodeRef::Output(id);
         self.cppn.core.outputs.insert(
             node_ref,
             CppnNode::new(
+                &config.cppn.get_node_config(),
                 NodeCore::new(NodeRef::Output(id)),
                 state.cppn_state.get_node_state_mut(),
             ),

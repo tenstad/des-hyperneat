@@ -2,6 +2,7 @@ use crate::codeshyperneat::{link::Link, node::Node, state::State};
 use crate::cppn::genome::Genome as CppnGenome;
 use evolution::{
     neat::{
+        conf::NeatConfig,
         genome::{Genome as NeatGenome, GetCore},
         genome_core::GenomeCore,
         node::NodeRef,
@@ -15,6 +16,7 @@ use std::collections::HashMap;
 type NeatCore = GenomeCore<Node, Link>;
 
 impl evolution::genome::Genome for Genome {
+    type Config = NeatConfig;
     type InitConfig = InitConfig;
     type State = State;
 }
@@ -25,25 +27,33 @@ pub struct Genome {
     pub core: NeatCore,
 }
 
-impl NeatGenome<State> for Genome {
+impl NeatGenome<NeatConfig, State> for Genome {
     type Init = InitConfig;
     type Node = Node;
     type Link = Link;
 
-    fn new(init_config: &Self::Init, state: &mut State) -> Self {
+    fn new(config: &NeatConfig, init_config: &Self::Init, state: &mut State) -> Self {
         Self {
-            core: GenomeCore::<Self::Node, Self::Link>::new(init_config, state),
+            core: GenomeCore::<Self::Node, Self::Link>::new(config, init_config, state),
         }
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(
+        &self,
+        config: &NeatConfig,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self {
         Self {
-            core: self.core.crossover(&other.core, fitness, other_fitness),
+            core: self
+                .core
+                .crossover(config, &other.core, fitness, other_fitness),
         }
     }
 
-    fn mutate(&mut self, state: &mut State) {
-        self.core.mutate(state);
+    fn mutate(&mut self, config: &NeatConfig, state: &mut State) {
+        self.core.mutate(config, state);
 
         let mut rng = rand::thread_rng();
 
@@ -100,8 +110,8 @@ impl NeatGenome<State> for Genome {
         }
     }
 
-    fn distance(&self, other: &Self) -> f64 {
-        self.core.distance(&other.core)
+    fn distance(&self, config: &NeatConfig, other: &Self) -> f64 {
+        self.core.distance(config, &other.core)
     }
 }
 

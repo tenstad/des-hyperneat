@@ -48,25 +48,32 @@ impl LinkCore {
 }
 
 impl Link for LinkCore {
+    type Config = ();
     type State = ();
 
-    fn new(core: LinkCore, _: &mut Self::State) -> Self {
+    fn new(_: &Self::Config, core: LinkCore, _: &mut Self::State) -> Self {
         core
     }
 
-    fn identity(core: LinkCore, _: &mut Self::State) -> Self {
+    fn identity(_: &Self::Config, core: LinkCore, _: &mut Self::State) -> Self {
         core
     }
 
-    fn clone_with(&self, core: LinkCore, _: &mut Self::State) -> Self {
+    fn clone_with(&self, _: &Self::Config, core: LinkCore, _: &mut Self::State) -> Self {
         core
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(
+        &self,
+        _: &Self::Config,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self {
         self.crossover(&other, fitness, other_fitness)
     }
 
-    fn distance(&self, other: &Self) -> f64 {
+    fn distance(&self, _: &Self::Config, other: &Self) -> f64 {
         self.distance(&other)
     }
 }

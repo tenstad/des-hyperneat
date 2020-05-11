@@ -15,9 +15,10 @@ pub struct Node {
 }
 
 impl NeatNode for Node {
+    type Config = ();
     type State = ();
 
-    fn new(core: NodeCore, _: &mut Self::State) -> Self {
+    fn new(_: &Self::Config, core: NodeCore, _: &mut Self::State) -> Self {
         Self {
             core,
             bias: 0.0,
@@ -29,7 +30,13 @@ impl NeatNode for Node {
         }
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(
+        &self,
+        _: &Self::Config,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self {
         Self {
             core: self.core.crossover(&other.core, fitness, other_fitness),
             bias: (self.bias + other.bias) / 2.0,
@@ -41,7 +48,7 @@ impl NeatNode for Node {
         }
     }
 
-    fn distance(&self, other: &Self) -> f64 {
+    fn distance(&self, _: &Self::Config, other: &Self) -> f64 {
         let mut distance = self.core.distance(&other.core);
         distance += 0.5 * ((self.activation != other.activation) as u8) as f64;
         distance += 0.5 * (self.bias - other.bias).abs().tanh();

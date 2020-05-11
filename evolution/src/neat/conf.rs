@@ -1,8 +1,7 @@
 use envconfig::Envconfig;
-use lazy_static::lazy_static;
 
-#[derive(Envconfig)]
-pub struct Conf {
+#[derive(Envconfig, Clone)]
+pub struct NeatConfig {
     #[envconfig(from = "ADD_NODE_PROBABILITY", default = "0.05")]
     pub add_node_probability: f64,
 
@@ -28,6 +27,26 @@ pub struct Conf {
     pub link_distance_weight: f64,
 }
 
-lazy_static! {
-    pub static ref NEAT: Conf = Conf::init().unwrap();
+impl Default for NeatConfig {
+    fn default() -> Self {
+        Self::init().unwrap()
+    }
+}
+
+pub trait ConfigProvider<N, L>: Clone {
+    fn get_core(&self) -> &NeatConfig;
+    fn get_node_config(&self) -> &N;
+    fn get_link_config(&self) -> &L;
+}
+
+impl ConfigProvider<(), ()> for NeatConfig {
+    fn get_core(&self) -> &NeatConfig {
+        self
+    }
+    fn get_node_config(&self) -> &() {
+        &()
+    }
+    fn get_link_config(&self) -> &() {
+        &()
+    }
 }

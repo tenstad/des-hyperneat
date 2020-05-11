@@ -8,7 +8,8 @@ use rand::Rng;
 use std::{collections::HashMap, f64, fmt};
 
 pub struct Population<G: Genome, S> {
-    pub config: PopulationConfig,
+    pub population_config: PopulationConfig,
+    pub genome_config: G::Config,
     pub species: HashMap<usize, Species<G, S>>,
     pub extinct_species: HashMap<usize, Species<G, S>>,
     pub next_id: usize,
@@ -16,9 +17,15 @@ pub struct Population<G: Genome, S> {
 }
 
 impl<G: Genome, S> Population<G, S> {
-    pub fn new(config: PopulationConfig, init_config: &G::InitConfig) -> Self {
+    pub fn new(
+        population_config: PopulationConfig,
+        genome_config: G::Config,
+        init_config: &G::InitConfig,
+    ) -> Self {
+        let genome_config_clone = genome_config.clone();
         let mut population = Population {
-            config,
+            population_config,
+            genome_config,
             species: HashMap::new(),
             extinct_species: HashMap::new(),
             next_id: 0,
@@ -26,8 +33,11 @@ impl<G: Genome, S> Population<G, S> {
         };
 
         let mut state = G::State::default();
-        for _ in 0..population.config.population_size {
-            population.push(Organism::<G, S>::new(&init_config, &mut state), false);
+        for _ in 0..population.population_config.population_size {
+            population.push(
+                Organism::<G, S>::new(&genome_config_clone, &init_config, &mut state),
+                false,
+            );
         }
         population.state = state;
 
@@ -54,7 +64,7 @@ impl<G: Genome, S> Population<G, S> {
     /// Find first species compatible with organism
     fn compatible_species(&mut self, organism: &Organism<G, S>) -> Option<&mut Species<G, S>> {
         for species in self.species.values_mut() {
-            if species.is_compatible(&organism, &self.config) {
+            if species.is_compatible(&self.population_config, &self.genome_config, &organism) {
                 return Some(species);
             }
         }
@@ -67,21 +77,22 @@ impl<G: Genome, S> Population<G, S> {
         // Adjust fitnesses based on age, stagnation and apply fitness sharing
         // Also sorts organisms by descending fitness
         for species in self.species.values_mut() {
-            species.adjust_fitness(&self.config);
+            species.adjust_fitness(&self.population_config);
         }
 
         // Average fitness of all organisms
-        let elites = self.config.global_elites + self.config.guaranteed_elites * self.species.len();
+        let elites = self.population_config.global_elites
+            + self.population_config.guaranteed_elites * self.species.len();
         // Subtract number of guaranteed elites from pop size, reserving these slots for elites.
         let avg_fitness: f64 = self
             .iter()
             .map(|organism| organism.adjusted_fitness.unwrap())
             .sum::<f64>()
-            / (self.config.population_size - elites) as f64;
+            / (self.population_config.population_size - elites) as f64;
 
         // Calculate number of new offsprings to produce within each new species
         for species in self.species.values_mut() {
-            species.calculate_offsprings(avg_fitness, &self.config);
+            species.calculate_offsprings(avg_fitness, &self.population_config);
         }
 
         // The total size of the next population before making up for floting point precicsion
@@ -103,13 +114,13 @@ impl<G: Genome, S> Population<G, S> {
 
         // Distribute missing offsprings amongs species
         // in order of floating distance from additional offspring
-        while new_population_size < self.config.population_size {
+        while new_population_size < self.population_config.population_size {
             for species_id in species_ids.iter() {
                 let mut species = self.species.get_mut(species_id).unwrap();
                 species.offsprings = species.offsprings.floor() + 1.0;
                 new_population_size += 1;
 
-                if new_population_size == self.config.population_size {
+                if new_population_size == self.population_config.population_size {
                     break;
                 }
             }
@@ -125,14 +136,14 @@ impl<G: Genome, S> Population<G, S> {
         let mut elites_distributed = 0;
 
         // Distribute elites
-        while elites_distributed < self.config.global_elites {
+        while elites_distributed < self.population_config.global_elites {
             for species_id in species_ids.iter() {
                 let mut species = self.species.get_mut(species_id).unwrap();
                 if species.elites < species.len() {
                     species.elites += 1;
                     elites_distributed += 1;
 
-                    if elites_distributed == self.config.global_elites {
+                    if elites_distributed == self.population_config.global_elites {
                         break;
                     }
                 }
@@ -144,13 +155,13 @@ impl<G: Genome, S> Population<G, S> {
                 .values()
                 .map(|s| s.offsprings.floor() as usize + s.elites)
                 .sum::<usize>(),
-            self.config.population_size,
+            self.population_config.population_size,
             "wrong number of planned individuals in next population"
         );
 
         // Kill individuals of low performance, not allowed to reproduce
         for species in self.species.values_mut() {
-            species.retain_best(&self.config);
+            species.retain_best(&self.population_config);
         }
 
         // Increase the age of and lock all species, making current organisms old
@@ -162,7 +173,7 @@ impl<G: Genome, S> Population<G, S> {
             let mut species = self.species.get_mut(i).unwrap();
             // Steal elites from number of offsprings
             let elites_taken_from_offspring = self
-                .config
+                .population_config
                 .elites_from_offspring
                 .min(species.offsprings.floor() as usize)
                 .min(species.len());
@@ -184,28 +195,30 @@ impl<G: Genome, S> Population<G, S> {
             // Breed new organisms
             for _ in 0..reproductions {
                 let error = "unable to gather organism";
-                let father = if rng.gen::<f64>() < self.config.interspecies_reproduction_probability
+                let father = if rng.gen::<f64>()
+                    < self.population_config.interspecies_reproduction_probability
                 {
                     // Interspecies breeding
-                    self.tournament_select(self.config.interspecies_tournament_size)
+                    self.tournament_select(self.population_config.interspecies_tournament_size)
                         .expect(error)
                 } else {
                     // Breeding within species
                     self.species[i]
-                        .tournament_select(self.config.tournament_size)
+                        .tournament_select(self.population_config.tournament_size)
                         .expect(error)
                 };
 
-                let mut child = if rng.gen::<f64>() < self.config.asexual_reproduction_probability {
-                    father.as_elite()
-                } else {
-                    let mother = self.species[i]
-                        .tournament_select(self.config.tournament_size)
-                        .expect(error);
-                    mother.crossover(father)
-                };
+                let mut child =
+                    if rng.gen::<f64>() < self.population_config.asexual_reproduction_probability {
+                        father.as_elite()
+                    } else {
+                        let mother = self.species[i]
+                            .tournament_select(self.population_config.tournament_size)
+                            .expect(error);
+                        mother.crossover(&self.genome_config, father)
+                    };
 
-                child.mutate(&mut self.state);
+                child.mutate(&self.genome_config, &mut self.state);
                 self.push(child, true);
             }
         }
@@ -226,7 +239,7 @@ impl<G: Genome, S> Population<G, S> {
         // Verify correct number of individuals in new population
         assert_eq!(
             self.iter().count(),
-            self.config.population_size,
+            self.population_config.population_size,
             "wrong number of individuals in population"
         );
     }
@@ -234,7 +247,7 @@ impl<G: Genome, S> Population<G, S> {
     pub fn mutate(&mut self) {
         for species in self.species.values_mut() {
             for organism in species.iter_mut() {
-                organism.mutate(&mut self.state);
+                organism.mutate(&self.genome_config, &mut self.state);
             }
         }
     }

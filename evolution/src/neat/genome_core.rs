@@ -1,5 +1,5 @@
 use crate::neat::{
-    conf::NEAT,
+    conf::ConfigProvider,
     genome::{Genome, GetCore, Link, Node},
     link::LinkCore,
     node::{NodeCore, NodeRef},
@@ -19,43 +19,51 @@ pub struct GenomeCore<N, L> {
     pub connections: connection::Connections<NodeRef, ()>, // Fast connection lookup
 }
 
-impl<N, L, S> Genome<S> for GenomeCore<N, L>
+impl<N, L, C, S> Genome<C, S> for GenomeCore<N, L>
 where
     N: Node,
     L: Link,
+    C: ConfigProvider<N::Config, L::Config>,
     S: StateProvider<N::State, L::State>,
 {
     type Init = InitConfig;
     type Node = N;
     type Link = L;
 
-    fn mutate(&mut self, state: &mut S) {
+    fn mutate(&mut self, config: &C, state: &mut S) {
+        let neat_config = config.get_core();
         let mut rng = rand::thread_rng();
 
-        if rng.gen::<f64>() < NEAT.add_node_probability {
-            self.mutation_add_node(state);
+        if rng.gen::<f64>() < neat_config.add_node_probability {
+            self.mutation_add_node(config, state);
         }
 
-        if rng.gen::<f64>() < NEAT.add_connection_probability {
-            self.mutation_add_connection(state);
+        if rng.gen::<f64>() < neat_config.add_connection_probability {
+            self.mutation_add_connection(config, state);
         }
 
-        if rng.gen::<f64>() < NEAT.disable_connection_probability {
+        if rng.gen::<f64>() < neat_config.disable_connection_probability {
             self.mutation_disable_connection();
         }
 
-        if rng.gen::<f64>() < NEAT.mutate_link_weight_probability {
-            self.mutate_link_weight();
+        if rng.gen::<f64>() < neat_config.mutate_link_weight_probability {
+            self.mutate_link_weight(config);
         }
     }
 
     /// Generate genome with default activation and no connections
-    fn new(init_config: &InitConfig, state: &mut S) -> Self {
+    fn new(config: &C, init_config: &InitConfig, state: &mut S) -> Self {
+        let node_config = config.get_node_config();
+
         let inputs: HashMap<NodeRef, N> = (0..init_config.inputs)
             .map(|i| {
                 (
                     NodeRef::Input(i),
-                    N::new(NodeCore::new(NodeRef::Input(i)), state.get_node_state_mut()),
+                    N::new(
+                        node_config,
+                        NodeCore::new(NodeRef::Input(i)),
+                        state.get_node_state_mut(),
+                    ),
                 )
             })
             .collect();
@@ -65,6 +73,7 @@ where
                 (
                     NodeRef::Output(i),
                     N::new(
+                        node_config,
                         NodeCore::new(NodeRef::Output(i)),
                         state.get_node_state_mut(),
                     ),
@@ -81,12 +90,12 @@ where
         }
     }
 
-    fn distance(&self, other: &Self) -> f64 {
-        Self::distance(self, other)
+    fn distance(&self, config: &C, other: &Self) -> f64 {
+        Self::distance(self, config, other)
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
-        Self::crossover(self, other, fitness, other_fitness)
+    fn crossover(&self, config: &C, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+        Self::crossover(self, config, other, fitness, other_fitness)
     }
 }
 
@@ -106,7 +115,15 @@ where
     L: Link,
 {
     // Genetic distance between two genomes
-    pub fn distance(&self, other: &Self) -> f64 {
+    pub fn distance<C: ConfigProvider<N::Config, L::Config>>(
+        &self,
+        config: &C,
+        other: &Self,
+    ) -> f64 {
+        let config_core = config.get_core();
+        let node_config = config.get_node_config();
+        let link_config = config.get_link_config();
+
         let mut link_differences: f64 = 0.0; // Number of links present in only one of the genomes
         let mut link_distance: f64 = 0.0; // Total distance between links present in both genomes
         let mut link_count = self.links.len() as f64; // Number of unique links between the two genomes
@@ -120,7 +137,7 @@ where
 
         for (link_ref, link) in self.links.iter() {
             if let Some(link2) = other.links.get(link_ref) {
-                link_distance += link.distance(link2); // Distance normalized between 0 and 1
+                link_distance += link.distance(link_config, link2); // Distance normalized between 0 and 1
             } else {
                 link_differences += 1.0;
             }
@@ -137,7 +154,7 @@ where
         let mut node_distance = 0.0;
         let mut node_count = self.hidden_nodes.len() as f64;
 
-        if !NEAT.only_hidden_node_distance {
+        if !config_core.only_hidden_node_distance {
             node_count += (self.inputs.len() + self.outputs.len()) as f64;
         }
         for node_ref in other.hidden_nodes.keys() {
@@ -145,7 +162,7 @@ where
                 node_differences += 1.0;
             }
         }
-        if !NEAT.only_hidden_node_distance {
+        if !config_core.only_hidden_node_distance {
             for node_ref in other.inputs.keys() {
                 if !self.inputs.contains_key(node_ref) {
                     node_differences += 1.0;
@@ -161,22 +178,22 @@ where
 
         for (node_ref, node) in self.hidden_nodes.iter() {
             if let Some(node2) = other.hidden_nodes.get(node_ref) {
-                node_distance += node.distance(node2);
+                node_distance += node.distance(node_config, node2);
             } else {
                 node_differences += 1.0;
             }
         }
-        if !NEAT.only_hidden_node_distance {
+        if !config_core.only_hidden_node_distance {
             for (node_ref, node) in self.inputs.iter() {
                 if let Some(node2) = other.inputs.get(node_ref) {
-                    node_distance += node.distance(node2);
+                    node_distance += node.distance(node_config, node2);
                 } else {
                     node_differences += 1.0;
                 }
             }
             for (node_ref, node) in self.outputs.iter() {
                 if let Some(node2) = other.outputs.get(node_ref) {
-                    node_distance += node.distance(node2);
+                    node_distance += node.distance(node_config, node2);
                 } else {
                     node_differences += 1.0;
                 }
@@ -189,10 +206,20 @@ where
             (node_differences + node_distance) / node_count
         };
 
-        NEAT.link_distance_weight * link_dist + (1.0 - NEAT.link_distance_weight) * node_dist
+        config_core.link_distance_weight * link_dist
+            + (1.0 - config_core.link_distance_weight) * node_dist
     }
 
-    pub fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    pub fn crossover<C: ConfigProvider<N::Config, L::Config>>(
+        &self,
+        config: &C,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self {
+        let node_config = config.get_node_config();
+        let link_config = config.get_link_config();
+
         // Let parent1 be the fitter parent
         let (parent1, parent2) = if fitness > other_fitness {
             (self, other)
@@ -209,7 +236,7 @@ where
                 .creates_cycle(link.get_core().from, link.get_core().to)
             {
                 if let Some(link2) = parent2.links.get(link_ref) {
-                    genome.insert_link(link.crossover(link2, fitness, other_fitness));
+                    genome.insert_link(link.crossover(link_config, link2, fitness, other_fitness));
                 } else {
                     genome.insert_link(link.clone());
                 }
@@ -219,9 +246,10 @@ where
         // Copy nodes only in fitter parent, perform crossover if in both parents
         for (node_ref, node) in parent1.inputs.iter() {
             if let Some(node2) = parent2.inputs.get(node_ref) {
-                genome
-                    .inputs
-                    .insert(*node_ref, node.crossover(node2, fitness, other_fitness));
+                genome.inputs.insert(
+                    *node_ref,
+                    node.crossover(node_config, node2, fitness, other_fitness),
+                );
             } else {
                 genome.inputs.insert(*node_ref, node.clone());
             }
@@ -229,9 +257,10 @@ where
 
         for (node_ref, node) in parent1.hidden_nodes.iter() {
             if let Some(node2) = parent2.hidden_nodes.get(node_ref) {
-                genome
-                    .hidden_nodes
-                    .insert(*node_ref, node.crossover(node2, fitness, other_fitness));
+                genome.hidden_nodes.insert(
+                    *node_ref,
+                    node.crossover(node_config, node2, fitness, other_fitness),
+                );
             } else {
                 genome.hidden_nodes.insert(*node_ref, node.clone());
             }
@@ -239,9 +268,10 @@ where
 
         for (node_ref, node) in parent1.outputs.iter() {
             if let Some(node2) = parent2.outputs.get(node_ref) {
-                genome
-                    .outputs
-                    .insert(*node_ref, node.crossover(node2, fitness, other_fitness));
+                genome.outputs.insert(
+                    *node_ref,
+                    node.crossover(node_config, node2, fitness, other_fitness),
+                );
             } else {
                 genome.outputs.insert(*node_ref, node.clone());
             }
@@ -275,8 +305,12 @@ where
         }
     }
 
-    pub fn split_link<S: StateProvider<N::State, L::State>>(
+    pub fn split_link<
+        C: ConfigProvider<N::Config, L::Config>,
+        S: StateProvider<N::State, L::State>,
+    >(
         &mut self,
+        config: &C,
         from: NodeRef,
         to: NodeRef,
         new_node_id: usize,
@@ -307,6 +341,7 @@ where
         self.hidden_nodes.insert(
             new_node_ref,
             N::new(
+                config.get_node_config(),
                 NodeCore::new(NodeRef::Hidden(new_node_id)),
                 state.get_node_state_mut(),
             ),
@@ -324,10 +359,12 @@ where
             )
         };
         let link1 = L::identity(
+            config.get_link_config(),
             LinkCore::new(link1_details.0, link1_details.1, 1.0, link1_details.2),
             state.get_link_state_mut(),
         );
         let link2 = link.clone_with(
+            config.get_link_config(),
             LinkCore::new(
                 link2_details.0,
                 link2_details.1,
@@ -358,7 +395,8 @@ where
             .add(link.get_core().from, link.get_core().to, ());
     }
 
-    fn mutate_link_weight(&mut self) {
+    fn mutate_link_weight<C: ConfigProvider<N::Config, L::Config>>(&mut self, config: &C) {
+        let core_config = config.get_core();
         let mut rng = rand::thread_rng();
 
         // Mutate single link
@@ -366,7 +404,7 @@ where
             let link_index = rng.gen_range(0, self.links.len());
             if let Some(link) = self.links.values_mut().skip(link_index).next() {
                 link.get_core_mut().weight +=
-                    (rng.gen::<f64>() - 0.5) * 2.0 * NEAT.mutate_link_weight_size;
+                    (rng.gen::<f64>() - 0.5) * 2.0 * core_config.mutate_link_weight_size;
             }
         }
 
@@ -375,7 +413,14 @@ where
         }*/
     }
 
-    fn mutation_add_node<S: StateProvider<N::State, L::State>>(&mut self, state: &mut S) {
+    fn mutation_add_node<
+        C: ConfigProvider<N::Config, L::Config>,
+        S: StateProvider<N::State, L::State>,
+    >(
+        &mut self,
+        config: &C,
+        state: &mut S,
+    ) {
         // Select random enabled link
         if let Some(index) = self
             .links
@@ -389,6 +434,7 @@ where
             let innovation = state.get_core_mut().get_split_innovation(link.innovation);
 
             self.split_link(
+                config,
                 link.from,
                 link.to,
                 innovation.node_number,
@@ -399,7 +445,14 @@ where
     }
 
     // TODO: avoid retries
-    fn mutation_add_connection<S: StateProvider<N::State, L::State>>(&mut self, state: &mut S) {
+    fn mutation_add_connection<
+        C: ConfigProvider<N::Config, L::Config>,
+        S: StateProvider<N::State, L::State>,
+    >(
+        &mut self,
+        config: &C,
+        state: &mut S,
+    ) {
         let mut rng = rand::thread_rng();
 
         // Retry 50 times
@@ -433,10 +486,13 @@ where
                     let innovation = state.get_core_mut().get_connect_innovation(from, to);
 
                     self.insert_link(L::new(
+                        config.get_link_config(),
                         LinkCore::new(
                             from,
                             to,
-                            (rng.gen::<f64>() - 0.5) * 2.0 * NEAT.initial_link_weight_size,
+                            (rng.gen::<f64>() - 0.5)
+                                * 2.0
+                                * config.get_core().initial_link_weight_size,
                             innovation,
                         ),
                         state.get_link_state_mut(),

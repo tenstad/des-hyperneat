@@ -14,9 +14,10 @@ pub struct Node {
 }
 
 impl NeatNode for Node {
+    type Config = ();
     type State = CustomState;
 
-    fn new(core: NodeCore, state: &mut Self::State) -> Self {
+    fn new(_: &Self::Config, core: NodeCore, state: &mut Self::State) -> Self {
         let mut rng = rand::thread_rng();
         let module_species = if state.species > 0 {
             rng.gen_range(0, state.species)
@@ -31,7 +32,13 @@ impl NeatNode for Node {
         }
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(
+        &self,
+        _: &Self::Config,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self {
         Self {
             core: self.core.crossover(&other.core, fitness, other_fitness),
             module_species: if rand::thread_rng().gen::<bool>() {
@@ -47,7 +54,7 @@ impl NeatNode for Node {
         }
     }
 
-    fn distance(&self, other: &Self) -> f64 {
+    fn distance(&self, _: &Self::Config, other: &Self) -> f64 {
         let mut distance = self.core.distance(&other.core);
         distance += 0.5 * ((self.module_species != other.module_species) as u8) as f64;
         distance += 0.5 * (self.depth as f64 - other.depth as f64).abs().tanh();

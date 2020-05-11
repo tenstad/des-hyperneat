@@ -16,7 +16,7 @@ use evolution::{
     environment::{Environment, NoStats},
     evaluate::{Evaluate, MultiEvaluator},
     log::{Log, Logger},
-    neat::state::InitConfig,
+    neat::{conf::NeatConfig, state::InitConfig},
     population::Population,
 };
 use network::execute::Executor;
@@ -25,14 +25,23 @@ pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>(
     let environment = &E::default();
 
     let module_config = PopulationConfig::init().unwrap();
-    let mut modules = Population::<CppnGenome, NoStats>::new(module_config, &InitConfig::new(4, 2));
+    let genome_config = NeatConfig::default();
+    let mut modules = Population::<CppnGenome, NoStats>::new(
+        module_config,
+        genome_config,
+        &InitConfig::new(4, 2),
+    );
 
     let blueprint_config = PopulationConfig::init().unwrap();
-    let mut blueprints =
-        Population::<BlueprintGenome, E::Stats>::new(blueprint_config, &InitConfig::new(1, 1));
+    let genome_config = NeatConfig::default();
+    let mut blueprints = Population::<BlueprintGenome, E::Stats>::new(
+        blueprint_config,
+        genome_config,
+        &InitConfig::new(1, 1),
+    );
 
     let evaluator = MultiEvaluator::<CombinedGenome, E>::new::<Developer>(
-        blueprints.config.population_size,
+        blueprints.population_config.population_size,
         EVOLUTION.thread_count,
     );
     let mut logger = Logger::from(environment.description());

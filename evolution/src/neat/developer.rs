@@ -1,6 +1,7 @@
 use crate::develop::Develop;
 use crate::environment::EnvironmentDescription;
 use crate::neat::{
+    conf::NeatConfig,
     genome::{Genome, GetCore},
     link::LinkCore,
     node::{NodeCore, NodeRef},
@@ -19,7 +20,7 @@ impl From<EnvironmentDescription> for Developer {
 
 impl<G> Develop<G, Executor> for Developer
 where
-    G: Genome<StateCore, Node = NodeCore, Link = LinkCore>,
+    G: Genome<NeatConfig, StateCore, Node = NodeCore, Link = LinkCore>,
 {
     fn develop(&self, genome: G) -> Executor {
         // Sort genomes netowrk topologically

@@ -15,9 +15,10 @@ pub struct Link {
 }
 
 impl NeatLink for Link {
+    type Config = ();
     type State = State;
 
-    fn new(core: LinkCore, state: &mut Self::State) -> Self {
+    fn new(_: &Self::Config, core: LinkCore, state: &mut Self::State) -> Self {
         let innovation = core.innovation;
         Self::new(
             core,
@@ -27,7 +28,7 @@ impl NeatLink for Link {
         )
     }
 
-    fn identity(core: LinkCore, state: &mut Self::State) -> Self {
+    fn identity(_: &Self::Config, core: LinkCore, state: &mut Self::State) -> Self {
         let innovation = core.innovation;
         Self::new(
             core,
@@ -37,11 +38,17 @@ impl NeatLink for Link {
         )
     }
 
-    fn clone_with(&self, core: LinkCore, _: &mut Self::State) -> Self {
+    fn clone_with(&self, _: &Self::Config, core: LinkCore, _: &mut Self::State) -> Self {
         Self::new(core, self.depth, self.cppn_output_id, self.is_identity)
     }
 
-    fn crossover(&self, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(
+        &self,
+        _: &Self::Config,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self {
         assert_eq!(self.cppn_output_id, other.cppn_output_id);
         assert_eq!(self.is_identity, other.is_identity);
 
@@ -57,7 +64,7 @@ impl NeatLink for Link {
         }
     }
 
-    fn distance(&self, other: &Self) -> f64 {
+    fn distance(&self, _: &Self::Config, other: &Self) -> f64 {
         let mut distance = self.core.distance(&other.core);
         distance += (self.depth as f64 - other.depth as f64).abs().tanh();
         distance

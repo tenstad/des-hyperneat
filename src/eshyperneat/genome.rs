@@ -1,5 +1,6 @@
 use crate::cppn::{genome::Genome, node::Node as CppnNode};
 use evolution::neat::{
+    conf::{ConfigProvider, NeatConfig},
     genome::{Genome as NeatGenome, GetCore, Node as NeatNode},
     link::LinkCore,
     node::{NodeCore, NodeRef},
@@ -21,6 +22,7 @@ fn insert_link(
 }
 
 fn split_link(
+    config: &NeatConfig,
     genome: &mut Genome,
     state: &mut StateCore,
     from: NodeRef,
@@ -41,6 +43,7 @@ fn split_link(
     let new_node = NodeRef::Hidden(innovation.node_number);
 
     genome.get_core_mut().split_link(
+        config,
         from,
         to,
         innovation.node_number,
@@ -72,7 +75,12 @@ fn split_link(
     new_node
 }
 
-pub fn insert_identity(genome: &mut Genome, state: &mut StateCore, output_id: usize) {
+pub fn insert_identity(
+    config: &NeatConfig,
+    genome: &mut Genome,
+    state: &mut StateCore,
+    output_id: usize,
+) {
     if !genome
         .core
         .outputs
@@ -81,6 +89,7 @@ pub fn insert_identity(genome: &mut Genome, state: &mut StateCore, output_id: us
         genome.core.outputs.insert(
             NodeRef::Output(output_id),
             CppnNode::new(
+                config.get_node_config(),
                 NodeCore::new(NodeRef::Output(output_id)),
                 state.get_node_state_mut(),
             ),
@@ -102,6 +111,7 @@ pub fn insert_identity(genome: &mut Genome, state: &mut StateCore, output_id: us
     );
 
     let hidden_x = split_link(
+        config,
         genome,
         state,
         NodeRef::Input(0),
@@ -113,6 +123,7 @@ pub fn insert_identity(genome: &mut Genome, state: &mut StateCore, output_id: us
     );
 
     let hidden_y = split_link(
+        config,
         genome,
         state,
         NodeRef::Input(1),
@@ -136,11 +147,12 @@ pub fn insert_identity(genome: &mut Genome, state: &mut StateCore, output_id: us
 }
 
 pub fn identity_genome() -> (Genome, StateCore) {
+    let config = NeatConfig::default();
     let init_config = InitConfig::new(4, 2);
     let mut state = StateCore::default();
-    let mut genome = Genome::new(&init_config, &mut state);
+    let mut genome = Genome::new(&config, &init_config, &mut state);
 
-    insert_identity(&mut genome, &mut state, 0);
+    insert_identity(&config, &mut genome, &mut state, 0);
 
     (genome, state)
 }
