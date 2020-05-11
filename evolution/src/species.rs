@@ -1,4 +1,4 @@
-use crate::conf::EVOLUTION;
+use crate::conf::PopulationConfig;
 use crate::genome::Genome;
 use crate::organism::Organism;
 use rand::Rng;
@@ -37,9 +37,9 @@ impl<G: Genome, S> Species<G, S> {
     }
 
     /// Determine wether a new organism is compatible
-    pub fn is_compatible(&mut self, other: &Organism<G, S>) -> bool {
+    pub fn is_compatible(&mut self, other: &Organism<G, S>, config: &PopulationConfig) -> bool {
         if let Some(organism) = self.organisms.first() {
-            organism.distance(other) < EVOLUTION.speciation_threshold
+            organism.distance(other) < config.speciation_threshold
         } else {
             true // All organisms are compatible if the species is empty
         }
@@ -78,11 +78,11 @@ impl<G: Genome, S> Species<G, S> {
     }
 
     /// Adjust fintesses of all organims
-    pub fn adjust_fitness(&mut self) {
+    pub fn adjust_fitness(&mut self, config: &PopulationConfig) {
         assert!(!self.locked);
 
-        let is_stagnent = self.age - self.last_improvement > EVOLUTION.dropoff_age;
-        let is_young = self.age < EVOLUTION.young_age_limit;
+        let is_stagnent = self.age - self.last_improvement > config.dropoff_age;
+        let is_young = self.age < config.young_age_limit;
         let size: f64 = self.organisms.len() as f64;
 
         for organism in self.organisms.iter_mut() {
@@ -90,12 +90,12 @@ impl<G: Genome, S> Species<G, S> {
 
             // Greatly penalize stagnent species
             if is_stagnent {
-                adjusted_fitness *= EVOLUTION.stagnent_species_fitness_multiplier;
+                adjusted_fitness *= config.stagnent_species_fitness_multiplier;
             }
 
             // Boost young species
             if is_young {
-                adjusted_fitness *= EVOLUTION.young_species_fitness_multiplier;
+                adjusted_fitness *= config.young_species_fitness_multiplier;
             }
 
             // Share fitness within species
@@ -126,10 +126,10 @@ impl<G: Genome, S> Species<G, S> {
     }
 
     /// Retain only the best individuals
-    pub fn retain_best(&mut self) {
+    pub fn retain_best(&mut self, config: &PopulationConfig) {
         assert!(!self.locked);
 
-        let new_size = (self.organisms.len() as f64 * EVOLUTION.survival_ratio).round() as usize;
+        let new_size = (self.organisms.len() as f64 * config.survival_ratio).round() as usize;
         // Assumes the individuals are sorted in descending fitness order
         // Keep a minimum of two individuals for sexual reproduction
         self.organisms.truncate(new_size.max(self.elites).max(2));
@@ -164,7 +164,7 @@ impl<G: Genome, S> Species<G, S> {
     }
 
     /// Calculate number of offsprings based on adjusted fitness of organisms
-    pub fn calculate_offsprings(&mut self, avg_fitness: f64) {
+    pub fn calculate_offsprings(&mut self, avg_fitness: f64, config: &PopulationConfig) {
         assert!(!self.locked);
 
         self.offsprings = self
@@ -172,7 +172,7 @@ impl<G: Genome, S> Species<G, S> {
             .iter()
             .map(|organism| organism.adjusted_fitness.unwrap() / avg_fitness)
             .sum();
-        self.elites = EVOLUTION.guaranteed_elites;
+        self.elites = config.guaranteed_elites;
     }
 
     /// Use tournament selection to select an organism

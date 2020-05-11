@@ -1,10 +1,18 @@
+pub mod conf;
+pub mod develop;
+pub mod genome;
+pub mod link;
+pub mod node;
+pub mod state;
+
 use crate::codeshyperneat::{
     conf::CODESHYPERNEAT, develop::CombinedGenome, genome::Genome as BlueprintGenome,
 };
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::developer::Developer;
+use envconfig::Envconfig;
 use evolution::{
-    conf::EVOLUTION,
+    conf::{PopulationConfig, EVOLUTION},
     environment::{Environment, NoStats},
     evaluate::{Evaluate, MultiEvaluator},
     log::{Log, Logger},
@@ -13,25 +21,18 @@ use evolution::{
 };
 use network::execute::Executor;
 
-pub mod conf;
-pub mod develop;
-pub mod genome;
-pub mod link;
-pub mod node;
-pub mod state;
-
 pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
     let environment = &E::default();
 
-    let mut modules =
-        Population::<CppnGenome, NoStats>::new(EVOLUTION.population_size, &InitConfig::new(4, 2));
-    let mut blueprints = Population::<BlueprintGenome, E::Stats>::new(
-        EVOLUTION.population_size,
-        &InitConfig::new(1, 1),
-    );
+    let module_config = PopulationConfig::init().unwrap();
+    let mut modules = Population::<CppnGenome, NoStats>::new(module_config, &InitConfig::new(4, 2));
+
+    let blueprint_config = PopulationConfig::init().unwrap();
+    let mut blueprints =
+        Population::<BlueprintGenome, E::Stats>::new(blueprint_config, &InitConfig::new(1, 1));
 
     let evaluator = MultiEvaluator::<CombinedGenome, E>::new::<Developer>(
-        EVOLUTION.population_size,
+        blueprints.config.population_size,
         EVOLUTION.thread_count,
     );
     let mut logger = Logger::from(environment.description());

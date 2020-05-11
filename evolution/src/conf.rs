@@ -8,7 +8,10 @@ pub struct Conf {
 
     #[envconfig(from = "ITERATIONS", default = "1000000")]
     pub iterations: usize,
+}
 
+#[derive(Envconfig)]
+pub struct PopulationConfig {
     #[envconfig(from = "POPULATION_SIZE", default = "200")]
     pub population_size: usize,
 

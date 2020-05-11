@@ -21,7 +21,8 @@ extern crate derive_new;
 extern crate neat_macro;
 
 use algorithm::Algorithm;
-use conf::EVOLUTION;
+use conf::{PopulationConfig, EVOLUTION};
+use envconfig::Envconfig;
 use environment::Environment;
 use evaluate::MultiEvaluator;
 use log::Log;
@@ -30,12 +31,12 @@ use population::Population;
 pub fn evolve<E: Environment + 'static, A: Algorithm<E>>() {
     let environment = &E::default();
 
+    let config = PopulationConfig::init().unwrap();
     let init_config = A::genome_init_config(&environment.description());
-    let mut population =
-        Population::<A::Genome, E::Stats>::new(EVOLUTION.population_size, &init_config);
+    let mut population = Population::<A::Genome, E::Stats>::new(config, &init_config);
 
     let evaluator = MultiEvaluator::<A::Genome, E>::new::<A::Developer>(
-        EVOLUTION.population_size,
+        population.config.population_size,
         EVOLUTION.thread_count,
     );
     let mut logger = A::Logger::from(environment.description());
