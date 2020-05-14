@@ -4,8 +4,6 @@ version = "0.1.0"
 authors = ["Amund Tenstad <github@amund.io>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 rand = "0.6.0"
 lazy_static = "1.4.0"
@@ -16,9 +14,10 @@ image = "0.23"
 order-stat = "0.1"
 network = {path = "network"}
 evolution = {path = "evolution"}
+neat_macro = {path = "evolution/src/neat/neat_macro"}
 data = {path = "data"}
 figure = {path = "figure"}
-neat_macro = {path = "evolution/src/neat/neat_macro"}
+db = {path = "db"}
 
 [workspace]
 members = [
