@@ -1,6 +1,7 @@
 use envconfig::Envconfig;
+use serde::Serialize;
 
-#[derive(Envconfig, Clone)]
+#[derive(Envconfig, Clone, Serialize)]
 pub struct NeatConfig {
     #[envconfig(from = "ADD_NODE_PROBABILITY", default = "0.05")]
     pub add_node_probability: f64,

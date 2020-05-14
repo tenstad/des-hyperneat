@@ -28,7 +28,7 @@ impl Develop<NeatGenome<NeatNode, NeatLink>, Executor> for Developer {
         // Prepend input nodes to extraction of hidden nodes from topological sorting
         let mut nodes = inputs
             .iter()
-            .map(|id| NodeRef::Input(*id))
+            .map(|id| NodeRef::Input(*id as u64))
             .chain(order.iter().filter_map(|action| match action {
                 connection::OrderedAction::Node(NodeRef::Hidden(id)) => Some(NodeRef::Hidden(*id)),
                 _ => None,
@@ -42,7 +42,7 @@ impl Develop<NeatGenome<NeatNode, NeatLink>, Executor> for Developer {
         // Append all output nodes. Disconnected nodes (not present in topological sorting)
         // are added to make the output vector of the correct size. If num_output_nodes grows
         // with evolution, this could use the highest known num_output_nodes of all genomes.
-        nodes.extend((0..(num_output_nodes)).map(|i| NodeRef::Output(i)));
+        nodes.extend((0..(num_output_nodes)).map(|i| NodeRef::Output(i as u64)));
 
         // Create mapping from NodeRef to array index in Network's node vector
         let node_mapping: HashMap<NodeRef, usize> = nodes

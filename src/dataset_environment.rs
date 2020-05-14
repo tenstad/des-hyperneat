@@ -1,6 +1,7 @@
 use data::{accuracy, dataset::Dataset, error};
 use evolution::environment::{Environment, EnvironmentDescription, Stats};
 use network::execute::Executor;
+use serde::Serialize;
 use std::fmt::{Display, Formatter, Result};
 
 pub struct DatasetEnvironment {
@@ -8,6 +9,7 @@ pub struct DatasetEnvironment {
     description: EnvironmentDescription,
 }
 
+#[derive(Serialize)]
 pub struct DatasetStats {
     validation_fitness: f64,
     training_accuracy: f64,
@@ -24,14 +26,7 @@ impl Display for DatasetStats {
     }
 }
 
-impl Stats for DatasetStats {
-    fn space_separated(&self) -> String {
-        format!(
-            "{} {} {}",
-            self.validation_fitness, self.training_accuracy, self.validation_accuracy
-        )
-    }
-}
+impl Stats for DatasetStats {}
 
 impl Default for DatasetEnvironment {
     fn default() -> DatasetEnvironment {

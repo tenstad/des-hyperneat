@@ -18,7 +18,6 @@ pub struct Neat;
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Neat {
     type Genome = DefaultNeatGenome;
     type Developer = Developer;
-    type Logger = Logger;
 
     fn genome_config(_: &EnvironmentDescription) -> conf::NeatConfig {
         conf::NeatConfig::default()
@@ -30,5 +29,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Neat {
 }
 
 pub fn neat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Neat>();
+    evolve::<E, Neat, Logger>();
 }

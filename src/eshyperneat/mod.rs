@@ -21,7 +21,6 @@ pub struct Eshyperneat;
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Eshyperneat {
     type Genome = Genome;
     type Developer = Developer;
-    type Logger = Logger;
 
     fn genome_config(_: &EnvironmentDescription) -> NeatConfig {
         NeatConfig::default()
@@ -33,5 +32,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Eshyperneat {
 }
 
 pub fn eshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Eshyperneat>();
+    evolve::<E, Eshyperneat, Logger>();
 }

@@ -9,7 +9,7 @@ use rand::Rng;
 pub struct Link {
     #[neat]
     pub neat: NeatLink,
-    pub module_species: usize,
+    pub module_species: u64,
 }
 
 impl LinkExtension for Link {

@@ -16,7 +16,7 @@ pub enum Action {
     Link(usize, usize, f64, f64, f64, f64), // from, to, x0, y0, x1, y1
 }
 
-pub fn horizontal_row(n: usize, y: i64) -> Vec<(i64, i64)> {
+pub fn horizontal_row(n: u64, y: i64) -> Vec<(i64, i64)> {
     if n == 1 {
         return vec![(0, y)];
     }
@@ -36,7 +36,7 @@ pub fn horizontal_row(n: usize, y: i64) -> Vec<(i64, i64)> {
         .collect()
 }
 
-pub fn horizontal_rows(layer_sizes: &Vec<usize>) -> Vec<Vec<Point>> {
+pub fn horizontal_rows(layer_sizes: &Vec<u64>) -> Vec<Vec<Point>> {
     let vertical_distance = if layer_sizes.len() > 1 {
         (2.0 * ESHYPERNEAT.resolution / (layer_sizes.len() as f64 - 1.0)) as f64
     } else {
@@ -55,7 +55,7 @@ pub fn horizontal_rows(layer_sizes: &Vec<usize>) -> Vec<Vec<Point>> {
 }
 
 impl Network {
-    pub fn layered(layer_sizes: Vec<usize>) -> Network {
+    pub fn layered(layer_sizes: Vec<u64>) -> Network {
         let layers = horizontal_rows(&layer_sizes);
 
         let mut connections = connection::Connections::<Point, ()>::new();

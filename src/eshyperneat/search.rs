@@ -11,13 +11,13 @@ struct QuadPoint {
     y: f64,
     width: f64,
     weight: f64,
-    depth: usize,
+    depth: u64,
     variance: f64,
     children: Option<[Box<QuadPoint>; 4]>,
 }
 
 impl QuadPoint {
-    fn new(x: f64, y: f64, width: f64, depth: usize, f: &mut dyn FnMut(f64, f64) -> f64) -> Self {
+    fn new(x: f64, y: f64, width: f64, depth: u64, f: &mut dyn FnMut(f64, f64) -> f64) -> Self {
         Self {
             x,
             y,
@@ -193,7 +193,8 @@ pub fn find_connections(
 
     let mut leaves = vec![&mut root];
     while leaves.len() > 0
-        && (ESHYPERNEAT.max_discoveries == 0 || connections.len() < ESHYPERNEAT.max_discoveries)
+        && (ESHYPERNEAT.max_discoveries == 0
+            || (connections.len() as u64) < ESHYPERNEAT.max_discoveries)
     {
         leaves = leaves
             .drain(..)
@@ -207,9 +208,9 @@ pub fn find_connections(
     }
 
     // Only return the weights with the highest absolute value.
-    if ESHYPERNEAT.max_outgoing > 0 && connections.len() > ESHYPERNEAT.max_outgoing {
+    if ESHYPERNEAT.max_outgoing > 0 && (connections.len() as u64) > ESHYPERNEAT.max_outgoing {
         connections.sort_by(|a, b| b.edge.abs().partial_cmp(&a.edge.abs()).unwrap());
-        connections.truncate(ESHYPERNEAT.max_outgoing);
+        connections.truncate(ESHYPERNEAT.max_outgoing as usize);
     }
 
     connections
@@ -220,7 +221,7 @@ pub fn explore_substrate(
     inputs: Vec<(i64, i64)>,
     outputs: &Vec<(i64, i64)>,
     cppn: &mut execute::Executor,
-    depth: usize,
+    depth: u64,
     reverse: bool,
     allow_connections_to_input: bool,
 ) -> (Vec<Vec<(i64, i64)>>, Vec<Connection<(i64, i64), f64>>) {
@@ -233,7 +234,7 @@ pub fn explore_substrate(
     let mut nodes: Vec<Vec<(i64, i64)>> = vec![inputs];
     let mut connections = Vec::<Connection<(i64, i64), f64>>::new();
 
-    for d in 0..depth {
+    for d in 0..(depth as usize) {
         let mut discoveries = Vec::<Connection<(i64, i64), f64>>::new();
         // Search from all nodes within previous layer of discoveries
         for (x, y) in nodes[d].iter() {

@@ -17,7 +17,7 @@ pub struct Link {
     #[neat]
     pub neat: NeatLink,
     pub cppn: CppnGenome,
-    pub depth: usize,
+    pub depth: u64,
 }
 
 impl LinkExtension for Link {

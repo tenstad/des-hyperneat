@@ -4,23 +4,24 @@ use evolution::{
     log,
     population::Population,
 };
+use serde::Serialize;
 
 pub struct Logger {
     default_logger: log::Logger,
-    log_interval: usize,
+    log_interval: u64,
 }
 
-impl From<EnvironmentDescription> for Logger {
-    fn from(description: EnvironmentDescription) -> Self {
+impl<C: Serialize> log::CreateLog<C> for Logger {
+    fn new(description: &EnvironmentDescription, config: &C) -> Self {
         Self {
-            default_logger: log::Logger::from(description),
+            default_logger: log::Logger::new(description, config),
             log_interval: 10,
         }
     }
 }
 
-impl<S: Stats> log::Log<Genome, S> for Logger {
-    fn log(&mut self, iteration: usize, population: &Population<Genome, S>) {
+impl<S: Stats> log::LogEntry<Genome, S> for Logger {
+    fn log(&mut self, iteration: u64, population: &Population<Genome, S>) {
         self.default_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {
@@ -30,3 +31,5 @@ impl<S: Stats> log::Log<Genome, S> for Logger {
         }
     }
 }
+
+impl<C: Serialize, S: Stats> log::Log<C, Genome, S> for Logger {}

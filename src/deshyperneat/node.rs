@@ -16,7 +16,7 @@ pub struct Node {
     #[neat]
     pub neat: NeatNode,
     pub cppn: CppnGenome,
-    pub depth: usize,
+    pub depth: u64,
 }
 
 impl NodeExtension for Node {

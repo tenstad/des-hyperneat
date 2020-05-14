@@ -62,13 +62,13 @@ impl NodeExtension for NeatNode {
 /// The ID is separate for the three types.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum NodeRef {
-    Input(usize),
-    Hidden(usize),
-    Output(usize),
+    Input(u64),
+    Hidden(u64),
+    Output(u64),
 }
 
 impl NodeRef {
-    pub fn id(&self) -> usize {
+    pub fn id(&self) -> u64 {
         match self {
             NodeRef::Input(id) => *id,
             NodeRef::Hidden(id) => *id,

@@ -42,7 +42,7 @@ impl From<EnvironmentDescription> for Developer {
             .flat_map(|(i, nodes)| {
                 nodes
                     .iter()
-                    .map(move |node| (NodeRef::Input(i), node.0, node.1))
+                    .map(move |node| (NodeRef::Input(i as u64), node.0, node.1))
             })
             .collect::<Vec<(NodeRef, i64, i64)>>();
         let flattened_outputs = output_nodes
@@ -51,7 +51,7 @@ impl From<EnvironmentDescription> for Developer {
             .flat_map(|(i, nodes)| {
                 nodes
                     .iter()
-                    .map(move |node| (NodeRef::Output(i), node.0, node.1))
+                    .map(move |node| (NodeRef::Output(i as u64), node.0, node.1))
             })
             .collect::<Vec<(NodeRef, i64, i64)>>();
 
@@ -81,13 +81,13 @@ impl Developer {
         let mut substrate_nodes = HashMap::<NodeRef, HashSet<(i64, i64)>>::new();
         for (i, nodes) in self.input_nodes.iter().enumerate() {
             substrate_nodes.insert(
-                NodeRef::Input(i),
+                NodeRef::Input(i as u64),
                 nodes.iter().cloned().collect::<HashSet<(i64, i64)>>(),
             );
         }
         for (i, nodes) in self.output_nodes.iter().enumerate() {
             substrate_nodes.insert(
-                NodeRef::Output(i),
+                NodeRef::Output(i as u64),
                 nodes.iter().cloned().collect::<HashSet<(i64, i64)>>(),
             );
         }
@@ -216,13 +216,13 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
         let mut substrate_nodes = HashMap::<NodeRef, HashSet<(i64, i64)>>::new();
         for (i, nodes) in self.input_nodes.iter().enumerate() {
             substrate_nodes.insert(
-                NodeRef::Input(i),
+                NodeRef::Input(i as u64),
                 nodes.iter().cloned().collect::<HashSet<(i64, i64)>>(),
             );
         }
         for (i, nodes) in self.output_nodes.iter().enumerate() {
             substrate_nodes.insert(
-                NodeRef::Output(i),
+                NodeRef::Output(i as u64),
                 nodes.iter().cloned().collect::<HashSet<(i64, i64)>>(),
             );
         }

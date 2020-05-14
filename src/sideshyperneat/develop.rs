@@ -107,7 +107,7 @@ impl DesGenome for Genome {
             .cppn
     }
 
-    fn get_depth(&self, node: &NodeRef) -> usize {
+    fn get_depth(&self, node: &NodeRef) -> u64 {
         self.des_genome
             .as_ref()
             .unwrap()

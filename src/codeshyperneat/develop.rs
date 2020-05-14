@@ -7,7 +7,7 @@ use std::collections::HashMap;
 #[derive(new, Clone)]
 pub struct CombinedGenome {
     pub blueprint: BlueprintGenome,
-    pub modules: HashMap<usize, (usize, CppnGenome)>,
+    pub modules: HashMap<u64, (usize, CppnGenome)>,
 }
 
 impl DesGenome for CombinedGenome {
@@ -26,7 +26,7 @@ impl DesGenome for CombinedGenome {
         &self
             .modules
             .get(
-                &&self
+                &self
                     .blueprint
                     .neat
                     .links
@@ -38,7 +38,7 @@ impl DesGenome for CombinedGenome {
             .1
     }
 
-    fn get_depth(&self, node: &NodeRef) -> usize {
+    fn get_depth(&self, node: &NodeRef) -> u64 {
         self.blueprint.neat.get_node(node).unwrap().depth
     }
 

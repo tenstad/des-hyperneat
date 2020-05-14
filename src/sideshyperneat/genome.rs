@@ -92,7 +92,7 @@ impl GenericEvolvableGenome<Config, State, InitConfig> for Genome {
                     .values()
                     .map(|link| (link.cppn_output_id, link.is_identity)),
             )
-            .collect::<Vec<(usize, bool)>>()
+            .collect::<Vec<(u64, bool)>>()
             .iter()
         {
             if !self
@@ -126,7 +126,7 @@ impl GenericEvolvableGenome<Config, State, InitConfig> for Genome {
 }
 
 impl Genome {
-    fn add_cppn_output(&mut self, config: &Config, id: usize, state: &mut State) {
+    fn add_cppn_output(&mut self, config: &Config, id: u64, state: &mut State) {
         let node_ref = NodeRef::Output(id);
         self.cppn.neat.outputs.insert(
             node_ref,

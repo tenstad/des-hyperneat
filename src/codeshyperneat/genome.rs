@@ -107,9 +107,9 @@ impl Genome {
     pub fn select_modules<S>(
         &self,
         modules: &Population<CppnGenome, S>,
-    ) -> HashMap<usize, (usize, CppnGenome)> {
+    ) -> HashMap<u64, (usize, CppnGenome)> {
         let mut rng = rand::thread_rng();
-        let mut genomes = HashMap::<usize, (usize, CppnGenome)>::new();
+        let mut genomes = HashMap::<u64, (usize, CppnGenome)>::new();
 
         for module_species in self
             .neat

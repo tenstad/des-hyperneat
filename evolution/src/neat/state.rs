@@ -3,26 +3,26 @@ use std::collections::HashMap;
 
 #[derive(new)]
 pub struct InitConfig {
-    pub inputs: usize,
-    pub outputs: usize,
+    pub inputs: u64,
+    pub outputs: u64,
 }
 
 #[derive(Default, Clone)]
 pub struct InnovationLog {
     // Hidden node id -> Innovation
-    pub hidden_node_innovations: HashMap<usize, Innovation>,
+    pub hidden_node_innovations: HashMap<u64, Innovation>,
     // Link split innovation -> Innovation
-    pub split_innovations: HashMap<usize, Innovation>,
+    pub split_innovations: HashMap<u64, Innovation>,
     // Source and target node -> link connect innovation
-    pub connect_innovations: HashMap<(NodeRef, NodeRef), usize>,
+    pub connect_innovations: HashMap<(NodeRef, NodeRef), u64>,
     // Link connect innovation -> Source and target node
-    pub reverse_connect_innovations: HashMap<usize, (NodeRef, NodeRef)>,
+    pub reverse_connect_innovations: HashMap<u64, (NodeRef, NodeRef)>,
 }
 
 #[derive(Default, Clone, new)]
 pub struct Innovation {
-    pub node_number: usize,
-    pub innovation_number: usize,
+    pub node_number: u64,
+    pub innovation_number: u64,
 }
 
 #[derive(Default, Clone)]
@@ -64,7 +64,7 @@ impl StateProvider<(), ()> for NeatState {
 }
 
 impl NeatState {
-    pub fn get_split_innovation(&mut self, link_innovation: usize) -> &Innovation {
+    pub fn get_split_innovation(&mut self, link_innovation: u64) -> &Innovation {
         if !self
             .innovation_log
             .split_innovations
@@ -117,7 +117,7 @@ impl NeatState {
             .unwrap()
     }
 
-    pub fn get_connect_innovation(&mut self, from: NodeRef, to: NodeRef) -> usize {
+    pub fn get_connect_innovation(&mut self, from: NodeRef, to: NodeRef) -> u64 {
         if !self
             .innovation_log
             .connect_innovations

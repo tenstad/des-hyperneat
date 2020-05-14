@@ -9,8 +9,8 @@ use rand::Rng;
 pub struct Link {
     #[neat]
     pub neat: NeatLink,
-    pub depth: usize,
-    pub cppn_output_id: usize,
+    pub depth: u64,
+    pub cppn_output_id: u64,
     pub is_identity: bool,
 }
 

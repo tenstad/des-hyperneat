@@ -26,11 +26,11 @@ pub struct NeatLink {
     pub weight: f64,
     pub enabled: bool,
     pub split: bool,       // Link has been split
-    pub innovation: usize, // Global innovation number
+    pub innovation: u64,   // Global innovation number
 }
 
 impl NeatLink {
-    pub fn new(from: NodeRef, to: NodeRef, weight: f64, innovation: usize) -> Self {
+    pub fn new(from: NodeRef, to: NodeRef, weight: f64, innovation: u64) -> Self {
         Self {
             from,
             to,

@@ -9,8 +9,8 @@ use rand::Rng;
 pub struct Node {
     #[neat]
     pub neat: NeatNode,
-    pub depth: usize,
-    pub cppn_output_id: usize,
+    pub depth: u64,
+    pub cppn_output_id: u64,
 }
 
 impl NodeExtension for Node {

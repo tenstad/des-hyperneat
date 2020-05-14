@@ -23,7 +23,7 @@ impl Develop<Genome, Executor> for Developer {
         // Prepend input nodes to extraction of hidden nodes from topological sorting
         let mut nodes = inputs
             .iter()
-            .map(|id| NodeRef::Input(*id))
+            .map(|id| NodeRef::Input(*id as u64))
             .chain(order.iter().filter_map(|action| match action {
                 connection::OrderedAction::Node(NodeRef::Hidden(id)) => Some(NodeRef::Hidden(*id)),
                 _ => None,
@@ -43,7 +43,7 @@ impl Develop<Genome, Executor> for Developer {
                 genome.neat.outputs.keys().map(|n| n.id()).max().unwrap() as usize + 1;
 
             (0..(num_output_nodes))
-                .map(|i| NodeRef::Output(i))
+                .map(|i| NodeRef::Output(i as u64))
                 .collect()
         } else {
             let mut output_nodes = genome

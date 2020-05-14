@@ -1,4 +1,4 @@
-#[macro_use(bson, doc)]
+#[macro_use(doc)]
 extern crate bson;
 extern crate mongodb;
 
@@ -14,7 +14,7 @@ use bson::{
     to_bson,
     Bson::{self, Document},
 };
-use chrono::{offset::Utc, DateTime};
+use chrono::offset::Utc;
 use conf::DB;
 use mongodb::{
     options::{auth::Credential, ClientOptions, StreamAddress},
@@ -22,28 +22,22 @@ use mongodb::{
 };
 use serde::Serialize;
 
-struct MongoDB {
+#[allow(dead_code)]
+pub struct Mongo {
     client: Client,
     db: Database,
     collection: Collection,
 }
 
-struct Entry {
-    data: EntryData,
+#[allow(dead_code)]
+pub struct Entry {
     collection: Collection,
     id_query: OrderedDocument,
-    id: ObjectId,
     num_events: u64,
 }
 
-#[derive(Serialize)]
-struct EntryData {
-    name: String,
-    start_time: DateTime<Utc>,
-    events: Vec<()>,
-}
-
-impl MongoDB {
+#[allow(dead_code)]
+impl Mongo {
     pub fn new() -> Self {
         let options = ClientOptions::builder()
             .hosts(vec![StreamAddress {
@@ -69,18 +63,12 @@ impl MongoDB {
         }
     }
 
-    pub fn entry(&mut self, name: String) -> Entry {
-        let data = EntryData {
-            name,
-            start_time: Utc::now(),
-            events: Vec::new(),
-        };
-        let id = self.insert(&data);
+    pub fn entry<T: Serialize>(&mut self, entry: &T) -> Entry {
+        let document = self.add_entry_data(entry);
+        let id = self.insert(&document);
 
         Entry {
-            data,
             collection: self.collection.clone(),
-            id: id.clone(),
             id_query: doc! {
                 "_id": id
             },
@@ -88,9 +76,18 @@ impl MongoDB {
         }
     }
 
+    fn add_entry_data<T: Serialize>(&mut self, data: &T) -> OrderedDocument {
+        if let Document(mut document) = to_bson(data).unwrap() {
+            document.insert("entry_time", Utc::now());
+            document
+        } else {
+            panic!("unable to serialize data");
+        }
+    }
+
     fn insert<T: Serialize>(&self, data: &T) -> ObjectId {
-        if let Document(document) = to_bson(data).ok().unwrap() {
-            let result = self.collection.insert_one(document, None).ok().unwrap();
+        if let Document(document) = to_bson(data).unwrap() {
+            let result = self.collection.insert_one(document, None).unwrap();
             if let Bson::ObjectId(id) = result.inserted_id {
                 id
             } else {
@@ -102,9 +99,10 @@ impl MongoDB {
     }
 }
 
+#[allow(dead_code)]
 impl Entry {
-    pub fn push<T: Serialize>(&mut self, data: &T) {
-        let document = self.add_event_data(data);
+    pub fn push<T: Serialize>(&mut self, event: &T) {
+        let document = self.add_event_data(event);
         let update = doc! {
             "$push": {"events": document}
         };
@@ -113,8 +111,8 @@ impl Entry {
             .unwrap();
     }
 
-    fn add_event_data<T: Serialize>(&mut self, data: &T) -> OrderedDocument {
-        if let Document(mut document) = to_bson(data).ok().unwrap() {
+    fn add_event_data<T: Serialize>(&mut self, event: &T) -> OrderedDocument {
+        if let Document(mut document) = to_bson(event).ok().unwrap() {
             document.insert("event_time", Utc::now());
             document.insert("event_id", self.num_events);
             self.num_events += 1;

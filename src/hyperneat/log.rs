@@ -6,25 +6,26 @@ use evolution::{
     log,
     population::Population,
 };
+use serde::Serialize;
 
 pub struct Logger {
     cppn_logger: CppnLogger,
     developer: Developer,
-    log_interval: usize,
+    log_interval: u64,
 }
 
-impl From<EnvironmentDescription> for Logger {
-    fn from(description: EnvironmentDescription) -> Self {
+impl<C: Serialize> log::CreateLog<C> for Logger {
+    fn new(description: &EnvironmentDescription, config: &C) -> Self {
         Self {
-            cppn_logger: CppnLogger::from(description),
-            developer: Developer::from(description),
+            cppn_logger: CppnLogger::new(description, config),
+            developer: Developer::from(description.clone()),
             log_interval: 10,
         }
     }
 }
 
-impl<S: Stats> log::Log<Genome, S> for Logger {
-    fn log(&mut self, iteration: usize, population: &Population<Genome, S>) {
+impl<S: Stats> log::LogEntry<Genome, S> for Logger {
+    fn log(&mut self, iteration: u64, population: &Population<Genome, S>) {
         self.cppn_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {
@@ -38,3 +39,5 @@ impl<S: Stats> log::Log<Genome, S> for Logger {
         }
     }
 }
+
+impl<C: Serialize, S: Stats> log::Log<C, Genome, S> for Logger {}

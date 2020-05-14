@@ -3,8 +3,8 @@ use crate::environment::Environment;
 use crossbeam::queue;
 use std::{sync::Arc, thread, time};
 
-type Input<G> = (usize, usize, G);
-type Output<S> = (usize, usize, f64, S);
+type Input<G> = (u64, usize, G);
+type Output<S> = (u64, usize, f64, S);
 
 pub trait Evaluate<G, S> {
     fn evaluate(&self, organisms: impl Iterator<Item = Input<G>>) -> Vec<Output<S>>;
@@ -16,9 +16,9 @@ pub struct MultiEvaluator<G, E: Environment> {
 }
 
 impl<G: Send + 'static, E: Environment + 'static> MultiEvaluator<G, E> {
-    pub fn new<D: Develop<G, E::Phenotype>>(task_count: usize, thread_count: usize) -> Self {
-        let input = Arc::new(queue::ArrayQueue::new(task_count));
-        let output = Arc::new(queue::ArrayQueue::new(task_count));
+    pub fn new<D: Develop<G, E::Phenotype>>(task_count: u64, thread_count: u64) -> Self {
+        let input = Arc::new(queue::ArrayQueue::new(task_count as usize));
+        let output = Arc::new(queue::ArrayQueue::new(task_count as usize));
 
         for _ in 0..thread_count {
             let input = input.clone();

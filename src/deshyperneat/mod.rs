@@ -22,7 +22,6 @@ pub struct Deshyperneat;
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Deshyperneat {
     type Genome = Genome;
     type Developer = Developer;
-    type Logger = Logger;
 
     fn genome_config(_: &EnvironmentDescription) -> conf::Config {
         conf::Config::default()
@@ -34,5 +33,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Deshyperneat {
 }
 
 pub fn deshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Deshyperneat>();
+    evolve::<E, Deshyperneat, Logger>();
 }

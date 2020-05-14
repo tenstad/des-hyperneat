@@ -313,8 +313,8 @@ where
         config: &C,
         from: NodeRef,
         to: NodeRef,
-        new_node_id: usize,
-        innovation_number: usize,
+        new_node_id: u64,
+        innovation_number: u64,
         state: &mut S,
     ) {
         let link = self

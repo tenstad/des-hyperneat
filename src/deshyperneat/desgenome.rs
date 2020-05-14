@@ -13,7 +13,7 @@ pub trait DesGenome {
     fn init_desgenome(&mut self) {}
     fn get_node_cppn(&self, node: &NodeRef) -> &CppnGenome;
     fn get_link_cppn(&self, source: NodeRef, target: NodeRef) -> &CppnGenome;
-    fn get_depth(&self, node: &NodeRef) -> usize;
+    fn get_depth(&self, node: &NodeRef) -> u64;
     fn get_neat(&self) -> &NeatGenome<Self::Node, Self::Link>;
 }
 
@@ -29,7 +29,7 @@ impl DesGenome for Genome {
         &self.neat.links.get(&(source, target)).unwrap().cppn
     }
 
-    fn get_depth(&self, node: &NodeRef) -> usize {
+    fn get_depth(&self, node: &NodeRef) -> u64 {
         self.neat.get_node(node).unwrap().depth
     }
 

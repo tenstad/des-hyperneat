@@ -12,12 +12,12 @@ envconfig_derive = "0.6.0"
 derive-new = "0.5.8"
 image = "0.23"
 order-stat = "0.1"
+serde = "1.0.110"
 network = {path = "network"}
 evolution = {path = "evolution"}
 neat_macro = {path = "evolution/src/neat/neat_macro"}
 data = {path = "data"}
 figure = {path = "figure"}
-db = {path = "db"}
 
 [workspace]
 members = [
@@ -27,6 +27,7 @@ members = [
   "evolution",
   "evolution/src/neat/neat_macro",
   "data",
+  "db",
 ]
 
 [profile.release]

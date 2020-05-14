@@ -20,7 +20,6 @@ pub struct Hyperneat;
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Hyperneat {
     type Genome = Genome;
     type Developer = Developer;
-    type Logger = Logger;
 
     fn genome_config(_: &EnvironmentDescription) -> NeatConfig {
         NeatConfig::default()
@@ -32,5 +31,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Hyperneat {
 }
 
 pub fn hyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Hyperneat>();
+    evolve::<E, Hyperneat, Logger>();
 }

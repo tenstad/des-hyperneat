@@ -12,7 +12,7 @@ pub struct Developer {
     neat_developer: CppnDeveloper,
     input_nodes: Vec<(i64, i64)>,
     output_nodes: Vec<(i64, i64)>,
-    depth: usize,
+    depth: u64,
 }
 
 impl From<EnvironmentDescription> for Developer {

@@ -8,7 +8,7 @@ pub struct State {
 
 #[derive(Clone, Default)]
 pub struct CustomState {
-    pub species: usize,
+    pub species: u64,
 }
 
 impl StateProvider<CustomState, CustomState> for State {

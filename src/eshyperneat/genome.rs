@@ -67,7 +67,7 @@ pub fn insert_identity(
     config: &NeatConfig,
     genome: &mut Genome,
     state: &mut NeatState,
-    output_id: usize,
+    output_id: u64,
 ) {
     if !genome
         .neat

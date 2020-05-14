@@ -8,8 +8,8 @@ use std::collections::HashMap;
 pub struct State {
     pub cppn_state: NeatState,
     pub topology_state: NeatState,
-    pub output_id_innovation_offset: usize,
-    pub io_output_id: HashMap<NodeRef, usize>,
+    pub output_id_innovation_offset: u64,
+    pub io_output_id: HashMap<NodeRef, u64>,
 }
 
 impl StateProvider<(), ()> for State {

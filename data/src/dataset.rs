@@ -27,8 +27,8 @@ pub struct Dataset {
 
 #[derive(Debug)]
 pub struct Dimensions {
-    pub inputs: usize,
-    pub outputs: usize,
+    pub inputs: u64,
+    pub outputs: u64,
 }
 
 impl Dataset {
@@ -109,8 +109,8 @@ impl Dataset {
 
         Ok(Dataset {
             dimensions: Dimensions {
-                inputs: inputs[0].len(),
-                outputs: targets[0].len(),
+                inputs: inputs[0].len() as u64,
+                outputs: targets[0].len() as u64,
             },
             is_classification: is_classification,
             one_hot_output: one_hot_encoded,

@@ -10,9 +10,9 @@ use std::{collections::HashMap, f64, fmt};
 pub struct Population<G: Genome, S> {
     pub population_config: PopulationConfig,
     pub genome_config: G::Config,
-    pub species: HashMap<usize, Species<G, S>>,
-    pub extinct_species: HashMap<usize, Species<G, S>>,
-    pub next_id: usize,
+    pub species: HashMap<u64, Species<G, S>>,
+    pub extinct_species: HashMap<u64, Species<G, S>>,
+    pub next_id: u64,
     pub state: G::State,
 }
 
@@ -82,7 +82,7 @@ impl<G: Genome, S> Population<G, S> {
 
         // Average fitness of all organisms
         let elites = self.population_config.global_elites
-            + self.population_config.guaranteed_elites * self.species.len();
+            + self.population_config.guaranteed_elites * self.species.len() as u64;
         // Subtract number of guaranteed elites from pop size, reserving these slots for elites.
         let avg_fitness: f64 = self
             .iter()
@@ -99,11 +99,11 @@ impl<G: Genome, S> Population<G, S> {
         let mut new_population_size = self
             .species
             .values()
-            .map(|species| species.offsprings.floor() as usize)
-            .sum::<usize>()
+            .map(|species| species.offsprings.floor() as u64)
+            .sum::<u64>()
             + elites;
 
-        let mut species_ids = self.species.keys().cloned().collect::<Vec<usize>>();
+        let mut species_ids = self.species.keys().cloned().collect::<Vec<u64>>();
 
         // Sort species based on closeness to additional offspring
         species_ids.sort_by(|a, b| {
@@ -139,7 +139,7 @@ impl<G: Genome, S> Population<G, S> {
         while elites_distributed < self.population_config.global_elites {
             for species_id in species_ids.iter() {
                 let mut species = self.species.get_mut(species_id).unwrap();
-                if species.elites < species.len() {
+                if species.elites < species.len() as u64 {
                     species.elites += 1;
                     elites_distributed += 1;
 
@@ -153,8 +153,8 @@ impl<G: Genome, S> Population<G, S> {
         assert_eq!(
             self.species
                 .values()
-                .map(|s| s.offsprings.floor() as usize + s.elites)
-                .sum::<usize>(),
+                .map(|s| s.offsprings.floor() as u64 + s.elites)
+                .sum::<u64>(),
             self.population_config.population_size,
             "wrong number of planned individuals in next population"
         );
@@ -175,14 +175,14 @@ impl<G: Genome, S> Population<G, S> {
             let elites_taken_from_offspring = self
                 .population_config
                 .elites_from_offspring
-                .min(species.offsprings.floor() as usize)
-                .min(species.len());
+                .min(species.offsprings.floor() as u64)
+                .min(species.len() as u64);
             species.elites += elites_taken_from_offspring;
             species.offsprings -= elites_taken_from_offspring as f64;
             drop(species);
 
             // Directly copy elites, without crossover or mutation
-            for j in 0..self.species[i].elites {
+            for j in 0..(self.species[i].elites as usize) {
                 self.push(self.species[i].organisms[j].as_elite(), true);
             }
         }
@@ -190,7 +190,7 @@ impl<G: Genome, S> Population<G, S> {
         // Evolve spiecies
         let mut rng = rand::thread_rng();
         for i in species_ids.iter() {
-            let reproductions = self.species[i].offsprings.floor() as usize;
+            let reproductions = self.species[i].offsprings.floor() as u64;
 
             // Breed new organisms
             for _ in 0..reproductions {
@@ -238,7 +238,7 @@ impl<G: Genome, S> Population<G, S> {
 
         // Verify correct number of individuals in new population
         assert_eq!(
-            self.iter().count(),
+            self.iter().count() as u64,
             self.population_config.population_size,
             "wrong number of individuals in population"
         );
@@ -266,7 +266,7 @@ impl<G: Genome, S> Population<G, S> {
     }
 
     /// Use tournament selection to select an organism
-    fn tournament_select(&self, k: usize) -> Option<&Organism<G, S>> {
+    fn tournament_select(&self, k: u64) -> Option<&Organism<G, S>> {
         let mut best: Option<&Organism<G, S>> = None;
         let mut best_fitness = f64::MIN;
 
@@ -319,7 +319,7 @@ impl<G: Genome, S> Population<G, S> {
     }
 
     /// Enumerate organisms
-    pub fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &Organism<G, S>)> {
+    pub fn enumerate(&self) -> impl Iterator<Item = (u64, usize, &Organism<G, S>)> {
         self.species
             .iter()
             .map(|(species_index, species)| {

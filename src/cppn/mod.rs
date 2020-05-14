@@ -22,7 +22,6 @@ pub struct Cppn;
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Cppn {
     type Genome = Genome;
     type Developer = Developer;
-    type Logger = Logger;
 
     fn genome_config(_: &EnvironmentDescription) -> NeatConfig {
         NeatConfig::default()
@@ -34,5 +33,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Cppn {
 }
 
 pub fn cppn<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Cppn>();
+    evolve::<E, Cppn, Logger>();
 }

@@ -15,28 +15,37 @@ use evolution::{
     conf::{PopulationConfig, EVOLUTION},
     environment::{Environment, NoStats},
     evaluate::{Evaluate, MultiEvaluator},
-    log::{Log, Logger},
+    log::{CreateLog, LogEntry, Logger},
     neat::{conf::NeatConfig, state::InitConfig},
     population::Population,
 };
 use network::execute::Executor;
+use serde::Serialize;
+
+#[derive(new, Serialize)]
+struct Config {
+    blueprint_population: PopulationConfig,
+    blueprint_genome: NeatConfig,
+    module_population: PopulationConfig,
+    module_genome: NeatConfig,
+}
 
 pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
     let environment = &E::default();
 
-    let module_config = PopulationConfig::init().unwrap();
-    let genome_config = NeatConfig::default();
+    let module_population_config = PopulationConfig::init().unwrap();
+    let module_genome_config = NeatConfig::default();
     let mut modules = Population::<CppnGenome, NoStats>::new(
-        module_config,
-        genome_config,
+        module_population_config.clone(),
+        module_genome_config.clone(),
         &InitConfig::new(4, 2),
     );
 
-    let blueprint_config = PopulationConfig::init().unwrap();
-    let genome_config = NeatConfig::default();
+    let blueprint_population_config = PopulationConfig::init().unwrap();
+    let blueprint_genome_config = NeatConfig::default();
     let mut blueprints = Population::<BlueprintGenome, E::Stats>::new(
-        blueprint_config,
-        genome_config,
+        blueprint_population_config.clone(),
+        blueprint_genome_config.clone(),
         &InitConfig::new(1, 1),
     );
 
@@ -44,7 +53,13 @@ pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>(
         blueprints.population_config.population_size,
         EVOLUTION.thread_count,
     );
-    let mut logger = Logger::from(environment.description());
+    let config = Config::new(
+        blueprint_population_config,
+        blueprint_genome_config,
+        module_population_config,
+        module_genome_config,
+    );
+    let mut logger = Logger::new(&environment.description(), &config);
 
     for i in 1..EVOLUTION.iterations {
         let mut avg_fitnesses = Vec::<f64>::new();
@@ -62,7 +77,7 @@ pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>(
                         ),
                     )
                 })
-                .collect::<Vec<(usize, usize, CombinedGenome)>>();
+                .collect::<Vec<(u64, usize, CombinedGenome)>>();
 
             let mut fitnesses = evaluator.evaluate(combined_genomes.iter().cloned());
 

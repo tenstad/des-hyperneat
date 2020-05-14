@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 pub trait GenericGenome<C, S: Default, I>: Clone + Send {
     fn new(config: &C, init_config: &I, state: &mut S) -> Self;
     fn crossover(&self, config: &C, other: &Self, fitness: &f64, other_fitness: &f64) -> Self;
@@ -10,7 +12,7 @@ pub trait GenericGenome<C, S: Default, I>: Clone + Send {
 pub trait Genome:
     GenericGenome<<Self as Genome>::Config, <Self as Genome>::State, <Self as Genome>::InitConfig>
 {
-    type Config: Clone;
+    type Config: Clone + Serialize;
     type InitConfig;
     type State: Default;
 }

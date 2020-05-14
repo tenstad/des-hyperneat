@@ -4,30 +4,31 @@ use crate::hyperneat::log::Logger as HyperneatLogger;
 use evolution::{
     develop::Develop,
     environment::{EnvironmentDescription, Stats},
-    log,
+    log::{self},
     population::Population,
 };
+use serde::Serialize;
 
 pub struct Logger {
     hyperneat_logger: HyperneatLogger,
     neat_developer: CppnDeveloper,
     developer: Developer,
-    log_interval: usize,
+    log_interval: u64,
 }
 
-impl From<EnvironmentDescription> for Logger {
-    fn from(description: EnvironmentDescription) -> Self {
+impl<C: Serialize> log::CreateLog<C> for Logger {
+    fn new(description: &EnvironmentDescription, config: &C) -> Self {
         Self {
-            hyperneat_logger: HyperneatLogger::from(description),
-            neat_developer: CppnDeveloper::from(description),
-            developer: Developer::from(description),
+            hyperneat_logger: HyperneatLogger::new(description, config),
+            neat_developer: CppnDeveloper::from(description.clone()),
+            developer: Developer::from(description.clone()),
             log_interval: 10,
         }
     }
 }
 
-impl<S: Stats> log::Log<Genome, S> for Logger {
-    fn log(&mut self, iteration: usize, population: &Population<Genome, S>) {
+impl<S: Stats> log::LogEntry<Genome, S> for Logger {
+    fn log(&mut self, iteration: u64, population: &Population<Genome, S>) {
         self.hyperneat_logger.log(iteration, population);
 
         if iteration % self.log_interval == 0 {
@@ -48,3 +49,5 @@ impl<S: Stats> log::Log<Genome, S> for Logger {
         }
     }
 }
+
+impl<C: Serialize, S: Stats> log::Log<C, Genome, S> for Logger {}

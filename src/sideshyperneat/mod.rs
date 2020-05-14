@@ -21,7 +21,6 @@ pub struct Sideshyperneat;
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Sideshyperneat {
     type Genome = Genome;
     type Developer = Developer;
-    type Logger = Logger;
 
     fn genome_config(_: &EnvironmentDescription) -> conf::Config {
         conf::Config::default()
@@ -33,5 +32,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Sideshyperneat {
 }
 
 pub fn sideshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Sideshyperneat>();
+    evolve::<E, Sideshyperneat, Logger>();
 }

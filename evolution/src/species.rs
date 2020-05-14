@@ -13,7 +13,7 @@ pub struct Species<G, S> {
     lifetime_best_fitness: f64,
     last_improvement: u64,
     pub offsprings: f64,
-    pub elites: usize,
+    pub elites: u64,
     pub organisms: Vec<Organism<G, S>>,
     pub extinct: bool,
     locked: bool, // When locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
@@ -137,7 +137,8 @@ impl<G: Genome, S> Species<G, S> {
         let new_size = (self.organisms.len() as f64 * config.survival_ratio).round() as usize;
         // Assumes the individuals are sorted in descending fitness order
         // Keep a minimum of two individuals for sexual reproduction
-        self.organisms.truncate(new_size.max(self.elites).max(2));
+        self.organisms
+            .truncate(new_size.max(self.elites as usize).max(2));
     }
 
     /// Lock the species, so that next generation organisms are not used for reproduction
@@ -181,7 +182,7 @@ impl<G: Genome, S> Species<G, S> {
     }
 
     /// Use tournament selection to select an organism
-    pub fn tournament_select(&self, k: usize) -> Option<&Organism<G, S>> {
+    pub fn tournament_select(&self, k: u64) -> Option<&Organism<G, S>> {
         let mut best: Option<&Organism<G, S>> = None;
         let mut best_fitness = f64::MIN;
 

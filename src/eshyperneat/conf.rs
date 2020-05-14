@@ -14,22 +14,22 @@ pub struct Conf {
     pub band_threshold: f64,
 
     #[envconfig(from = "INITIAL_RESOLUTION", default = "4")]
-    pub initial_resolution: usize,
+    pub initial_resolution: u64,
 
     #[envconfig(from = "MAX_RESOLUTION", default = "5")]
-    pub max_resolution: usize,
+    pub max_resolution: u64,
 
     #[envconfig(from = "ITERATION_LEVEL", default = "3")]
-    pub iteration_level: usize,
+    pub iteration_level: u64,
 
     #[envconfig(from = "RESOLUTION", default = "1048576.0")]
     pub resolution: f64,
 
     #[envconfig(from = "MAX_DISCOVERIES", default = "512")]
-    pub max_discoveries: usize,
+    pub max_discoveries: u64,
 
     #[envconfig(from = "MAX_OUTGOING", default = "16")]
-    pub max_outgoing: usize,
+    pub max_outgoing: u64,
 
     #[envconfig(from = "HIDDEN_ACTIVATION", default = "None")]
     pub hidden_activation: Activation,
