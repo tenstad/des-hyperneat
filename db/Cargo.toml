@@ -11,6 +11,7 @@ chrono = { version = "0.4", features = ["serde"] }
 lazy_static = "1.4.0"
 envconfig = "0.6.0"
 envconfig_derive = "0.6.0"
+hex = "0.4.2"
 
 [dependencies.mongodb]
 version = "0.10.0"

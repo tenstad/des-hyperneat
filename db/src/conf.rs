@@ -15,8 +15,11 @@ pub struct Conf {
     #[envconfig(from = "DATABASE", default = "deshyperneat")]
     pub database: String,
 
-    #[envconfig(from = "COLLECTION", default = "logs")]
-    pub collection: String,
+    #[envconfig(from = "JOB_COLLECTION", default = "jobs")]
+    pub job_collection: String,
+
+    #[envconfig(from = "LOG_COLLECTION", default = "logs")]
+    pub log_collection: String,
 
     #[envconfig(from = "JOB_ID", default = "-1")]
     pub job_id: String,

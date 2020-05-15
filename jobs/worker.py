@@ -11,7 +11,7 @@ def find_job_transaction(session):
     return jobs.find_one_and_update(
         {'$expr': {'$lt': ['$started', '$scheduled']}},
         {'$inc': {'started': 1}},
-        sort=[('started', -1)], session=session)
+        sort=[('timestamp', 1)], session=session)
 
 
 def create_complete_job_transaction(id):
@@ -41,7 +41,7 @@ def main():
         job = run_transaction(client, find_job_transaction)
 
         if job is not None:
-            print('found job: ', job)
+            print('found job:', job.get('name', "unnamed"), job.get('_id', -1))
 
             parameters = job.get('parameters', {})
             for k, v in parameters.items():
