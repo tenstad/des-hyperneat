@@ -1,5 +1,5 @@
 import os
-from jobs.client import get_client
+from src.client import get_client
 from datetime import datetime
 
 
@@ -8,7 +8,8 @@ class Scheduler:
         self.client = get_client()
 
     def create_job(self, name, schedules, parameters):
-        jobs = getattr(self.client, os.environ['DATABASE']).jobs
+        jobs = getattr(self.client, os.environ.get(
+            'DATABASE', 'deshyperneat')).jobs
 
         job = jobs.insert_one(
             {

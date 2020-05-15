@@ -2,11 +2,12 @@ import os
 from pymongo.read_concern import ReadConcern
 from pymongo import WriteConcern, ReadPreference
 import time
-from jobs.client import get_client
+from src.client import get_client
 
 
 def find_job_transaction(session):
-    jobs = getattr(session.client, os.environ['DATABASE']).jobs
+    jobs = getattr(session.client, os.environ.get(
+        'DATABASE', 'deshyperneat')).jobs
 
     return jobs.find_one_and_update(
         {'$expr': {'$lt': ['$started', '$scheduled']}},
@@ -16,7 +17,8 @@ def find_job_transaction(session):
 
 def create_complete_job_transaction(id):
     def complete_job_transaction(session):
-        jobs = getattr(session.client, os.environ['DATABASE']).jobs
+        jobs = getattr(session.client, os.environ.get(
+            'DATABASE', 'deshyperneat')).jobs
 
         return jobs.find_one_and_update(
             {'_id': id},
@@ -34,7 +36,7 @@ def run_transaction(client, transaction):
             read_preference=ReadPreference.PRIMARY)
 
 
-def main():
+def work():
     client = get_client()
 
     while 1:
@@ -59,7 +61,3 @@ def main():
             print('waiting for job...')
 
             time.sleep(1)
-
-
-if __name__ == '__main__':
-    main()
