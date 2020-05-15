@@ -3,6 +3,7 @@ from pymongo.read_concern import ReadConcern
 from pymongo import WriteConcern, ReadPreference
 import time
 from src.client import get_client
+from datetime import datetime
 
 
 def find_job_transaction(session):
@@ -43,7 +44,8 @@ def work():
         job = run_transaction(client, find_job_transaction)
 
         if job is not None:
-            print('found job:', job.get('name', "unnamed"), job.get('_id', -1))
+            print(f'[{now()}] found job:', job.get(
+                'name', "unnamed"), job.get('_id', -1))
 
             parameters = job.get('parameters', {})
             for k, v in parameters.items():
@@ -51,13 +53,17 @@ def work():
             os.putenv("DEBUG", "false")
             os.putenv("JOB_ID", str(job.get('_id', -1)))
 
-            print('running job...')
+            print(f'[{now()}] running job...')
             os.system('cargo run --release')
 
-            print('job complete')
+            print(f'[{now()}] completed job')
             run_transaction(
                 client, create_complete_job_transaction(job['_id']))
         else:
-            print('waiting for job...')
+            print(f'[{now()}] waiting for job...')
 
             time.sleep(1)
+
+
+def now():
+    return datetime.now().strftime("%b %d %H:%M:%S")
