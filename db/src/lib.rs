@@ -33,7 +33,6 @@ pub struct Mongo {
 pub struct Entry {
     collection: Collection,
     id_query: OrderedDocument,
-    num_events: u64,
 }
 
 #[allow(dead_code)]
@@ -72,14 +71,16 @@ impl Mongo {
             id_query: doc! {
                 "_id": id
             },
-            num_events: 0,
         }
     }
 
     fn add_entry_data<T: Serialize>(&mut self, data: &T) -> OrderedDocument {
-        if let Document(mut document) = to_bson(data).unwrap() {
-            document.insert("entry_time", Utc::now());
-            document
+        if let Document(document) = to_bson(data).unwrap() {
+            doc! {
+                "job_id": DB.job_id.clone(),
+                "start_time": Utc::now(),
+                "config": document,
+            }
         } else {
             panic!("unable to serialize data");
         }
@@ -114,8 +115,6 @@ impl Entry {
     fn add_event_data<T: Serialize>(&mut self, event: &T) -> OrderedDocument {
         if let Document(mut document) = to_bson(event).ok().unwrap() {
             document.insert("event_time", Utc::now());
-            document.insert("event_id", self.num_events);
-            self.num_events += 1;
             document
         } else {
             panic!("unable to serialize data");

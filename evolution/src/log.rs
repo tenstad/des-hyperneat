@@ -1,3 +1,4 @@
+use crate::conf::EVOLUTION;
 use crate::environment::{EnvironmentDescription, Stats};
 use crate::genome::Genome;
 use crate::population::Population;
@@ -17,14 +18,20 @@ pub trait LogEntry<G: Genome, S: Stats> {
 
 pub struct Logger {
     pub log_interval: u64,
-    pub entry: Entry,
+    pub entry: Option<Entry>,
 }
 
 impl<C: Serialize> CreateLog<C> for Logger {
     fn new(_: &EnvironmentDescription, config: &C) -> Self {
+        let entry = if EVOLUTION.debug {
+            None
+        } else {
+            Some(Mongo::new().entry(config))
+        };
+
         Self {
             log_interval: 10,
-            entry: Mongo::new().entry(config),
+            entry,
         }
     }
 }
@@ -35,8 +42,12 @@ impl<G: Genome, S: Stats> LogEntry<G, S> for Logger {
             print!("Iter: {}", iteration);
             if let Some(best) = &population.best() {
                 if let (Some(fitness), Some(stats)) = (best.fitness, &best.stats) {
-                    self.entry.push(&stats);
+                    if let Some(entry) = &mut self.entry {
+                        entry.push(&stats);
+                    }
+
                     let stats_str = serde_yaml::to_string(&stats).unwrap();
+
                     print!("\t Fitness: {}", fitness);
                     print!("\n{}", stats_str);
                 }
