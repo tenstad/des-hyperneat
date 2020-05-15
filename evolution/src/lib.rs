@@ -20,6 +20,8 @@ extern crate derive_new;
 #[macro_use]
 extern crate neat_macro;
 
+extern crate num_cpus;
+
 use algorithm::Algorithm;
 use conf::{Conf, PopulationConfig, EVOLUTION};
 use envconfig::Envconfig;
@@ -56,7 +58,11 @@ pub fn evolve<
 
     let evaluator = MultiEvaluator::<A::Genome, E>::new::<A::Developer>(
         population.population_config.population_size,
-        EVOLUTION.thread_count,
+        if EVOLUTION.thread_count > 0 {
+            EVOLUTION.thread_count
+        } else {
+            num_cpus::get() as u64
+        },
     );
     let config = Config::<<<A as algorithm::Algorithm<E>>::Genome as Genome>::Config>::new(
         EVOLUTION.clone(),

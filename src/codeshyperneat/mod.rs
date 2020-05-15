@@ -5,6 +5,8 @@ pub mod link;
 pub mod node;
 pub mod state;
 
+extern crate num_cpus;
+
 use crate::codeshyperneat::{
     conf::CODESHYPERNEAT, develop::CombinedGenome, genome::Genome as BlueprintGenome,
 };
@@ -51,7 +53,11 @@ pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>(
 
     let evaluator = MultiEvaluator::<CombinedGenome, E>::new::<Developer>(
         blueprints.population_config.population_size,
-        EVOLUTION.thread_count,
+        if EVOLUTION.thread_count > 0 {
+            EVOLUTION.thread_count
+        } else {
+            num_cpus::get() as u64
+        },
     );
     let config = Config::new(
         blueprint_population_config,

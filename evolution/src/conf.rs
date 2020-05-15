@@ -6,11 +6,11 @@ use serde::Serialize;
 #[derive(Envconfig, Serialize, Clone)]
 pub struct Conf {
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "THREADS", default = "8")]
+    #[envconfig(from = "THREADS", default = "0")]
     pub thread_count: u64,
 
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "ITERATIONS", default = "1000000")]
+    #[envconfig(from = "ITERATIONS", default = "10000")]
     pub iterations: u64,
 
     #[envconfig(from = "DEBUG", default = "true")]
