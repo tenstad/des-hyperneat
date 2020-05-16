@@ -7,6 +7,12 @@ use serde::Serialize;
 pub struct MethodConfig {
     #[envconfig(from = "SINGLE_CPPN_STATE", default = "false")]
     pub single_cppn_state: bool,
+
+    #[envconfig(from = "INPUT_CONFIG", default = "line")]
+    pub input_config: String,
+
+    #[envconfig(from = "OUTPUT_CONFIG", default = "line")]
+    pub output_config: String,
 }
 
 impl Default for MethodConfig {

@@ -9,7 +9,7 @@ pub mod node;
 pub mod state;
 
 use conf::{GenomeConfig, MethodConfig};
-use developer::Developer;
+use developer::{topology_init_config, Developer};
 use evolution::{
     algorithm::Algorithm, environment::Environment, environment::EnvironmentDescription, evolve,
     neat::state::InitConfig,
@@ -30,8 +30,8 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Deshyperneat {
         GenomeConfig::default()
     }
 
-    fn genome_init_config(_: &EnvironmentDescription) -> InitConfig {
-        InitConfig::new(3, 1)
+    fn genome_init_config(description: &EnvironmentDescription) -> InitConfig {
+        topology_init_config(description)
     }
 }
 

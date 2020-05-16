@@ -11,7 +11,7 @@ use crate::codeshyperneat::{
     conf::CODESHYPERNEAT, develop::CombinedGenome, genome::Genome as BlueprintGenome,
 };
 use crate::cppn::genome::Genome as CppnGenome;
-use crate::deshyperneat::developer::Developer;
+use crate::deshyperneat::developer::{topology_init_config, Developer};
 use conf::MethodConfig;
 use envconfig::Envconfig;
 use evolution::{
@@ -53,10 +53,11 @@ pub fn codeshyperneat<
 
     let blueprint_population_config = PopulationConfig::init().unwrap();
     let blueprint_genome_config = NeatConfig::default();
+    let blueprint_genome_init = topology_init_config(&environment.description());
     let mut blueprints = Population::<BlueprintGenome, E::Stats>::new(
         blueprint_population_config.clone(),
         blueprint_genome_config.clone(),
-        &InitConfig::new(1, 1),
+        &blueprint_genome_init,
     );
 
     let evaluator = MultiEvaluator::<CombinedGenome, E>::new::<Developer>(

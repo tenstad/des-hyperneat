@@ -7,7 +7,7 @@ pub mod log;
 pub mod node;
 pub mod state;
 
-use crate::deshyperneat::developer::Developer;
+use crate::deshyperneat::developer::{topology_init_config, Developer};
 use conf::{GenomeConfig, MethodConfig};
 use evolution::{
     algorithm::Algorithm, environment::Environment, environment::EnvironmentDescription, evolve,
@@ -29,8 +29,8 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Sideshyperneat {
         GenomeConfig::default()
     }
 
-    fn genome_init_config(_: &EnvironmentDescription) -> InitConfig {
-        InitConfig::new(3, 1)
+    fn genome_init_config(description: &EnvironmentDescription) -> InitConfig {
+        topology_init_config(description)
     }
 }
 

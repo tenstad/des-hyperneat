@@ -1,16 +1,17 @@
 use crate::cppn::developer::Developer as CppnDeveloper;
-use crate::deshyperneat::desgenome::DesGenome;
+use crate::deshyperneat::{conf::DESHYPERNEAT, desgenome::DesGenome};
 use crate::eshyperneat::{conf::ESHYPERNEAT, search};
 use crate::hyperneat::substrate;
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
-    neat::{genome::GetNeat, node::NodeRef},
+    neat::{genome::GetNeat, node::NodeRef, state::InitConfig},
 };
 use network::{
     connection,
     execute::{Action, Executor},
 };
+use serde_json;
 use std::collections::{HashMap, HashSet};
 
 pub struct Developer {
@@ -23,19 +24,9 @@ pub struct Developer {
 
 impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
-        let r = ESHYPERNEAT.resolution as i64;
-        let _input_nodes = (0..description.inputs)
-            .map(|_| vec![(0, 0)])
-            .collect::<Vec<Vec<(i64, i64)>>>();
-        let _output_nodes = (0..description.outputs)
-            .map(|_| vec![(0, 0)])
-            .collect::<Vec<Vec<(i64, i64)>>>();
-        let input_nodes = vec![
-            vec![(-r, -r), (-r, r), (r, -r), (r, r)],
-            vec![(-r, -r), (-r, r), (r, -r), (r, r)],
-            vec![(-r, -r), (-r, r), (r, -r), (r, r), (0, 0)],
-        ];
-        let output_nodes = vec![substrate::horizontal_row(description.outputs, 0)];
+        let input_nodes = parse_nodes(&DESHYPERNEAT.input_config, description.inputs);
+        let output_nodes = parse_nodes(&DESHYPERNEAT.output_config, description.outputs);
+
         let flattened_inputs = input_nodes
             .iter()
             .enumerate()
@@ -405,4 +396,33 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
 
         Executor::create(nodes.len(), inputs, outputs, actions)
     }
+}
+
+pub fn parse_nodes(conf: &String, num: u64) -> Vec<Vec<(i64, i64)>> {
+    let r = ESHYPERNEAT.resolution as i64;
+    match &conf[..] {
+        "line" => vec![substrate::horizontal_row(num, 0)],
+        "separate" => vec![vec![(0, 0)]; num as usize],
+        _ => serde_json::from_str::<Vec<Vec<(i64, i64)>>>(&DESHYPERNEAT.output_config)
+            .expect("unable to parse output nodes")
+            .iter()
+            .map(|nodes| nodes.iter().map(|node| (node.0 * r, node.1 * r)).collect())
+            .collect(),
+    }
+}
+
+pub fn parse_num_substrates(conf: &String, num: u64) -> u64 {
+    match &conf[..] {
+        "line" => 1,
+        "separate" => num,
+        _ => serde_json::from_str::<Vec<Vec<(i64, i64)>>>(&DESHYPERNEAT.output_config)
+            .expect("unable to parse output nodes")
+            .len() as u64,
+    }
+}
+
+pub fn topology_init_config(init_config: &EnvironmentDescription) -> InitConfig {
+    let inputs = parse_num_substrates(&DESHYPERNEAT.input_config, init_config.inputs);
+    let outputs = parse_num_substrates(&DESHYPERNEAT.output_config, init_config.outputs);
+    InitConfig::new(inputs, outputs)
 }

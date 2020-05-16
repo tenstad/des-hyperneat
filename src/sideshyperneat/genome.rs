@@ -32,27 +32,12 @@ impl EvolvableGenome for Genome {
 }
 
 impl GenericEvolvableGenome<GenomeConfig, State, InitConfig> for Genome {
-    fn new(config: &GenomeConfig, _init_config: &InitConfig, state: &mut State) -> Self {
-        let mut topology =
-            NeatGenome::<Node, Link>::new(&config.topology, &InitConfig::new(3, 1), state);
-        topology
-            .get_node_mut(&NodeRef::Input(0))
-            .unwrap()
-            .cppn_output_id = 0;
-        topology
-            .get_node_mut(&NodeRef::Input(1))
-            .unwrap()
-            .cppn_output_id = 1;
-        topology
-            .get_node_mut(&NodeRef::Input(2))
-            .unwrap()
-            .cppn_output_id = 2;
-        topology
-            .get_node_mut(&NodeRef::Output(0))
-            .unwrap()
-            .cppn_output_id = 3;
+    fn new(config: &GenomeConfig, init_config: &InitConfig, state: &mut State) -> Self {
+        let cppn = CppnGenome::new(&config.cppn, &InitConfig::new(4, 2), &mut state.cppn_state);
+        let topology = NeatGenome::new(&config.topology, init_config, state);
+
         Self {
-            cppn: CppnGenome::new(&config.cppn, &InitConfig::new(4, 2), &mut state.cppn_state),
+            cppn,
             topology,
             des_genome: None,
         }
