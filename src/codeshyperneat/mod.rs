@@ -26,13 +26,14 @@ use network::execute::Executor;
 use serde::Serialize;
 
 #[derive(new, Serialize)]
-struct Config<N: Serialize> {
+struct Config<N: Serialize, E: Serialize> {
     evolution: EvolutionConfig,
     blueprint_population: PopulationConfig,
     blueprint_genome: NeatConfig,
     module_population: PopulationConfig,
     module_genome: NeatConfig,
     method: MethodConfig,
+    environment: E,
     main: N,
 }
 
@@ -73,6 +74,7 @@ pub fn codeshyperneat<
         module_population_config,
         module_genome_config,
         CODESHYPERNEAT.clone(),
+        E::Config::default(),
         N::default(),
     );
     let mut logger = Logger::new(&environment.description(), &config);

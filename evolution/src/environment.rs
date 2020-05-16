@@ -7,6 +7,7 @@ pub struct NoStats;
 impl Stats for NoStats {}
 
 pub trait Environment: Default {
+    type Config: Serialize + Default;
     type Stats: Stats;
     type Phenotype;
 

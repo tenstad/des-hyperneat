@@ -22,6 +22,7 @@ use serde::Serialize;
 pub struct Deshyperneat;
 
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Deshyperneat {
+    type Config = MethodConfig;
     type Genome = Genome;
     type Developer = Developer;
 
@@ -36,7 +37,7 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Deshyperneat {
 
 pub fn deshyperneat<
     E: Environment<Phenotype = Executor> + Default + 'static,
-    N: Serialize + Default,
+    C: Serialize + Default,
 >() {
-    evolve::<E, Deshyperneat, Logger, MethodConfig, N>();
+    evolve::<E, Deshyperneat, Logger, C>();
 }

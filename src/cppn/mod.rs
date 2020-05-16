@@ -22,6 +22,7 @@ pub mod node;
 pub struct Cppn;
 
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Cppn {
+    type Config = MethodConfig;
     type Genome = Genome;
     type Developer = Developer;
 
@@ -34,6 +35,6 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Cppn {
     }
 }
 
-pub fn cppn<E: Environment<Phenotype = Executor> + Default + 'static, N: Serialize + Default>() {
-    evolve::<E, Cppn, Logger, MethodConfig, N>();
+pub fn cppn<E: Environment<Phenotype = Executor> + Default + 'static, C: Serialize + Default>() {
+    evolve::<E, Cppn, Logger, C>();
 }

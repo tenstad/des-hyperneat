@@ -17,6 +17,7 @@ pub mod state;
 pub struct Neat;
 
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Neat {
+    type Config = NoConfig;
     type Genome = DefaultNeatGenome;
     type Developer = Developer;
 
@@ -30,5 +31,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Neat {
 }
 
 pub fn neat<E: Environment<Phenotype = Executor> + Default + 'static, N: Serialize + Default>() {
-    evolve::<E, Neat, Logger, NoConfig, N>();
+    evolve::<E, Neat, Logger, N>();
 }

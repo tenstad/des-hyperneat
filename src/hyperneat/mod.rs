@@ -20,6 +20,7 @@ use serde::Serialize;
 pub struct Hyperneat;
 
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Hyperneat {
+    type Config = MethodConfig;
     type Genome = Genome;
     type Developer = Developer;
 
@@ -34,7 +35,7 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Hyperneat {
 
 pub fn hyperneat<
     E: Environment<Phenotype = Executor> + Default + 'static,
-    N: Serialize + Default,
+    C: Serialize + Default,
 >() {
-    evolve::<E, Hyperneat, Logger, MethodConfig, N>();
+    evolve::<E, Hyperneat, Logger, C>();
 }

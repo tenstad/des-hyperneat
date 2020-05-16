@@ -33,20 +33,29 @@ use population::Population;
 use serde::Serialize;
 
 #[derive(new, Serialize)]
-pub struct Config<G: Serialize, M: Serialize, N: Serialize> {
+pub struct Config<G: Serialize, M: Serialize, E: Serialize, C: Serialize> {
     evoltuion: EvolutionConfig,
     population: PopulationConfig,
     genome: G,
     method: M,
-    main: N,
+    environment: E,
+    main: C,
 }
 
 pub fn evolve<
     E: Environment + 'static,
     A: Algorithm<E>,
-    L: Log<Config<<<A as Algorithm<E>>::Genome as Genome>::Config, M, N>, A::Genome, E::Stats>,
-    M: Serialize + Default,
-    N: Serialize + Default,
+    L: Log<
+        Config<
+            <<A as Algorithm<E>>::Genome as Genome>::Config,
+            <A as Algorithm<E>>::Config,
+            E::Config,
+            C,
+        >,
+        A::Genome,
+        E::Stats,
+    >,
+    C: Serialize + Default,
 >() {
     let environment = &E::default();
     let environment_description = environment.description();
@@ -68,12 +77,13 @@ pub fn evolve<
             num_cpus::get() as u64
         },
     );
-    let config = Config::<<<A as algorithm::Algorithm<E>>::Genome as Genome>::Config, M, N>::new(
+    let config = Config::new(
         EVOLUTION.clone(),
         population_config,
         genome_config,
-        M::default(),
-        N::default(),
+        A::Config::default(),
+        E::Config::default(),
+        C::default(),
     );
     let mut logger = L::new(&environment_description, &config);
 

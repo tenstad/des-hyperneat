@@ -21,6 +21,7 @@ use serde::Serialize;
 pub struct Sideshyperneat;
 
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Sideshyperneat {
+    type Config = MethodConfig;
     type Genome = Genome;
     type Developer = Developer;
 
@@ -35,7 +36,7 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Sideshyperneat {
 
 pub fn sideshyperneat<
     E: Environment<Phenotype = Executor> + Default + 'static,
-    N: Serialize + Default,
+    C: Serialize + Default,
 >() {
-    evolve::<E, Sideshyperneat, Logger, MethodConfig, N>();
+    evolve::<E, Sideshyperneat, Logger, C>();
 }

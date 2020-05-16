@@ -1,4 +1,4 @@
-use data::{accuracy, dataset::Dataset, error};
+use data::{accuracy, conf::DatasetConfig, dataset::Dataset, error};
 use evolution::environment::{Environment, EnvironmentDescription, Stats};
 use network::execute::Executor;
 use serde::Serialize;
@@ -64,6 +64,7 @@ impl DatasetEnvironment {
 }
 
 impl Environment for DatasetEnvironment {
+    type Config = DatasetConfig;
     type Phenotype = Executor;
     type Stats = DatasetStats;
 
