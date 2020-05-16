@@ -17,6 +17,7 @@ use evolution::{
 use genome::Genome;
 use log::Logger;
 use network::execute::Executor;
+use serde::Serialize;
 
 pub struct Deshyperneat;
 
@@ -33,6 +34,9 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Deshyperneat {
     }
 }
 
-pub fn deshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Deshyperneat, Logger, MethodConfig>();
+pub fn deshyperneat<
+    E: Environment<Phenotype = Executor> + Default + 'static,
+    N: Serialize + Default,
+>() {
+    evolve::<E, Deshyperneat, Logger, MethodConfig, N>();
 }

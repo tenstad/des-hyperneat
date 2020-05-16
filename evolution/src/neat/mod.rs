@@ -5,6 +5,7 @@ use crate::neat::genome::DefaultNeatGenome;
 use crate::{conf::NoConfig, environment::Environment, evolve};
 use developer::Developer;
 use network::execute::Executor;
+use serde::Serialize;
 
 pub mod conf;
 pub mod developer;
@@ -28,6 +29,6 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Neat {
     }
 }
 
-pub fn neat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Neat, Logger, NoConfig>();
+pub fn neat<E: Environment<Phenotype = Executor> + Default + 'static, N: Serialize + Default>() {
+    evolve::<E, Neat, Logger, NoConfig, N>();
 }

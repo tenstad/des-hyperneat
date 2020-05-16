@@ -96,7 +96,6 @@ impl Mongo {
         let document = doc! {
             "single": true,
             "start_time": Utc::now(),
-            "parameters": {"METHOD": DB.method.clone() },
             "config": document,
         };
         let result = self

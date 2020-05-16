@@ -23,9 +23,6 @@ pub struct Conf {
 
     #[envconfig(from = "JOB_ID", default = "0")]
     pub job_id: String,
-
-    #[envconfig(from = "METHOD", default = "")]
-    pub method: String,
 }
 
 lazy_static! {

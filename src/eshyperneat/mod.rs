@@ -16,6 +16,7 @@ use evolution::{
     neat::{conf::NeatConfig, state::InitConfig},
 };
 use network::execute::Executor;
+use serde::Serialize;
 
 pub struct Eshyperneat;
 
@@ -32,6 +33,9 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Eshyperneat {
     }
 }
 
-pub fn eshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Eshyperneat, Logger, MethodConfig>();
+pub fn eshyperneat<
+    E: Environment<Phenotype = Executor> + Default + 'static,
+    N: Serialize + Default,
+>() {
+    evolve::<E, Eshyperneat, Logger, MethodConfig, N>();
 }

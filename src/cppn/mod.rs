@@ -10,6 +10,7 @@ use evolution::{
 use genome::Genome;
 use log::Logger;
 use network::execute::Executor;
+use serde::Serialize;
 
 pub mod conf;
 pub mod developer;
@@ -33,6 +34,6 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Cppn {
     }
 }
 
-pub fn cppn<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Cppn, Logger, MethodConfig>();
+pub fn cppn<E: Environment<Phenotype = Executor> + Default + 'static, N: Serialize + Default>() {
+    evolve::<E, Cppn, Logger, MethodConfig, N>();
 }

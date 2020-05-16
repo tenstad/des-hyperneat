@@ -16,6 +16,7 @@ use evolution::{
 use genome::Genome;
 use log::Logger;
 use network::execute::Executor;
+use serde::Serialize;
 
 pub struct Sideshyperneat;
 
@@ -32,6 +33,9 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Sideshyperneat {
     }
 }
 
-pub fn sideshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Sideshyperneat, Logger, MethodConfig>();
+pub fn sideshyperneat<
+    E: Environment<Phenotype = Executor> + Default + 'static,
+    N: Serialize + Default,
+>() {
+    evolve::<E, Sideshyperneat, Logger, MethodConfig, N>();
 }

@@ -15,6 +15,7 @@ use evolution::{
 };
 use log::Logger;
 use network::execute::Executor;
+use serde::Serialize;
 
 pub struct Hyperneat;
 
@@ -31,6 +32,9 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Hyperneat {
     }
 }
 
-pub fn hyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Hyperneat, Logger, MethodConfig>();
+pub fn hyperneat<
+    E: Environment<Phenotype = Executor> + Default + 'static,
+    N: Serialize + Default,
+>() {
+    evolve::<E, Hyperneat, Logger, MethodConfig, N>();
 }

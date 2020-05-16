@@ -16,6 +16,7 @@ mod hyperneat;
 mod sideshyperneat;
 
 use codeshyperneat::codeshyperneat;
+use conf::MainConfig;
 use cppn::cppn;
 use dataset_environment::DatasetEnvironment;
 use deshyperneat::deshyperneat;
@@ -26,13 +27,13 @@ use sideshyperneat::sideshyperneat;
 
 fn main() {
     match &conf::CONF.method[..] {
-        "NEAT" => neat::<DatasetEnvironment>(),
-        "CPPN" => cppn::<DatasetEnvironment>(),
-        "HyperNEAT" => hyperneat::<DatasetEnvironment>(),
-        "ES-HyperNEAT" => eshyperneat::<DatasetEnvironment>(),
-        "DES-HyperNEAT" => deshyperneat::<DatasetEnvironment>(),
-        "CoDES-HyperNEAT" => codeshyperneat::<DatasetEnvironment>(),
-        "SiDES-HyperNEAT" => sideshyperneat::<DatasetEnvironment>(),
+        "NEAT" => neat::<DatasetEnvironment, MainConfig>(),
+        "CPPN" => cppn::<DatasetEnvironment, MainConfig>(),
+        "HyperNEAT" => hyperneat::<DatasetEnvironment, MainConfig>(),
+        "ES-HyperNEAT" => eshyperneat::<DatasetEnvironment, MainConfig>(),
+        "DES-HyperNEAT" => deshyperneat::<DatasetEnvironment, MainConfig>(),
+        "CoDES-HyperNEAT" => codeshyperneat::<DatasetEnvironment, MainConfig>(),
+        "SiDES-HyperNEAT" => sideshyperneat::<DatasetEnvironment, MainConfig>(),
         _ => println!("Unknown method method"),
     }
 }
