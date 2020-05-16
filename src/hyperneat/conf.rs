@@ -1,9 +1,10 @@
 use envconfig::Envconfig;
 use lazy_static::lazy_static;
 use network::activation::Activation;
+use serde::Serialize;
 
-#[derive(Envconfig)]
-pub struct Conf {
+#[derive(Envconfig, Serialize)]
+pub struct MethodConfig {
     #[envconfig(from = "WEIGHT_THRESHOLD", default = "0.1")]
     pub weight_threshold: f64,
 
@@ -14,6 +15,12 @@ pub struct Conf {
     pub output_activation: Activation,
 }
 
+impl Default for MethodConfig {
+    fn default() -> Self {
+        MethodConfig::init().unwrap()
+    }
+}
+
 lazy_static! {
-    pub static ref HYPERNEAT: Conf = Conf::init().unwrap();
+    pub static ref HYPERNEAT: MethodConfig = MethodConfig::init().unwrap();
 }

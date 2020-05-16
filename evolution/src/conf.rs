@@ -3,8 +3,11 @@ use envconfig::Envconfig;
 use lazy_static::lazy_static;
 use serde::Serialize;
 
+#[derive(Serialize, Clone, Default)]
+pub struct NoConfig {}
+
 #[derive(Envconfig, Serialize, Clone)]
-pub struct Conf {
+pub struct EvolutionConfig {
     #[serde(with = "bson::compat::u2f")]
     #[envconfig(from = "THREADS", default = "0")]
     pub thread_count: u64,
@@ -13,8 +16,8 @@ pub struct Conf {
     #[envconfig(from = "ITERATIONS", default = "10000")]
     pub iterations: u64,
 
-    #[envconfig(from = "DEBUG", default = "true")]
-    pub debug: bool,
+    #[envconfig(from = "DB_LOG", default = "false")]
+    pub db_log: bool,
 }
 
 #[derive(Envconfig, Serialize, Clone)]
@@ -71,5 +74,5 @@ pub struct PopulationConfig {
 }
 
 lazy_static! {
-    pub static ref EVOLUTION: Conf = Conf::init().unwrap();
+    pub static ref EVOLUTION: EvolutionConfig = EvolutionConfig::init().unwrap();
 }

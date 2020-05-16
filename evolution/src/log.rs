@@ -23,10 +23,10 @@ pub struct Logger {
 
 impl<C: Serialize> CreateLog<C> for Logger {
     fn new(_: &EnvironmentDescription, config: &C) -> Self {
-        let entry = if EVOLUTION.debug {
-            None
-        } else {
+        let entry = if EVOLUTION.db_log {
             Some(Mongo::new().entry(config))
+        } else {
+            None
         };
 
         Self {

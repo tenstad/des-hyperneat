@@ -1,3 +1,4 @@
+use conf::MethodConfig;
 use developer::Developer;
 use evolution::{
     algorithm::Algorithm,
@@ -33,5 +34,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Cppn {
 }
 
 pub fn cppn<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Cppn, Logger>();
+    evolve::<E, Cppn, Logger, MethodConfig>();
 }

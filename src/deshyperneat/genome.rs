@@ -1,5 +1,5 @@
 use crate::deshyperneat::{
-    conf::{Config, DESHYPERNEAT},
+    conf::{GenomeConfig, DESHYPERNEAT},
     link::Link,
     node::Node,
     state::State,
@@ -17,19 +17,25 @@ pub struct Genome {
 }
 
 impl EvolvableGenome for Genome {
-    type Config = Config;
+    type Config = GenomeConfig;
     type InitConfig = InitConfig;
     type State = State;
 }
 
-impl GenericEvolvableGenome<Config, State, InitConfig> for Genome {
-    fn new(config: &Config, init_config: &InitConfig, state: &mut State) -> Self {
+impl GenericEvolvableGenome<GenomeConfig, State, InitConfig> for Genome {
+    fn new(config: &GenomeConfig, init_config: &InitConfig, state: &mut State) -> Self {
         Self {
             neat: NeatGenome::<Node, Link>::new(config, init_config, state),
         }
     }
 
-    fn crossover(&self, config: &Config, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
+    fn crossover(
+        &self,
+        config: &GenomeConfig,
+        other: &Self,
+        fitness: &f64,
+        other_fitness: &f64,
+    ) -> Self {
         Self {
             neat: self
                 .neat
@@ -37,7 +43,7 @@ impl GenericEvolvableGenome<Config, State, InitConfig> for Genome {
         }
     }
 
-    fn mutate(&mut self, config: &Config, state: &mut State) {
+    fn mutate(&mut self, config: &GenomeConfig, state: &mut State) {
         self.neat.mutate(config, state);
         let mut rng = rand::thread_rng();
 
@@ -107,7 +113,7 @@ impl GenericEvolvableGenome<Config, State, InitConfig> for Genome {
         }
     }
 
-    fn distance(&self, config: &Config, other: &Self) -> f64 {
+    fn distance(&self, config: &GenomeConfig, other: &Self) -> f64 {
         self.neat.distance(config, &other.neat)
     }
 }

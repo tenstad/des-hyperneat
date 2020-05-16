@@ -8,6 +8,7 @@ pub mod node;
 pub mod state;
 
 use crate::deshyperneat::developer::Developer;
+use conf::{GenomeConfig, MethodConfig};
 use evolution::{
     algorithm::Algorithm, environment::Environment, environment::EnvironmentDescription, evolve,
     neat::state::InitConfig,
@@ -22,8 +23,8 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Sideshyperneat {
     type Genome = Genome;
     type Developer = Developer;
 
-    fn genome_config(_: &EnvironmentDescription) -> conf::Config {
-        conf::Config::default()
+    fn genome_config(_: &EnvironmentDescription) -> GenomeConfig {
+        GenomeConfig::default()
     }
 
     fn genome_init_config(_: &EnvironmentDescription) -> InitConfig {
@@ -32,5 +33,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Sideshyperneat {
 }
 
 pub fn sideshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Sideshyperneat, Logger>();
+    evolve::<E, Sideshyperneat, Logger, MethodConfig>();
 }

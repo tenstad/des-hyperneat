@@ -5,6 +5,7 @@ pub mod log;
 pub mod substrate;
 
 use crate::cppn::genome::Genome;
+use conf::MethodConfig;
 use developer::Developer;
 use evolution::{
     algorithm::Algorithm,
@@ -31,5 +32,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Hyperneat {
 }
 
 pub fn hyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Hyperneat, Logger>();
+    evolve::<E, Hyperneat, Logger, MethodConfig>();
 }

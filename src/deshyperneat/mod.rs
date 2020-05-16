@@ -8,6 +8,7 @@ pub mod log;
 pub mod node;
 pub mod state;
 
+use conf::{GenomeConfig, MethodConfig};
 use developer::Developer;
 use evolution::{
     algorithm::Algorithm, environment::Environment, environment::EnvironmentDescription, evolve,
@@ -23,8 +24,8 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Deshyperneat {
     type Genome = Genome;
     type Developer = Developer;
 
-    fn genome_config(_: &EnvironmentDescription) -> conf::Config {
-        conf::Config::default()
+    fn genome_config(_: &EnvironmentDescription) -> GenomeConfig {
+        GenomeConfig::default()
     }
 
     fn genome_init_config(_: &EnvironmentDescription) -> InitConfig {
@@ -33,5 +34,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Deshyperneat {
 }
 
 pub fn deshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Deshyperneat, Logger>();
+    evolve::<E, Deshyperneat, Logger, MethodConfig>();
 }

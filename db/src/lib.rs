@@ -61,41 +61,74 @@ impl Mongo {
     /// Returns a job instance entry, able to
     /// push future events in this job instance.
     pub fn entry<T: Serialize>(&mut self, data: &T) -> Entry {
-        self.add_details_to_job(data);
-        let id = self.create_log_entry();
+        let job_id = if let Some(job_id) = self.add_details_to_job(data) {
+            job_id
+        } else {
+            str_to_id(&DB.job_id)
+        };
+        let entry_id = self.create_log_entry(job_id);
 
         Entry {
             db: self.db.clone(),
             id_query: doc! {
-                "_id": id
+                "_id": entry_id
             },
         }
     }
 
     /// Update the job description with the exect config,
     /// if not already done by another instance of the job.
-    fn add_details_to_job<T: Serialize>(&mut self, data: &T) {
+    /// If this is a standalone run, create new job for it.
+    fn add_details_to_job<T: Serialize>(&mut self, data: &T) -> Option<ObjectId> {
         if let Document(document) = to_bson(data).unwrap() {
-            let query = doc! {
-                "_id": str_to_id(&DB.job_id),
-                "config": {"$exists": false},
-            };
-            let update = doc! {
-                "$set": {"config": document},
-            };
-            self.db
-                .collection(&DB.job_collection)
-                .update_one(query, update, None)
-                .unwrap();
+            if DB.job_id == "0" {
+                Some(self.crate_new_single_run_job(document))
+            } else {
+                self.add_details_to_existing_job(document);
+                None
+            }
         } else {
             panic!("unable to serialize data");
         }
     }
 
-    /// Creates a new log entry for this job instance, returns id.
-    fn create_log_entry(&self) -> ObjectId {
+    fn crate_new_single_run_job(&mut self, document: OrderedDocument) -> ObjectId {
         let document = doc! {
-            "job_id": DB.job_id.clone(),
+            "single": true,
+            "start_time": Utc::now(),
+            "parameters": {"METHOD": DB.method.clone() },
+            "config": document,
+        };
+        let result = self
+            .db
+            .collection(&DB.job_collection)
+            .insert_one(document, None)
+            .unwrap();
+        if let Bson::ObjectId(id) = result.inserted_id {
+            id
+        } else {
+            panic!("unable to get inserted entry id")
+        }
+    }
+
+    fn add_details_to_existing_job(&mut self, document: OrderedDocument) {
+        let query = doc! {
+            "_id": str_to_id(&DB.job_id),
+            "config": {"$exists": false},
+        };
+        let update = doc! {
+            "$set": {"config": document},
+        };
+        self.db
+            .collection(&DB.job_collection)
+            .update_one(query, update, None)
+            .unwrap();
+    }
+
+    /// Creates a new log entry for this job instance, returns id.
+    fn create_log_entry(&self, job_id: ObjectId) -> ObjectId {
+        let document = doc! {
+            "job_id": job_id,
             "start_time": Utc::now(),
         };
 

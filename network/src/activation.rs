@@ -1,9 +1,11 @@
 use rand::Rng;
-use std::fmt;
-use std::fmt::Display;
-use std::str;
+use serde::Serialize;
+use std::{
+    fmt::{self, Display},
+    str,
+};
 
-#[derive(Copy, Clone, Debug, Display, PartialEq)]
+#[derive(Copy, Clone, Debug, Display, PartialEq, Serialize)]
 pub enum Activation {
     None,
     Linear,
@@ -21,7 +23,7 @@ pub enum Activation {
     Exp,
 }
 
-#[derive(Clone, new)]
+#[derive(Clone, new, Serialize)]
 pub struct Activations {
     activations: Vec<Activation>,
 }

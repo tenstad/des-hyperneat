@@ -8,6 +8,7 @@ pub mod search;
 
 use crate::cppn::genome::Genome;
 use crate::eshyperneat::{developer::Developer, log::Logger};
+use conf::MethodConfig;
 use evolution::{
     algorithm::Algorithm,
     environment::{Environment, EnvironmentDescription},
@@ -32,5 +33,5 @@ impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Eshyperneat {
 }
 
 pub fn eshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
-    evolve::<E, Eshyperneat, Logger>();
+    evolve::<E, Eshyperneat, Logger, MethodConfig>();
 }

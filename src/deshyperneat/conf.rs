@@ -4,22 +4,28 @@ use lazy_static::lazy_static;
 use serde::Serialize;
 
 #[derive(Envconfig, Serialize)]
-pub struct Conf {
+pub struct MethodConfig {
     #[envconfig(from = "SINGLE_CPPN_STATE", default = "false")]
     pub single_cppn_state: bool,
 }
 
+impl Default for MethodConfig {
+    fn default() -> Self {
+        MethodConfig::init().unwrap()
+    }
+}
+
 lazy_static! {
-    pub static ref DESHYPERNEAT: Conf = Conf::init().unwrap();
+    pub static ref DESHYPERNEAT: MethodConfig = MethodConfig::default();
 }
 
 #[derive(Default, Clone, Serialize)]
-pub struct Config {
+pub struct GenomeConfig {
     pub cppn: NeatConfig,
     pub topology: NeatConfig,
 }
 
-impl ConfigProvider<NeatConfig, NeatConfig> for Config {
+impl ConfigProvider<NeatConfig, NeatConfig> for GenomeConfig {
     fn neat(&self) -> &NeatConfig {
         &self.topology
     }

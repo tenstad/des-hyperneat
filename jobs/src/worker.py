@@ -26,7 +26,15 @@ def work():
         job = run_transaction(client, find_job_transaction)
 
         if job:
-            do_job(job)
+            try:
+                do_job(job)
+                time.sleep(0.5)
+            except KeyboardInterrupt:
+                print_now('terminating')
+                run_transaction(
+                    client, create_complete_job_transaction(job['_id'], abort=True))
+                break
+
             run_transaction(
                 client, create_complete_job_transaction(job['_id']))
         elif stop_if_idle:
@@ -44,7 +52,7 @@ def do_job(job):
     parameters = job.get('parameters', {})
     for k, v in parameters.items():
         os.putenv(k, str(v))
-    os.putenv("DEBUG", "false")
+    os.putenv("DB_LOG", "true")
     os.putenv("JOB_ID", str(job.get('_id', -1)))
 
     print_now('running job...')
@@ -58,19 +66,22 @@ def find_job_transaction(session):
         'DATABASE', 'deshyperneat')).jobs
 
     return jobs.find_one_and_update(
-        {'$expr': {'$lt': ['$started', '$scheduled']}},
+        {'$expr': {
+            '$lt': [{'$subtract': ['$started', '$aborted']}, '$scheduled']}},
         {'$inc': {'started': 1}},
         sort=[('timestamp', 1)], session=session)
 
 
-def create_complete_job_transaction(id):
+def create_complete_job_transaction(id, abort=False):
+    field = 'aborted' if abort else 'completed'
+
     def complete_job_transaction(session):
         jobs = getattr(session.client, os.environ.get(
             'DATABASE', 'deshyperneat')).jobs
 
         return jobs.find_one_and_update(
             {'_id': id},
-            {'$inc': {'completed': 1}},
+            {'$inc': {field: 1}},
             session=session)
 
     return complete_job_transaction

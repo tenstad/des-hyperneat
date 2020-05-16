@@ -12,9 +12,10 @@ use crate::codeshyperneat::{
 };
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::developer::Developer;
+use conf::MethodConfig;
 use envconfig::Envconfig;
 use evolution::{
-    conf::{PopulationConfig, EVOLUTION},
+    conf::{EvolutionConfig, PopulationConfig, EVOLUTION},
     environment::{Environment, NoStats},
     evaluate::{Evaluate, MultiEvaluator},
     log::{CreateLog, LogEntry, Logger},
@@ -26,10 +27,12 @@ use serde::Serialize;
 
 #[derive(new, Serialize)]
 struct Config {
+    evolution: EvolutionConfig,
     blueprint_population: PopulationConfig,
     blueprint_genome: NeatConfig,
     module_population: PopulationConfig,
     module_genome: NeatConfig,
+    method: MethodConfig,
 }
 
 pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>() {
@@ -60,10 +63,12 @@ pub fn codeshyperneat<E: Environment<Phenotype = Executor> + Default + 'static>(
         },
     );
     let config = Config::new(
+        EVOLUTION.clone(),
         blueprint_population_config,
         blueprint_genome_config,
         module_population_config,
         module_genome_config,
+        CODESHYPERNEAT.clone(),
     );
     let mut logger = Logger::new(&environment.description(), &config);
 

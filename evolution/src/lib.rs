@@ -23,7 +23,7 @@ extern crate neat_macro;
 extern crate num_cpus;
 
 use algorithm::Algorithm;
-use conf::{Conf, PopulationConfig, EVOLUTION};
+use conf::{EvolutionConfig, PopulationConfig, EVOLUTION};
 use envconfig::Envconfig;
 use environment::Environment;
 use evaluate::MultiEvaluator;
@@ -33,16 +33,18 @@ use population::Population;
 use serde::Serialize;
 
 #[derive(new, Serialize)]
-pub struct Config<T: Serialize> {
-    evoltuion: Conf,
+pub struct Config<G: Serialize, M: Serialize> {
+    evoltuion: EvolutionConfig,
     population: PopulationConfig,
-    genome: T,
+    genome: G,
+    method: M,
 }
 
 pub fn evolve<
     E: Environment + 'static,
     A: Algorithm<E>,
-    L: Log<Config<<<A as Algorithm<E>>::Genome as Genome>::Config>, A::Genome, E::Stats>,
+    L: Log<Config<<<A as Algorithm<E>>::Genome as Genome>::Config, M>, A::Genome, E::Stats>,
+    M: Serialize + Default,
 >() {
     let environment = &E::default();
     let environment_description = environment.description();
@@ -64,10 +66,11 @@ pub fn evolve<
             num_cpus::get() as u64
         },
     );
-    let config = Config::<<<A as algorithm::Algorithm<E>>::Genome as Genome>::Config>::new(
+    let config = Config::<<<A as algorithm::Algorithm<E>>::Genome as Genome>::Config, M>::new(
         EVOLUTION.clone(),
         population_config,
         genome_config,
+        M::default(),
     );
     let mut logger = L::new(&environment_description, &config);
 

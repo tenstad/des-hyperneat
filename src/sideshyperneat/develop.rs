@@ -1,7 +1,7 @@
 use crate::cppn::genome::Genome as CppnGenome;
 use crate::deshyperneat::{
-    conf::Config as DesConfig, desgenome::DesGenome, genome::Genome as DesGenomeStruct, link::Link,
-    node::Node, state::State,
+    conf::GenomeConfig as DesConfig, desgenome::DesGenome, genome::Genome as DesGenomeStruct,
+    link::Link, node::Node, state::State,
 };
 use crate::sideshyperneat::genome::Genome;
 use evolution::{

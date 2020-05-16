@@ -5,9 +5,6 @@ use lazy_static::lazy_static;
 pub struct Conf {
     #[envconfig(from = "METHOD", default = "DES-HyperNEAT")]
     pub method: String,
-
-    #[envconfig(from = "DEBUG", default = "true")]
-    pub debug: bool,
 }
 
 lazy_static! {
