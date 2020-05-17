@@ -5,8 +5,9 @@ use crate::neat::{
     link::NeatLink,
     node::{NeatNode, NodeRef},
 };
-use crate::stats::NoStats;
+use crate::stats::Stats;
 use network::{connection, execute, execute::Executor};
+use serde::Serialize;
 use std::collections::HashMap;
 
 pub struct Developer;
@@ -17,9 +18,17 @@ impl From<EnvironmentDescription> for Developer {
     }
 }
 
+#[derive(Serialize, new)]
+pub struct NetworkStats {
+    pub nodes: u64,
+    pub edges: u64,
+}
+
+impl Stats for NetworkStats {}
+
 impl Develop<NeatGenome<NeatNode, NeatLink>> for Developer {
     type Phenotype = Executor;
-    type Stats = NoStats;
+    type Stats = NetworkStats;
 
     fn develop(&self, genome: NeatGenome<NeatNode, NeatLink>) -> (Self::Phenotype, Self::Stats) {
         // Sort genomes netowrk topologically
@@ -82,7 +91,11 @@ impl Develop<NeatGenome<NeatNode, NeatLink>> for Developer {
 
         // Create neural network executor
         let network = Executor::create(nodes.len(), inputs, outputs, actions);
+        let stats = NetworkStats {
+            nodes: nodes.len() as u64,
+            edges: genome.links.values().filter(|link| link.enabled).count() as u64,
+        };
 
-        (network, NoStats {})
+        (network, stats)
     }
 }

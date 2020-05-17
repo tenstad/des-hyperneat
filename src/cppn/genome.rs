@@ -3,12 +3,11 @@ use evolution::{
     genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
     neat::{
         conf::NeatConfig,
-        genome::NeatGenome,
+        genome::{NeatGenome, NeatGenomeStats},
         link::NeatLink,
         node::NodeRef,
         state::{InitConfig, NeatState},
     },
-    stats::NoStats,
 };
 use network::activation;
 use rand::Rng;
@@ -22,10 +21,10 @@ impl EvolvableGenome for Genome {
     type Config = NeatConfig;
     type InitConfig = InitConfig;
     type State = NeatState;
-    type Stats = NoStats;
+    type Stats = NeatGenomeStats;
 }
 
-impl GenericEvolvableGenome<NeatConfig, NeatState, InitConfig, NoStats> for Genome {
+impl GenericEvolvableGenome<NeatConfig, NeatState, InitConfig, NeatGenomeStats> for Genome {
     fn new(config: &NeatConfig, init_config: &InitConfig, state: &mut NeatState) -> Self {
         Self {
             neat: NeatGenome::<Node, NeatLink>::new(config, init_config, state),
@@ -72,8 +71,8 @@ impl GenericEvolvableGenome<NeatConfig, NeatState, InitConfig, NoStats> for Geno
         self.neat.distance(config, &other.neat)
     }
 
-    fn get_stats(&self) -> NoStats {
-        NoStats {}
+    fn get_stats(&self) -> NeatGenomeStats {
+        self.neat.get_stats()
     }
 }
 

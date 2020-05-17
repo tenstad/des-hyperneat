@@ -23,7 +23,10 @@ pub struct NeatGenome<N, L> {
 }
 
 #[derive(Serialize)]
-pub struct NeatGenomeStats {}
+pub struct NeatGenomeStats {
+    hidden_nodes: u64,
+    links: u64,
+}
 impl Stats for NeatGenomeStats {}
 
 pub trait GetNeat<T> {
@@ -115,7 +118,7 @@ where
     }
 
     fn get_stats(&self) -> NeatGenomeStats {
-        NeatGenomeStats {}
+        Self::get_stats(self)
     }
 }
 
@@ -289,6 +292,14 @@ where
 
         return genome;
     }
+
+    pub fn get_stats(&self) -> NeatGenomeStats {
+        NeatGenomeStats {
+            hidden_nodes: self.hidden_nodes.len() as u64,
+            links: self.links.len() as u64,
+        }
+    }
+
     pub fn empty() -> Self {
         Self {
             inputs: HashMap::new(),

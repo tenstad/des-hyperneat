@@ -1,6 +1,7 @@
 use crate::cppn::{conf::CPPN, Genome};
 use evolution::{
-    develop::Develop, environment::EnvironmentDescription, neat::node::NodeRef, stats::NoStats,
+    develop::Develop, environment::EnvironmentDescription, neat::developer::NetworkStats,
+    neat::node::NodeRef,
 };
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
@@ -15,7 +16,7 @@ impl From<EnvironmentDescription> for Developer {
 
 impl Develop<Genome> for Developer {
     type Phenotype = Executor;
-    type Stats = NoStats;
+    type Stats = NetworkStats;
 
     fn develop(&self, genome: Genome) -> (Self::Phenotype, Self::Stats) {
         // Sort genomes netowrk topologically
@@ -99,12 +100,21 @@ impl Develop<Genome> for Developer {
                     genome.get_activation(node),
                 )),
             })
-            .collect();
+            .collect::<Vec<_>>();
 
         // Create neural network executor
         let network = Executor::create(nodes.len(), inputs, outputs, actions);
+        let stats = NetworkStats {
+            nodes: nodes.len() as u64,
+            edges: genome
+                .neat
+                .links
+                .values()
+                .filter(|link| link.enabled)
+                .count() as u64,
+        };
 
-        (network, NoStats {})
+        (network, stats)
     }
 }
 
