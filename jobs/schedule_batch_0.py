@@ -2,7 +2,7 @@ from src.scheduler import Scheduler
 
 sheduler = Scheduler()
 BATCH = 0
-REPEATS = 10
+REPEATS = 20
 
 for dataset in ('iris', 'wine'):
     for method in ('CPPN', 'HyperNEAT'):
