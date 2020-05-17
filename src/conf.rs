@@ -15,5 +15,5 @@ impl Default for MainConfig {
 }
 
 lazy_static! {
-    pub static ref CONF: MainConfig = MainConfig::init().unwrap();
+    pub static ref CONF: MainConfig = MainConfig::default();
 }

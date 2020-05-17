@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use network::activation::Activation;
 use serde::Serialize;
 
-#[derive(Envconfig, Serialize)]
+#[derive(Envconfig, Serialize, Clone)]
 pub struct MethodConfig {
     #[envconfig(from = "VARIANCE_THRESHOLD", default = "0.2")]
     pub variance_threshold: f64,
@@ -64,5 +64,5 @@ impl Default for MethodConfig {
 }
 
 lazy_static! {
-    pub static ref ESHYPERNEAT: MethodConfig = MethodConfig::init().unwrap();
+    pub static ref ESHYPERNEAT: MethodConfig = MethodConfig::default();
 }

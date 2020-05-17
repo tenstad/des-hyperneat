@@ -22,5 +22,5 @@ impl Default for MethodConfig {
 }
 
 lazy_static! {
-    pub static ref HYPERNEAT: MethodConfig = MethodConfig::init().unwrap();
+    pub static ref HYPERNEAT: MethodConfig = MethodConfig::default();
 }

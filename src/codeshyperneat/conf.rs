@@ -17,5 +17,5 @@ impl Default for MethodConfig {
 }
 
 lazy_static! {
-    pub static ref CODESHYPERNEAT: MethodConfig = MethodConfig::init().unwrap();
+    pub static ref CODESHYPERNEAT: MethodConfig = MethodConfig::default();
 }

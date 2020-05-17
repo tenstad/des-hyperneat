@@ -19,7 +19,7 @@ impl Default for MethodConfig {
 }
 
 lazy_static! {
-    pub static ref SIDESHYPERNEAT: MethodConfig = MethodConfig::init().unwrap();
+    pub static ref SIDESHYPERNEAT: MethodConfig = MethodConfig::default();
 }
 
 #[derive(Default, Clone, Serialize)]

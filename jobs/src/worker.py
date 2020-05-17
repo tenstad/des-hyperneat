@@ -5,6 +5,7 @@ import time
 from src.client import get_client
 from datetime import datetime
 import time
+import json
 
 
 def work():
@@ -51,7 +52,8 @@ def do_job(job):
 
     parameters = job.get('parameters', {})
     for k, v in parameters.items():
-        os.putenv(k, str(v))
+        v = v if type(v) == str else json.dumps(v)
+        os.putenv(k, v)
     os.putenv("DB_LOG", "true")
     os.putenv("JOB_ID", str(job.get('_id', -1)))
 
