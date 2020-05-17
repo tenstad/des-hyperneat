@@ -62,7 +62,7 @@ impl Develop<Genome> for Developer {
 
         let stats = NetworkStats {
             nodes: self.network.length as u64,
-            edges: network.actions.len() as u64 - self.network.length as u64,
+            edges: self.network.actions.len() as u64,
         };
 
         (network, stats)

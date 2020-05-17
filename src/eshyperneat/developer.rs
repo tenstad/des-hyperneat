@@ -164,8 +164,8 @@ impl Develop<Genome> for Developer {
             .collect::<Vec<_>>();
 
         let stats = NetworkStats {
-            nodes: nodes.len() as u64,
-            edges: actions.len() as u64 - nodes.len() as u64,
+            nodes: connections.get_all_nodes().len() as u64,
+            edges: connections.get_all_connections().len() as u64,
         };
         // Create neural network executor
         let network = Executor::create(nodes.len(), inputs, outputs, actions);

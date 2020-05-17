@@ -6,6 +6,7 @@ use crate::neat::{
     node::{NeatNode, NodeRef},
 };
 use crate::stats::Stats;
+use bson;
 use network::{connection, execute, execute::Executor};
 use serde::Serialize;
 use std::collections::HashMap;
@@ -20,7 +21,9 @@ impl From<EnvironmentDescription> for Developer {
 
 #[derive(Serialize, new)]
 pub struct NetworkStats {
+    #[serde(with = "bson::compat::u2f")]
     pub nodes: u64,
+    #[serde(with = "bson::compat::u2f")]
     pub edges: u64,
 }
 

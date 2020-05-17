@@ -2,15 +2,18 @@ use crate::cppn::developer::Developer as CppnDeveloper;
 use crate::deshyperneat::{conf::DESHYPERNEAT, desgenome::DesGenome};
 use crate::eshyperneat::{conf::ESHYPERNEAT, search};
 use crate::hyperneat::substrate;
+use bson;
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
     neat::{developer::NetworkStats, genome::GetNeat, node::NodeRef, state::InitConfig},
+    stats::Stats,
 };
 use network::{
     connection,
     execute::{Action, Executor},
 };
+use serde::Serialize;
 use serde_json;
 use std::collections::{HashMap, HashSet};
 
@@ -56,6 +59,16 @@ impl From<EnvironmentDescription> for Developer {
         }
     }
 }
+
+#[derive(Serialize, new)]
+pub struct MultiSubstrateNetworkStats {
+    #[serde(with = "bson::compat::u2f")]
+    pub hidden_substrates: u64,
+    pub hidden_substrate_node_counts: Vec<i64>,
+    pub network_stats: NetworkStats,
+}
+
+impl Stats for MultiSubstrateNetworkStats {}
 
 impl Developer {
     pub fn connections<G: DesGenome>(
@@ -199,7 +212,7 @@ impl Developer {
 
 impl<G: DesGenome> Develop<G> for Developer {
     type Phenotype = Executor;
-    type Stats = NetworkStats;
+    type Stats = MultiSubstrateNetworkStats;
 
     fn develop(&self, genome: G) -> (Self::Phenotype, Self::Stats) {
         // Let the genome prepeare to provide cppns and depth
@@ -402,9 +415,35 @@ impl<G: DesGenome> Develop<G> for Developer {
             })
             .collect::<Vec<_>>();
 
-        let stats = NetworkStats {
-            nodes: nodes.len() as u64,
-            edges: actions.len() as u64 - nodes.len() as u64,
+        let hidden_substrate_nodes = assembled_connections
+            .get_all_nodes()
+            .iter()
+            .filter_map(|node| {
+                if let (NodeRef::Hidden(id), _, _) = node {
+                    Some(*id)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<u64>>();
+        let mut hidden_substrate_node_counts = HashMap::<u64, i64>::new();
+        for node_id in hidden_substrate_nodes.iter() {
+            hidden_substrate_node_counts.insert(
+                *node_id,
+                hidden_substrate_node_counts.get(node_id).unwrap_or(&0) + 1,
+            );
+        }
+
+        let stats = MultiSubstrateNetworkStats {
+            hidden_substrates: hidden_substrate_node_counts.len() as u64,
+            hidden_substrate_node_counts: hidden_substrate_node_counts
+                .values()
+                .cloned()
+                .collect::<Vec<i64>>(),
+            network_stats: NetworkStats {
+                nodes: assembled_connections.get_all_nodes().len() as u64,
+                edges: assembled_connections.get_all_connections().len() as u64,
+            },
         };
         let network = Executor::create(nodes.len(), inputs, outputs, actions);
 
