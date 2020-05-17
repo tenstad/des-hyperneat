@@ -11,13 +11,14 @@ use evolution::{
     genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
     neat::{
         conf::ConfigProvider,
-        genome::NeatGenome,
+        genome::{NeatGenome, NeatGenomeStats},
         node::{NeatNode, NodeExtension, NodeRef},
         state::{InitConfig, StateProvider},
     },
-    stats::NoStats,
+    stats::Stats,
 };
 use rand::Rng;
+use serde::Serialize;
 
 #[derive(Clone)]
 pub struct Genome {
@@ -26,14 +27,21 @@ pub struct Genome {
     pub des_genome: Option<DesGenome>,
 }
 
+#[derive(Serialize)]
+pub struct SiDESgenomeStats {
+    topology: NeatGenomeStats,
+    cppn: NeatGenomeStats,
+}
+impl Stats for SiDESgenomeStats {}
+
 impl EvolvableGenome for Genome {
     type Config = GenomeConfig;
     type InitConfig = InitConfig;
     type State = State;
-    type Stats = NoStats;
+    type Stats = SiDESgenomeStats;
 }
 
-impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, NoStats> for Genome {
+impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, SiDESgenomeStats> for Genome {
     fn new(config: &GenomeConfig, init_config: &InitConfig, state: &mut State) -> Self {
         let cppn = CppnGenome::new(&config.cppn, &InitConfig::new(4, 2), &mut state.cppn_state);
         let topology = NeatGenome::new(&config.topology, init_config, state);
@@ -117,8 +125,11 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, NoStats> for Genome
             + 0.5 * self.topology.distance(&config.topology, &other.topology)
     }
 
-    fn get_stats(&self) -> NoStats {
-        NoStats {}
+    fn get_stats(&self) -> SiDESgenomeStats {
+        SiDESgenomeStats {
+            topology: self.topology.get_stats(),
+            cppn: self.cppn.get_stats(),
+        }
     }
 }
 

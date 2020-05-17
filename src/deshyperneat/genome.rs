@@ -7,24 +7,39 @@ use crate::deshyperneat::{
 use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::{
     genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
-    neat::{genome::NeatGenome, node::NodeRef, state::InitConfig},
-    stats::NoStats,
+    neat::{
+        genome::{NeatGenome, NeatGenomeStats},
+        node::NodeRef,
+        state::InitConfig,
+    },
+    stats::Stats,
 };
 use rand::{seq::SliceRandom, Rng};
+use serde::Serialize;
 
 #[derive(Clone)]
 pub struct Genome {
     pub neat: NeatGenome<Node, Link>,
 }
 
+#[derive(Serialize)]
+pub struct DESGenomeStats {
+    topology: NeatGenomeStats,
+    input_node_cppns: Vec<NeatGenomeStats>,
+    hidden_node_cppns: Vec<NeatGenomeStats>,
+    output_node_cppns: Vec<NeatGenomeStats>,
+    link_cppns: Vec<NeatGenomeStats>,
+}
+impl Stats for DESGenomeStats {}
+
 impl EvolvableGenome for Genome {
     type Config = GenomeConfig;
     type InitConfig = InitConfig;
     type State = State;
-    type Stats = NoStats;
+    type Stats = DESGenomeStats;
 }
 
-impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, NoStats> for Genome {
+impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, DESGenomeStats> for Genome {
     fn new(config: &GenomeConfig, init_config: &InitConfig, state: &mut State) -> Self {
         Self {
             neat: NeatGenome::<Node, Link>::new(config, init_config, state),
@@ -119,7 +134,33 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, NoStats> for Genome
         self.neat.distance(config, &other.neat)
     }
 
-    fn get_stats(&self) -> NoStats {
-        NoStats {}
+    fn get_stats(&self) -> DESGenomeStats {
+        DESGenomeStats {
+            topology: self.neat.get_stats(),
+            input_node_cppns: self
+                .neat
+                .inputs
+                .values()
+                .map(|x| x.cppn.get_stats())
+                .collect::<Vec<NeatGenomeStats>>(),
+            hidden_node_cppns: self
+                .neat
+                .hidden_nodes
+                .values()
+                .map(|x| x.cppn.get_stats())
+                .collect::<Vec<NeatGenomeStats>>(),
+            output_node_cppns: self
+                .neat
+                .outputs
+                .values()
+                .map(|x| x.cppn.get_stats())
+                .collect::<Vec<NeatGenomeStats>>(),
+            link_cppns: self
+                .neat
+                .links
+                .values()
+                .map(|x| x.cppn.get_stats())
+                .collect::<Vec<NeatGenomeStats>>(),
+        }
     }
 }
