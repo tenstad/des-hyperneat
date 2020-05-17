@@ -2,10 +2,11 @@ from src.scheduler import Scheduler
 
 sheduler = Scheduler()
 BATCH = 0
+REPEATS = 10
 
 for dataset in ('iris', 'wine'):
-    for method in ('CPPN', 'HyperNEAT', 'CoDES-HyperNEAT', 'SiDES-HyperNEAT'):
-        sheduler.create_job(BATCH, f'{method}_{dataset}', 50,
+    for method in ('CPPN', 'HyperNEAT'):
+        sheduler.create_job(BATCH, f'{method}_{dataset}', REPEATS,
                             {
                                 'METHOD': method,
                                 'ITERATIONS': 1000,
@@ -13,8 +14,8 @@ for dataset in ('iris', 'wine'):
                             })
 
 for dataset in ('iris', 'wine'):
-    for method in ('CPPN', 'HyperNEAT'):
-        sheduler.create_job(BATCH, f'{method}_{dataset}', 50,
+    for method in ('SiDES-HyperNEAT',):
+        sheduler.create_job(BATCH, f'{method}_{dataset}', REPEATS,
                             {
                                 'METHOD': method,
                                 'ITERATIONS': 500,
@@ -23,7 +24,7 @@ for dataset in ('iris', 'wine'):
 
 for dataset in ('iris', 'wine'):
     for method in ('ES-HyperNEAT', 'DES-HyperNEAT'):
-        sheduler.create_job(BATCH, f'{method}_{dataset}_custom_var_limited', 50,
+        sheduler.create_job(BATCH, f'{method}_{dataset}_custom_var_limited', REPEATS,
                             {
                                 'METHOD': method,
                                 'ITERATIONS': 500,
@@ -35,7 +36,7 @@ for dataset in ('iris', 'wine'):
                                 'MEDIAN_VARIANCE': True,
                                 'ONLY_LEAF_VARIANCE': False,
                             })
-        sheduler.create_job(BATCH, f'{method}_{dataset}_default_limited', 50,
+        sheduler.create_job(BATCH, f'{method}_{dataset}_default_limited', REPEATS,
                             {
                                 'METHOD': method,
                                 'ITERATIONS': 500,
@@ -50,7 +51,7 @@ for dataset in ('iris', 'wine'):
 
 for dataset in ('iris', 'wine'):
     for method in ('ES-HyperNEAT', 'DES-HyperNEAT'):
-        sheduler.create_job(BATCH,  f'{method}_{dataset}_custom_var_unlimited', 50,
+        sheduler.create_job(BATCH,  f'{method}_{dataset}_custom_var_unlimited', REPEATS,
                             {
                                 'METHOD': method,
                                 'ITERATIONS': 500,
@@ -64,7 +65,7 @@ for dataset in ('iris', 'wine'):
                                 'MAX_DISCOVERIES': 0,
                                 'MAX_OUTGOING': 0,
                             })
-        sheduler.create_job(BATCH, f'{method}_{dataset}_default_unlimited', 50,
+        sheduler.create_job(BATCH, f'{method}_{dataset}_default_unlimited', REPEATS,
                             {
                                 'METHOD': method,
                                 'ITERATIONS': 500,
