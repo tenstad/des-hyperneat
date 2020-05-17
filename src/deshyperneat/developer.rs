@@ -6,7 +6,7 @@ use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
     neat::{genome::GetNeat, node::NodeRef, state::InitConfig},
-    NoStats,
+    stats::NoStats,
 };
 use network::{
     connection,
@@ -97,7 +97,8 @@ impl Developer {
                     // Develop the link's cppn
                     let mut cppn = self
                         .cppn_developer
-                        .develop(genome.get_link_cppn(*from, *to).clone()).0;
+                        .develop(genome.get_link_cppn(*from, *to).clone())
+                        .0;
 
                     // Search for connections
                     let (layers, connections) = match to {
@@ -152,7 +153,8 @@ impl Developer {
                         // Develop the node's cppn
                         let mut cppn = self
                             .cppn_developer
-                            .develop(genome.get_node_cppn(node_ref).clone()).0;
+                            .develop(genome.get_node_cppn(node_ref).clone())
+                            .0;
 
                         // Develop substrate
                         let (layers, connections) = search::explore_substrate(
@@ -235,7 +237,8 @@ impl<G: DesGenome> Develop<G> for Developer {
                     // Develop the link's cppn
                     let mut cppn = self
                         .cppn_developer
-                        .develop(genome.get_link_cppn(*from, *to).clone()).0;
+                        .develop(genome.get_link_cppn(*from, *to).clone())
+                        .0;
 
                     // Search for connections
                     let (layers, connections) = match to {
@@ -297,7 +300,8 @@ impl<G: DesGenome> Develop<G> for Developer {
                         // Develop the node's cppn
                         let mut cppn = self
                             .cppn_developer
-                            .develop(genome.get_node_cppn(node_ref).clone()).0;
+                            .develop(genome.get_node_cppn(node_ref).clone())
+                            .0;
 
                         // Develop substrate
                         let (layers, connections) = search::explore_substrate(

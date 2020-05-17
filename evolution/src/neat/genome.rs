@@ -6,7 +6,7 @@ use crate::neat::{
     node::{NeatNode, NodeExtension, NodeRef},
     state::{InitConfig, NeatState, StateProvider},
 };
-use crate::Stats;
+use crate::stats::Stats;
 use network::connection;
 use rand::{seq::SliceRandom, Rng};
 use serde::Serialize;

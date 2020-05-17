@@ -8,7 +8,7 @@ use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::{
     genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
     neat::{genome::NeatGenome, node::NodeRef, state::InitConfig},
-    NoStats,
+    stats::NoStats,
 };
 use rand::{seq::SliceRandom, Rng};
 

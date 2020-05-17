@@ -73,6 +73,16 @@ pub struct PopulationConfig {
     pub elites_from_offspring: u64,
 }
 
+#[derive(new, Serialize)]
+pub struct CombinedConfig<G: Serialize, M: Serialize, E: Serialize, C: Serialize> {
+    evoltuion: EvolutionConfig,
+    population: PopulationConfig,
+    genome: G,
+    method: M,
+    environment: E,
+    main: C,
+}
+
 lazy_static! {
     pub static ref EVOLUTION: EvolutionConfig = EvolutionConfig::init().unwrap();
 }

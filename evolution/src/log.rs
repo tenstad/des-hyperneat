@@ -1,8 +1,8 @@
 use crate::conf::EVOLUTION;
 use crate::environment::EnvironmentDescription;
-use crate::evaluate::GetPopulationStats;
 use crate::genome::Genome;
 use crate::population::Population;
+use crate::stats::GetPopulationStats;
 use db::{Entry, Mongo};
 use serde::Serialize;
 use serde_yaml;

@@ -4,7 +4,7 @@ use evolution::{
     genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
     neat::{conf::NeatConfig, genome::NeatGenome, node::NodeRef, state::InitConfig},
     population::Population,
-    NoStats,
+    stats::NoStats,
 };
 use rand::{seq::SliceRandom, Rng};
 use std::collections::HashMap;

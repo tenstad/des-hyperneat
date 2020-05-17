@@ -1,7 +1,7 @@
 use crate::cppn::{developer::Developer as CppnDeveloper, genome::Genome};
 use crate::eshyperneat::{conf::ESHYPERNEAT, search};
 use crate::hyperneat::substrate;
-use evolution::{develop::Develop, environment::EnvironmentDescription, NoStats};
+use evolution::{develop::Develop, environment::EnvironmentDescription, stats::NoStats};
 use network::{
     connection,
     execute::{Action, Executor},

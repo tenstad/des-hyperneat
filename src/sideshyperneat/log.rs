@@ -1,7 +1,7 @@
 use crate::deshyperneat::log::Logger as DeshyperneatLogger;
 use crate::sideshyperneat::{dot::genome_to_dot, genome::Genome};
 use evolution::{
-    environment::EnvironmentDescription, evaluate::GetPopulationStats, log, population::Population,
+    environment::EnvironmentDescription, stats::GetPopulationStats, log, population::Population,
 };
 use serde::Serialize;
 

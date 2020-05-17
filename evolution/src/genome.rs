@@ -1,4 +1,4 @@
-use crate::Stats;
+use crate::stats::Stats;
 use serde::Serialize;
 
 pub trait GenericGenome<C, S: Default, I, T>: Clone + Send {

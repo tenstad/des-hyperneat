@@ -1,8 +1,8 @@
 use crate::deshyperneat::{desgenome::DesGenome, developer::Developer, figure::save_fig_to_file};
 use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::{
-    environment::EnvironmentDescription, evaluate::GetPopulationStats, genome::Genome, log,
-    population::Population,
+    environment::EnvironmentDescription, genome::Genome, log, population::Population,
+    stats::GetPopulationStats,
 };
 use serde::Serialize;
 

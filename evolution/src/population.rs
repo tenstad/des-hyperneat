@@ -1,9 +1,9 @@
 use crate::conf::PopulationConfig;
 use crate::evaluate;
-use crate::evaluate::{OrganismStats, PopulationStats};
 use crate::genome::Genome;
 use crate::organism::Organism;
 use crate::species::Species;
+use crate::stats::{OrganismStats, PopulationStats};
 use rand::Rng;
 use std::{collections::HashMap, f64, fmt};
 

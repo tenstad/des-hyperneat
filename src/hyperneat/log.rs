@@ -1,7 +1,7 @@
 use crate::cppn::{developer::Developer, genome::Genome, log::Logger as CppnLogger};
 use crate::hyperneat::img;
 use evolution::{
-    develop::Develop, environment::EnvironmentDescription, evaluate::GetPopulationStats, log,
+    develop::Develop, environment::EnvironmentDescription, stats::GetPopulationStats, log,
     population::Population,
 };
 use serde::Serialize;

@@ -9,6 +9,7 @@ pub mod neat;
 pub mod organism;
 pub mod population;
 pub mod species;
+pub mod stats;
 
 #[macro_use]
 extern crate envconfig_derive;
@@ -23,29 +24,13 @@ extern crate neat_macro;
 extern crate num_cpus;
 
 use algorithm::Algorithm;
-use conf::{EvolutionConfig, PopulationConfig, EVOLUTION};
+use conf::{CombinedConfig, PopulationConfig, EVOLUTION};
 use envconfig::Envconfig;
 use environment::Environment;
 use evaluate::MultiEvaluator;
 use log::Log;
 use population::Population;
 use serde::Serialize;
-
-pub trait Stats: Send + Serialize {}
-
-#[derive(Serialize)]
-pub struct NoStats;
-impl Stats for NoStats {}
-
-#[derive(new, Serialize)]
-pub struct Config<G: Serialize, M: Serialize, E: Serialize, C: Serialize> {
-    evoltuion: EvolutionConfig,
-    population: PopulationConfig,
-    genome: G,
-    method: M,
-    environment: E,
-    main: C,
-}
 
 pub fn evolve<
     E: Environment + 'static,
@@ -73,7 +58,7 @@ pub fn evolve<
             num_cpus::get() as u64
         },
     );
-    let config = Config::new(
+    let config = CombinedConfig::new(
         EVOLUTION.clone(),
         population_config,
         genome_config,

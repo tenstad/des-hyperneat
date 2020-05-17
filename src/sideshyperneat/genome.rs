@@ -15,7 +15,7 @@ use evolution::{
         node::{NeatNode, NodeExtension, NodeRef},
         state::{InitConfig, StateProvider},
     },
-    NoStats,
+    stats::NoStats,
 };
 use rand::Rng;
 

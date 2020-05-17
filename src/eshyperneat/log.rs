@@ -4,9 +4,9 @@ use crate::hyperneat::log::Logger as HyperneatLogger;
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
-    evaluate::GetPopulationStats,
     log::{self},
     population::Population,
+    stats::GetPopulationStats,
 };
 use serde::Serialize;
 

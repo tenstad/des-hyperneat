@@ -1,6 +1,6 @@
 use crate::cppn::{dot::genome_to_dot, genome::Genome};
 use evolution::{
-    environment::EnvironmentDescription, evaluate::GetPopulationStats, log, population::Population,
+    environment::EnvironmentDescription, log, population::Population, stats::GetPopulationStats,
 };
 use serde::Serialize;
 

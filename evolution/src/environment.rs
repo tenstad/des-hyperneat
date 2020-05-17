@@ -1,4 +1,4 @@
-use crate::Stats;
+use crate::stats::Stats;
 use serde::Serialize;
 
 pub trait Environment: Default {

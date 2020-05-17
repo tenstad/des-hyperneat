@@ -8,7 +8,7 @@ use evolution::{
         node::NodeRef,
         state::{InitConfig, NeatState},
     },
-    NoStats,
+    stats::NoStats,
 };
 use network::activation;
 use rand::Rng;

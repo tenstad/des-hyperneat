@@ -5,7 +5,7 @@ use crate::neat::{
     link::NeatLink,
     node::{NeatNode, NodeRef},
 };
-use crate::NoStats;
+use crate::stats::NoStats;
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 

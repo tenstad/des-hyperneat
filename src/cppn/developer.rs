@@ -1,6 +1,6 @@
 use crate::cppn::{conf::CPPN, Genome};
 use evolution::{
-    develop::Develop, environment::EnvironmentDescription, neat::node::NodeRef, NoStats,
+    develop::Develop, environment::EnvironmentDescription, neat::node::NodeRef, stats::NoStats,
 };
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
@@ -153,7 +153,9 @@ mod tests {
             .unwrap()
             .activation = Activation::Sine;
 
-        let mut phenotype = Developer::from(EnvironmentDescription::new(4, 2)).develop(genome).0;
+        let mut phenotype = Developer::from(EnvironmentDescription::new(4, 2))
+            .develop(genome)
+            .0;
 
         let result = phenotype.execute(&vec![5.0, 7.0, -1.0, -1.0]);
         assert_eq!(

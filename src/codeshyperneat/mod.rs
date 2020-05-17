@@ -18,11 +18,11 @@ use evolution::{
     conf::{EvolutionConfig, PopulationConfig, EVOLUTION},
     develop::Develop,
     environment::Environment,
-    evaluate::{Evaluate, MultiEvaluator, OrganismStats, PopulationStats},
+    evaluate::{Evaluate, MultiEvaluator},
     log::{Log, Logger},
     neat::{conf::NeatConfig, state::InitConfig},
     population::Population,
-    NoStats,
+    stats::{NoStats, OrganismStats, PopulationStats},
 };
 use network::execute::Executor;
 use serde::Serialize;
