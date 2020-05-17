@@ -5,8 +5,7 @@ use crate::hyperneat::substrate;
 use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
-    neat::{genome::GetNeat, node::NodeRef, state::InitConfig},
-    stats::NoStats,
+    neat::{developer::NetworkStats, genome::GetNeat, node::NodeRef, state::InitConfig},
 };
 use network::{
     connection,
@@ -200,7 +199,7 @@ impl Developer {
 
 impl<G: DesGenome> Develop<G> for Developer {
     type Phenotype = Executor;
-    type Stats = NoStats;
+    type Stats = NetworkStats;
 
     fn develop(&self, genome: G) -> (Self::Phenotype, Self::Stats) {
         // Let the genome prepeare to provide cppns and depth
@@ -401,11 +400,15 @@ impl<G: DesGenome> Develop<G> for Developer {
                     },
                 ),
             })
-            .collect();
+            .collect::<Vec<_>>();
 
+        let stats = NetworkStats {
+            nodes: nodes.len() as u64,
+            edges: actions.len() as u64 - nodes.len() as u64,
+        };
         let network = Executor::create(nodes.len(), inputs, outputs, actions);
 
-        (network, NoStats {})
+        (network, stats)
     }
 }
 

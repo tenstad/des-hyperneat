@@ -4,10 +4,10 @@ use std::mem;
 
 #[derive(Clone, Debug)]
 pub struct Executor {
-    values: Vec<f64>,
-    inputs: Vec<usize>,
-    outputs: Vec<usize>,
-    actions: Vec<Action>,
+    pub values: Vec<f64>,
+    pub inputs: Vec<usize>,
+    pub outputs: Vec<usize>,
+    pub actions: Vec<Action>,
 }
 
 #[derive(Clone, Debug)]

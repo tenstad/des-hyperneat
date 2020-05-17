@@ -1,6 +1,8 @@
 use crate::cppn::{developer::Developer as CppnDeveloper, genome::Genome};
 use crate::hyperneat::{conf::HYPERNEAT, substrate};
-use evolution::{develop::Develop, environment::EnvironmentDescription, stats::NoStats};
+use evolution::{
+    develop::Develop, environment::EnvironmentDescription, neat::developer::NetworkStats,
+};
 use network::{
     activation,
     execute::{Action, Executor},
@@ -22,7 +24,7 @@ impl From<EnvironmentDescription> for Developer {
 
 impl Develop<Genome> for Developer {
     type Phenotype = Executor;
-    type Stats = NoStats;
+    type Stats = NetworkStats;
 
     fn develop(&self, genome: Genome) -> (Self::Phenotype, Self::Stats) {
         let mut neat_executor = self.neat_developer.develop(genome).0;
@@ -58,6 +60,11 @@ impl Develop<Genome> for Developer {
                 .collect(),
         );
 
-        (network, NoStats {})
+        let stats = NetworkStats {
+            nodes: self.network.length as u64,
+            edges: network.actions.len() as u64 - self.network.length as u64,
+        };
+
+        (network, stats)
     }
 }
