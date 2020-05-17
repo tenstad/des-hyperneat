@@ -8,7 +8,7 @@ impl Stats for NoStats {}
 
 #[derive(Serialize, new)]
 pub struct PopulationStats<G: Serialize, P: Serialize, E: Serialize> {
-    organism: Vec<OrganismStats<G, P, E>>,
+    organisms: Vec<OrganismStats<G, P, E>>,
 }
 #[derive(Serialize, new)]
 pub struct OrganismStats<G: Serialize, P: Serialize, E: Serialize> {
@@ -37,7 +37,7 @@ impl<G: Serialize, P: Serialize, E: Serialize> GetPopulationStats for Population
     }
 
     fn best(&self) -> Option<&OrganismStats<Self::G, Self::P, Self::E>> {
-        self.organism
+        self.organisms
             .iter()
             .max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap())
     }
