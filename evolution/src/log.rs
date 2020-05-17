@@ -43,7 +43,7 @@ impl<G: Genome, S: Stats> LogEntry<G, S> for Logger {
             if let Some(best) = &population.best() {
                 if let (Some(fitness), Some(stats)) = (best.fitness, &best.stats) {
                     if let Some(entry) = &mut self.entry {
-                        entry.push(&stats);
+                        entry.push(&stats, iteration);
                     }
 
                     let stats_str = serde_yaml::to_string(&stats).unwrap();

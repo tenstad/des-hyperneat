@@ -147,8 +147,8 @@ impl Mongo {
 
 #[allow(dead_code)]
 impl Entry {
-    pub fn push<T: Serialize>(&mut self, event: &T) {
-        let document = self.add_event_data(event);
+    pub fn push<T: Serialize>(&mut self, event: &T, iteration: u64) {
+        let document = self.add_event_data(event, iteration);
         let update = doc! {
             "$push": {"events": document}
         };
@@ -158,9 +158,10 @@ impl Entry {
             .unwrap();
     }
 
-    fn add_event_data<T: Serialize>(&mut self, event: &T) -> OrderedDocument {
+    fn add_event_data<T: Serialize>(&mut self, event: &T, iteration: u64) -> OrderedDocument {
         if let Document(mut document) = to_bson(event).ok().unwrap() {
             document.insert("event_time", Utc::now());
+            document.insert("iteration", iteration);
             document
         } else {
             panic!("unable to serialize data");
