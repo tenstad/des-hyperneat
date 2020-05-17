@@ -1,5 +1,4 @@
-use crate::genome::GenericGenome;
-use crate::genome::Genome as EvolvableGenome;
+use crate::genome::{GenericGenome, Genome as EvolvableGenome};
 use crate::neat::{
     conf::ConfigProvider,
     conf::NeatConfig,
@@ -7,8 +6,10 @@ use crate::neat::{
     node::{NeatNode, NodeExtension, NodeRef},
     state::{InitConfig, NeatState, StateProvider},
 };
+use crate::Stats;
 use network::connection;
 use rand::{seq::SliceRandom, Rng};
+use serde::Serialize;
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -21,6 +22,10 @@ pub struct NeatGenome<N, L> {
     pub connections: connection::Connections<NodeRef, ()>, // Fast connection lookup
 }
 
+#[derive(Serialize)]
+pub struct NeatGenomeStats {}
+impl Stats for NeatGenomeStats {}
+
 pub trait GetNeat<T> {
     fn neat(&self) -> &T;
     fn neat_mut(&mut self) -> &mut T;
@@ -31,9 +36,10 @@ impl EvolvableGenome for DefaultNeatGenome {
     type InitConfig = InitConfig;
     type State = NeatState;
     type Config = NeatConfig;
+    type Stats = NeatGenomeStats;
 }
 
-impl<N, L, C, S> GenericGenome<C, S, InitConfig> for NeatGenome<N, L>
+impl<N, L, C, S> GenericGenome<C, S, InitConfig, NeatGenomeStats> for NeatGenome<N, L>
 where
     N: NodeExtension,
     L: LinkExtension,
@@ -106,6 +112,10 @@ where
 
     fn crossover(&self, config: &C, other: &Self, fitness: &f64, other_fitness: &f64) -> Self {
         Self::crossover(self, config, other, fitness, other_fitness)
+    }
+
+    fn get_stats(&self) -> NeatGenomeStats {
+        NeatGenomeStats {}
     }
 }
 

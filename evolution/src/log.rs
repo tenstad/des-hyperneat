@@ -1,19 +1,15 @@
 use crate::conf::EVOLUTION;
-use crate::environment::{EnvironmentDescription, Stats};
+use crate::environment::EnvironmentDescription;
+use crate::evaluate::GetPopulationStats;
 use crate::genome::Genome;
 use crate::population::Population;
 use db::{Entry, Mongo};
 use serde::Serialize;
 use serde_yaml;
 
-pub trait Log<C: Serialize, G: Genome, S: Stats>: CreateLog<C> + LogEntry<G, S> {}
-
-pub trait CreateLog<C: Serialize> {
-    fn new(description: &EnvironmentDescription, config: &C) -> Self;
-}
-
-pub trait LogEntry<G: Genome, S: Stats> {
-    fn log(&mut self, iteration: u64, population: &Population<G, S>);
+pub trait Log<G: Genome> {
+    fn new<C: Serialize>(description: &EnvironmentDescription, config: &C) -> Self;
+    fn log<S: GetPopulationStats>(&mut self, iteration: u64, population: &Population<G>, stats: &S);
 }
 
 pub struct Logger {
@@ -21,8 +17,8 @@ pub struct Logger {
     pub entry: Option<Entry>,
 }
 
-impl<C: Serialize> CreateLog<C> for Logger {
-    fn new(_: &EnvironmentDescription, config: &C) -> Self {
+impl<G: Genome> Log<G> for Logger {
+    fn new<C: Serialize>(_: &EnvironmentDescription, config: &C) -> Self {
         let entry = if EVOLUTION.db_log {
             Some(Mongo::new().entry(config))
         } else {
@@ -34,27 +30,27 @@ impl<C: Serialize> CreateLog<C> for Logger {
             entry,
         }
     }
-}
 
-impl<G: Genome, S: Stats> LogEntry<G, S> for Logger {
-    fn log(&mut self, iteration: u64, population: &Population<G, S>) {
+    fn log<S: GetPopulationStats>(
+        &mut self,
+        iteration: u64,
+        population: &Population<G>,
+        stats: &S,
+    ) {
         if iteration % self.log_interval == 0 {
             print!("Iter: {}", iteration);
-            if let Some(best) = &population.best() {
-                if let (Some(fitness), Some(stats)) = (best.fitness, &best.stats) {
-                    if let Some(entry) = &mut self.entry {
-                        entry.push(&stats, iteration);
-                    }
 
-                    let stats_str = serde_yaml::to_string(&stats).unwrap();
+            let population_stats = stats.population();
 
-                    print!("\t Fitness: {}", fitness);
-                    print!("\n{}", stats_str);
-                }
+            if let Some(best) = population_stats.best() {
+                print!("\n{}", serde_yaml::to_string(best).unwrap());
             }
+
+            if let Some(entry) = &mut self.entry {
+                entry.push(&population_stats, iteration);
+            }
+
             println!("\n{}", population);
         }
     }
 }
-
-impl<C: Serialize, G: Genome, S: Stats> Log<C, G, S> for Logger {}

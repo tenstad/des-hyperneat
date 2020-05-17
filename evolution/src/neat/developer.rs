@@ -5,6 +5,7 @@ use crate::neat::{
     link::NeatLink,
     node::{NeatNode, NodeRef},
 };
+use crate::NoStats;
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
@@ -16,8 +17,11 @@ impl From<EnvironmentDescription> for Developer {
     }
 }
 
-impl Develop<NeatGenome<NeatNode, NeatLink>, Executor> for Developer {
-    fn develop(&self, genome: NeatGenome<NeatNode, NeatLink>) -> Executor {
+impl Develop<NeatGenome<NeatNode, NeatLink>> for Developer {
+    type Phenotype = Executor;
+    type Stats = NoStats;
+
+    fn develop(&self, genome: NeatGenome<NeatNode, NeatLink>) -> (Self::Phenotype, Self::Stats) {
         // Sort genomes netowrk topologically
         let order = genome.connections.sort_topologically();
 
@@ -77,6 +81,8 @@ impl Develop<NeatGenome<NeatNode, NeatLink>, Executor> for Developer {
             .collect();
 
         // Create neural network executor
-        Executor::create(nodes.len(), inputs, outputs, actions)
+        let network = Executor::create(nodes.len(), inputs, outputs, actions);
+
+        (network, NoStats {})
     }
 }

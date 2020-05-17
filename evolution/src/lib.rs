@@ -27,10 +27,15 @@ use conf::{EvolutionConfig, PopulationConfig, EVOLUTION};
 use envconfig::Envconfig;
 use environment::Environment;
 use evaluate::MultiEvaluator;
-use genome::Genome;
 use log::Log;
 use population::Population;
 use serde::Serialize;
+
+pub trait Stats: Send + Serialize {}
+
+#[derive(Serialize)]
+pub struct NoStats;
+impl Stats for NoStats {}
 
 #[derive(new, Serialize)]
 pub struct Config<G: Serialize, M: Serialize, E: Serialize, C: Serialize> {
@@ -45,16 +50,7 @@ pub struct Config<G: Serialize, M: Serialize, E: Serialize, C: Serialize> {
 pub fn evolve<
     E: Environment + 'static,
     A: Algorithm<E>,
-    L: Log<
-        Config<
-            <<A as Algorithm<E>>::Genome as Genome>::Config,
-            <A as Algorithm<E>>::Config,
-            E::Config,
-            C,
-        >,
-        A::Genome,
-        E::Stats,
-    >,
+    L: Log<A::Genome>,
     C: Serialize + Default,
 >() {
     let environment = &E::default();
@@ -63,13 +59,13 @@ pub fn evolve<
     let population_config = PopulationConfig::init().unwrap();
     let genome_config = A::genome_config(&environment_description);
     let init_config = A::genome_init_config(&environment_description);
-    let mut population = Population::<A::Genome, E::Stats>::new(
+    let mut population = Population::<A::Genome>::new(
         population_config.clone(),
         genome_config.clone(),
         &init_config,
     );
 
-    let evaluator = MultiEvaluator::<A::Genome, E>::new::<A::Developer>(
+    let evaluator = MultiEvaluator::<A::Genome, A::Developer, E>::new(
         population.population_config.population_size,
         if EVOLUTION.thread_count > 0 {
             EVOLUTION.thread_count
@@ -88,8 +84,8 @@ pub fn evolve<
     let mut logger = L::new(&environment_description, &config);
 
     for i in 1..EVOLUTION.iterations {
-        population.evaluate(&evaluator);
-        logger.log(i, &population);
+        let population_stats = population.evaluate(&evaluator);
+        logger.log(i, &population, &population_stats);
 
         population.evolve();
     }

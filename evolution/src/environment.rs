@@ -1,10 +1,5 @@
+use crate::Stats;
 use serde::Serialize;
-
-pub trait Stats: Send + Serialize {}
-
-#[derive(Serialize)]
-pub struct NoStats;
-impl Stats for NoStats {}
 
 pub trait Environment: Default {
     type Config: Serialize + Default;

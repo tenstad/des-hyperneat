@@ -7,20 +7,20 @@ use std::f64;
 /// Collection of similar organisms
 // The lock is used to add new organisms without affecting the reproduction of the previous generation.
 // It is unlocked after reproduction, which will remove the previous generation and keep the new.
-pub struct Species<G, S> {
+pub struct Species<G> {
     age: u64,
     pub best_fitness: f64,
     lifetime_best_fitness: f64,
     last_improvement: u64,
     pub offsprings: f64,
     pub elites: u64,
-    pub organisms: Vec<Organism<G, S>>,
+    pub organisms: Vec<Organism<G>>,
     pub extinct: bool,
     locked: bool, // When locked new organisms may be added, but the len() and iter() functions will remain unchanged after addition
     locked_organisms: usize, // The number of organisms when species was locked
 }
 
-impl<G: Genome, S> Species<G, S> {
+impl<G: Genome> Species<G> {
     pub fn new() -> Self {
         Self {
             age: 0,
@@ -41,7 +41,7 @@ impl<G: Genome, S> Species<G, S> {
         &mut self,
         population_config: &PopulationConfig,
         genome_config: &G::Config,
-        other: &Organism<G, S>,
+        other: &Organism<G>,
     ) -> bool {
         if let Some(organism) = self.organisms.first() {
             organism.distance(genome_config, other) < population_config.speciation_threshold
@@ -51,7 +51,7 @@ impl<G: Genome, S> Species<G, S> {
     }
 
     /// Add an organism
-    pub fn push(&mut self, individual: Organism<G, S>) {
+    pub fn push(&mut self, individual: Organism<G>) {
         self.organisms.push(individual);
     }
 
@@ -65,18 +65,18 @@ impl<G: Genome, S> Species<G, S> {
     }
 
     /// Iterate organisms. Adheres to lock.
-    pub fn iter(&self) -> impl Iterator<Item = &Organism<G, S>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Organism<G>> {
         self.organisms.iter().take(self.len())
     }
 
     /// Iterate mutable organisms. Adheres to lock.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<G, S>> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Organism<G>> {
         let len = self.len(); // Must read len before iter_mut
         self.organisms.iter_mut().take(len)
     }
 
     /// Get random organism. Adheres to lock.
-    pub fn random_organism(&self) -> Option<&Organism<G, S>> {
+    pub fn random_organism(&self) -> Option<&Organism<G>> {
         self.iter()
             .skip(rand::thread_rng().gen_range(0, self.len()))
             .next()
@@ -182,8 +182,8 @@ impl<G: Genome, S> Species<G, S> {
     }
 
     /// Use tournament selection to select an organism
-    pub fn tournament_select(&self, k: u64) -> Option<&Organism<G, S>> {
-        let mut best: Option<&Organism<G, S>> = None;
+    pub fn tournament_select(&self, k: u64) -> Option<&Organism<G>> {
+        let mut best: Option<&Organism<G>> = None;
         let mut best_fitness = f64::MIN;
 
         for _ in 0..k {

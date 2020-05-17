@@ -1,8 +1,6 @@
 use crate::cppn::{dot::genome_to_dot, genome::Genome};
 use evolution::{
-    environment::{EnvironmentDescription, Stats},
-    log,
-    population::Population,
+    environment::EnvironmentDescription, evaluate::GetPopulationStats, log, population::Population,
 };
 use serde::Serialize;
 
@@ -11,18 +9,21 @@ pub struct Logger {
     log_interval: u64,
 }
 
-impl<C: Serialize> log::CreateLog<C> for Logger {
-    fn new(description: &EnvironmentDescription, config: &C) -> Self {
+impl log::Log<Genome> for Logger {
+    fn new<C: Serialize>(description: &EnvironmentDescription, config: &C) -> Self {
         Self {
-            default_logger: log::Logger::new(description, config),
+            default_logger: <log::Logger as log::Log<Genome>>::new(description, config),
             log_interval: 10,
         }
     }
-}
 
-impl<S: Stats> log::LogEntry<Genome, S> for Logger {
-    fn log(&mut self, iteration: u64, population: &Population<Genome, S>) {
-        self.default_logger.log(iteration, population);
+    fn log<S: GetPopulationStats>(
+        &mut self,
+        iteration: u64,
+        population: &Population<Genome>,
+        stats: &S,
+    ) {
+        self.default_logger.log(iteration, population, stats);
 
         if iteration % self.log_interval == 0 {
             if let Some(best) = &population.best() {
@@ -31,5 +32,3 @@ impl<S: Stats> log::LogEntry<Genome, S> for Logger {
         }
     }
 }
-
-impl<C: Serialize, S: Stats> log::Log<C, Genome, S> for Logger {}

@@ -1,5 +1,7 @@
 use crate::cppn::{conf::CPPN, Genome};
-use evolution::{develop::Develop, environment::EnvironmentDescription, neat::node::NodeRef};
+use evolution::{
+    develop::Develop, environment::EnvironmentDescription, neat::node::NodeRef, NoStats,
+};
 use network::{connection, execute, execute::Executor};
 use std::collections::HashMap;
 
@@ -11,8 +13,11 @@ impl From<EnvironmentDescription> for Developer {
     }
 }
 
-impl Develop<Genome, Executor> for Developer {
-    fn develop(&self, genome: Genome) -> Executor {
+impl Develop<Genome> for Developer {
+    type Phenotype = Executor;
+    type Stats = NoStats;
+
+    fn develop(&self, genome: Genome) -> (Self::Phenotype, Self::Stats) {
         // Sort genomes netowrk topologically
         let order = genome.neat.connections.sort_topologically();
 
@@ -97,7 +102,9 @@ impl Develop<Genome, Executor> for Developer {
             .collect();
 
         // Create neural network executor
-        Executor::create(nodes.len(), inputs, outputs, actions)
+        let network = Executor::create(nodes.len(), inputs, outputs, actions);
+
+        (network, NoStats {})
     }
 }
 
@@ -146,7 +153,7 @@ mod tests {
             .unwrap()
             .activation = Activation::Sine;
 
-        let mut phenotype = Developer::from(EnvironmentDescription::new(4, 2)).develop(genome);
+        let mut phenotype = Developer::from(EnvironmentDescription::new(4, 2)).develop(genome).0;
 
         let result = phenotype.execute(&vec![5.0, 7.0, -1.0, -1.0]);
         assert_eq!(

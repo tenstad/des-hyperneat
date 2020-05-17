@@ -3,7 +3,8 @@ use crate::eshyperneat::{conf::ESHYPERNEAT, developer::Developer, figure::save_f
 use crate::hyperneat::log::Logger as HyperneatLogger;
 use evolution::{
     develop::Develop,
-    environment::{EnvironmentDescription, Stats},
+    environment::EnvironmentDescription,
+    evaluate::GetPopulationStats,
     log::{self},
     population::Population,
 };
@@ -16,8 +17,8 @@ pub struct Logger {
     log_interval: u64,
 }
 
-impl<C: Serialize> log::CreateLog<C> for Logger {
-    fn new(description: &EnvironmentDescription, config: &C) -> Self {
+impl log::Log<Genome> for Logger {
+    fn new<C: Serialize>(description: &EnvironmentDescription, config: &C) -> Self {
         Self {
             hyperneat_logger: HyperneatLogger::new(description, config),
             neat_developer: CppnDeveloper::from(description.clone()),
@@ -25,14 +26,17 @@ impl<C: Serialize> log::CreateLog<C> for Logger {
             log_interval: 10,
         }
     }
-}
 
-impl<S: Stats> log::LogEntry<Genome, S> for Logger {
-    fn log(&mut self, iteration: u64, population: &Population<Genome, S>) {
-        self.hyperneat_logger.log(iteration, population);
+    fn log<S: GetPopulationStats>(
+        &mut self,
+        iteration: u64,
+        population: &Population<Genome>,
+        stats: &S,
+    ) {
+        self.hyperneat_logger.log(iteration, population, stats);
 
         if iteration % self.log_interval == 0 {
-            let mut phenotype = self
+            let (mut phenotype, _) = self
                 .neat_developer
                 .develop(population.best().unwrap().genome.clone());
 
@@ -49,5 +53,3 @@ impl<S: Stats> log::LogEntry<Genome, S> for Logger {
         }
     }
 }
-
-impl<C: Serialize, S: Stats> log::Log<C, Genome, S> for Logger {}

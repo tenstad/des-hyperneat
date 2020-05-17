@@ -8,6 +8,7 @@ use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::{
     genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
     neat::{genome::NeatGenome, node::NodeRef, state::InitConfig},
+    NoStats,
 };
 use rand::{seq::SliceRandom, Rng};
 
@@ -20,9 +21,10 @@ impl EvolvableGenome for Genome {
     type Config = GenomeConfig;
     type InitConfig = InitConfig;
     type State = State;
+    type Stats = NoStats;
 }
 
-impl GenericEvolvableGenome<GenomeConfig, State, InitConfig> for Genome {
+impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, NoStats> for Genome {
     fn new(config: &GenomeConfig, init_config: &InitConfig, state: &mut State) -> Self {
         Self {
             neat: NeatGenome::<Node, Link>::new(config, init_config, state),
@@ -115,5 +117,9 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig> for Genome {
 
     fn distance(&self, config: &GenomeConfig, other: &Self) -> f64 {
         self.neat.distance(config, &other.neat)
+    }
+
+    fn get_stats(&self) -> NoStats {
+        NoStats {}
     }
 }

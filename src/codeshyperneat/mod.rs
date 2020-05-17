@@ -16,14 +16,17 @@ use conf::MethodConfig;
 use envconfig::Envconfig;
 use evolution::{
     conf::{EvolutionConfig, PopulationConfig, EVOLUTION},
-    environment::{Environment, NoStats},
-    evaluate::{Evaluate, MultiEvaluator},
-    log::{CreateLog, LogEntry, Logger},
+    develop::Develop,
+    environment::Environment,
+    evaluate::{Evaluate, MultiEvaluator, OrganismStats, PopulationStats},
+    log::{Log, Logger},
     neat::{conf::NeatConfig, state::InitConfig},
     population::Population,
+    NoStats,
 };
 use network::execute::Executor;
 use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(new, Serialize)]
 struct Config<N: Serialize, E: Serialize> {
@@ -45,7 +48,7 @@ pub fn codeshyperneat<
 
     let module_population_config = PopulationConfig::init().unwrap();
     let module_genome_config = NeatConfig::default();
-    let mut modules = Population::<CppnGenome, NoStats>::new(
+    let mut modules = Population::<CppnGenome>::new(
         module_population_config.clone(),
         module_genome_config.clone(),
         &InitConfig::new(4, 2),
@@ -54,13 +57,13 @@ pub fn codeshyperneat<
     let blueprint_population_config = PopulationConfig::init().unwrap();
     let blueprint_genome_config = NeatConfig::default();
     let blueprint_genome_init = topology_init_config(&environment.description());
-    let mut blueprints = Population::<BlueprintGenome, E::Stats>::new(
+    let mut blueprints = Population::<BlueprintGenome>::new(
         blueprint_population_config.clone(),
         blueprint_genome_config.clone(),
         &blueprint_genome_init,
     );
 
-    let evaluator = MultiEvaluator::<CombinedGenome, E>::new::<Developer>(
+    let evaluator = MultiEvaluator::<CombinedGenome, Developer, E>::new(
         blueprints.population_config.population_size,
         if EVOLUTION.thread_count > 0 {
             EVOLUTION.thread_count
@@ -78,10 +81,19 @@ pub fn codeshyperneat<
         E::Config::default(),
         N::default(),
     );
-    let mut logger = Logger::new(&environment.description(), &config);
+    let mut logger = <Logger as Log<BlueprintGenome>>::new(&environment.description(), &config);
 
     for i in 1..EVOLUTION.iterations {
         let mut avg_fitnesses = Vec::<f64>::new();
+
+        let mut stats = HashMap::<
+            (u64, usize),
+            OrganismStats<
+                Vec<NoStats>,
+                Vec<<Developer as Develop<CombinedGenome>>::Stats>,
+                Vec<E::Stats>,
+            >,
+        >::new();
 
         for _ in 0..CODESHYPERNEAT.blueprint_developments {
             let mut combined_genomes = blueprints
@@ -100,12 +112,32 @@ pub fn codeshyperneat<
 
             let mut fitnesses = evaluator.evaluate(combined_genomes.iter().cloned());
 
-            avg_fitnesses
-                .push(fitnesses.iter().map(|(_, _, f, _)| f).sum::<f64>() / fitnesses.len() as f64);
+            avg_fitnesses.push(
+                fitnesses.iter().map(|(_, _, f, _, _)| f).sum::<f64>() / fitnesses.len() as f64,
+            );
 
-            for ((species_index, organism_index, combined_genome), (_, _, fitness, _stats)) in
-                combined_genomes.drain(..).zip(fitnesses.drain(..))
+            for (
+                (species_index, organism_index, combined_genome),
+                (_, _, fitness, phenotype_stats, evaluation_stats),
+            ) in combined_genomes.drain(..).zip(fitnesses.drain(..))
             {
+                if let Some(mut organism_stats) = stats.get_mut(&(species_index, organism_index)) {
+                    organism_stats.fitness += fitness;
+                    organism_stats.genome.push(NoStats {});
+                    organism_stats.phenotype.push(phenotype_stats);
+                    organism_stats.evaluation.push(evaluation_stats);
+                } else {
+                    stats.insert(
+                        (species_index, organism_index),
+                        OrganismStats::new(
+                            fitness,
+                            vec![NoStats {}],
+                            vec![phenotype_stats],
+                            vec![evaluation_stats],
+                        ),
+                    );
+                }
+
                 // Assign fitness to the blueprint
                 *blueprints
                     .species
@@ -144,8 +176,14 @@ pub fn codeshyperneat<
             }
         }
 
-        logger.log(i, &blueprints);
-        logger.log(i, &modules);
+        for mut organism_stats in stats.values_mut() {
+            organism_stats.fitness =
+                organism_stats.fitness / CODESHYPERNEAT.blueprint_developments as f64;
+        }
+        let stats = PopulationStats::new(stats.drain().map(|(_, v)| v).collect::<Vec<_>>());
+
+        logger.log(i, &blueprints, &stats);
+        // logger.log(i, &modules);
 
         blueprints.evolve();
         modules.evolve();

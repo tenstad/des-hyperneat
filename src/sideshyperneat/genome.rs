@@ -15,6 +15,7 @@ use evolution::{
         node::{NeatNode, NodeExtension, NodeRef},
         state::{InitConfig, StateProvider},
     },
+    NoStats,
 };
 use rand::Rng;
 
@@ -29,9 +30,10 @@ impl EvolvableGenome for Genome {
     type Config = GenomeConfig;
     type InitConfig = InitConfig;
     type State = State;
+    type Stats = NoStats;
 }
 
-impl GenericEvolvableGenome<GenomeConfig, State, InitConfig> for Genome {
+impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, NoStats> for Genome {
     fn new(config: &GenomeConfig, init_config: &InitConfig, state: &mut State) -> Self {
         let cppn = CppnGenome::new(&config.cppn, &InitConfig::new(4, 2), &mut state.cppn_state);
         let topology = NeatGenome::new(&config.topology, init_config, state);
@@ -113,6 +115,10 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig> for Genome {
     fn distance(&self, config: &GenomeConfig, other: &Self) -> f64 {
         0.5 * self.cppn.distance(&config.cppn, &other.cppn)
             + 0.5 * self.topology.distance(&config.topology, &other.topology)
+    }
+
+    fn get_stats(&self) -> NoStats {
+        NoStats {}
     }
 }
 

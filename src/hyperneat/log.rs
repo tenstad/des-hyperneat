@@ -1,9 +1,7 @@
 use crate::cppn::{developer::Developer, genome::Genome, log::Logger as CppnLogger};
 use crate::hyperneat::img;
 use evolution::{
-    develop::Develop,
-    environment::{EnvironmentDescription, Stats},
-    log,
+    develop::Develop, environment::EnvironmentDescription, evaluate::GetPopulationStats, log,
     population::Population,
 };
 use serde::Serialize;
@@ -14,22 +12,25 @@ pub struct Logger {
     log_interval: u64,
 }
 
-impl<C: Serialize> log::CreateLog<C> for Logger {
-    fn new(description: &EnvironmentDescription, config: &C) -> Self {
+impl log::Log<Genome> for Logger {
+    fn new<C: Serialize>(description: &EnvironmentDescription, config: &C) -> Self {
         Self {
             cppn_logger: CppnLogger::new(description, config),
             developer: Developer::from(description.clone()),
             log_interval: 10,
         }
     }
-}
 
-impl<S: Stats> log::LogEntry<Genome, S> for Logger {
-    fn log(&mut self, iteration: u64, population: &Population<Genome, S>) {
-        self.cppn_logger.log(iteration, population);
+    fn log<S: GetPopulationStats>(
+        &mut self,
+        iteration: u64,
+        population: &Population<Genome>,
+        stats: &S,
+    ) {
+        self.cppn_logger.log(iteration, population, stats);
 
         if iteration % self.log_interval == 0 {
-            let mut phenotype = self
+            let (mut phenotype, _) = self
                 .developer
                 .develop(population.best().unwrap().genome.clone());
 
@@ -39,5 +40,3 @@ impl<S: Stats> log::LogEntry<Genome, S> for Logger {
         }
     }
 }
-
-impl<C: Serialize, S: Stats> log::Log<C, Genome, S> for Logger {}

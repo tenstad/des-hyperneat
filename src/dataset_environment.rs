@@ -1,5 +1,8 @@
 use data::{accuracy, conf::DatasetConfig, dataset::Dataset, error};
-use evolution::environment::{Environment, EnvironmentDescription, Stats};
+use evolution::{
+    environment::{Environment, EnvironmentDescription},
+    Stats,
+};
 use network::execute::Executor;
 use serde::Serialize;
 use std::fmt::{Display, Formatter, Result};

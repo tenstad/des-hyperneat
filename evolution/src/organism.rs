@@ -2,21 +2,19 @@ use crate::genome::Genome;
 use std::cmp;
 
 #[derive(Clone)]
-pub struct Organism<G, S> {
+pub struct Organism<G> {
     pub genome: G,
     pub fitness: Option<f64>,
     pub adjusted_fitness: Option<f64>,
-    pub stats: Option<S>,
     pub generation: u64,
 }
 
-impl<G: Genome, S> Organism<G, S> {
+impl<G: Genome> Organism<G> {
     pub fn new(config: &G::Config, init_config: &G::InitConfig, state: &mut G::State) -> Self {
         Self {
             genome: G::new(config, init_config, state),
             fitness: None,
             adjusted_fitness: None,
-            stats: None,
             generation: 0,
         }
     }
@@ -32,7 +30,6 @@ impl<G: Genome, S> Organism<G, S> {
             ),
             fitness: None,
             adjusted_fitness: None,
-            stats: None,
             generation: self.generation + 1,
         }
     }
@@ -58,7 +55,6 @@ impl<G: Genome, S> Organism<G, S> {
             genome: self.genome.clone(),
             fitness: None,
             adjusted_fitness: None,
-            stats: None,
             generation: self.generation + 1,
         }
     }

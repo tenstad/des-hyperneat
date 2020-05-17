@@ -1,7 +1,7 @@
 use crate::cppn::{developer::Developer as CppnDeveloper, genome::Genome};
 use crate::eshyperneat::{conf::ESHYPERNEAT, search};
 use crate::hyperneat::substrate;
-use evolution::{develop::Develop, environment::EnvironmentDescription};
+use evolution::{develop::Develop, environment::EnvironmentDescription, NoStats};
 use network::{
     connection,
     execute::{Action, Executor},
@@ -66,9 +66,12 @@ impl Developer {
     }
 }
 
-impl Develop<Genome, Executor> for Developer {
-    fn develop(&self, genome: Genome) -> Executor {
-        let mut cppn = self.neat_developer.develop(genome);
+impl Develop<Genome> for Developer {
+    type Phenotype = Executor;
+    type Stats = NoStats;
+
+    fn develop(&self, genome: Genome) -> (Self::Phenotype, Self::Stats) {
+        let mut cppn = self.neat_developer.develop(genome).0;
 
         // Forward search with depth
         let (layers, connections) = search::explore_substrate(
@@ -159,6 +162,8 @@ impl Develop<Genome, Executor> for Developer {
             .collect();
 
         // Create neural network executor
-        Executor::create(nodes.len(), inputs, outputs, actions)
+        let network = Executor::create(nodes.len(), inputs, outputs, actions);
+
+        (network, NoStats {})
     }
 }

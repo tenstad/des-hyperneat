@@ -4,6 +4,7 @@ use evolution::{
     genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
     neat::{conf::NeatConfig, genome::NeatGenome, node::NodeRef, state::InitConfig},
     population::Population,
+    NoStats,
 };
 use rand::{seq::SliceRandom, Rng};
 use std::collections::HashMap;
@@ -17,9 +18,10 @@ impl EvolvableGenome for Genome {
     type Config = NeatConfig;
     type InitConfig = InitConfig;
     type State = State;
+    type Stats = NoStats;
 }
 
-impl GenericEvolvableGenome<NeatConfig, State, InitConfig> for Genome {
+impl GenericEvolvableGenome<NeatConfig, State, InitConfig, NoStats> for Genome {
     fn new(config: &NeatConfig, init_config: &InitConfig, state: &mut State) -> Self {
         Self {
             neat: NeatGenome::<Node, Link>::new(config, init_config, state),
@@ -101,12 +103,16 @@ impl GenericEvolvableGenome<NeatConfig, State, InitConfig> for Genome {
     fn distance(&self, config: &NeatConfig, other: &Self) -> f64 {
         self.neat.distance(config, &other.neat)
     }
+
+    fn get_stats(&self) -> NoStats {
+        NoStats {}
+    }
 }
 
 impl Genome {
-    pub fn select_modules<S>(
+    pub fn select_modules(
         &self,
-        modules: &Population<CppnGenome, S>,
+        modules: &Population<CppnGenome>,
     ) -> HashMap<u64, (usize, CppnGenome)> {
         let mut rng = rand::thread_rng();
         let mut genomes = HashMap::<u64, (usize, CppnGenome)>::new();

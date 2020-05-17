@@ -6,6 +6,7 @@ use evolution::{
     develop::Develop,
     environment::EnvironmentDescription,
     neat::{genome::GetNeat, node::NodeRef, state::InitConfig},
+    NoStats,
 };
 use network::{
     connection,
@@ -96,7 +97,7 @@ impl Developer {
                     // Develop the link's cppn
                     let mut cppn = self
                         .cppn_developer
-                        .develop(genome.get_link_cppn(*from, *to).clone());
+                        .develop(genome.get_link_cppn(*from, *to).clone()).0;
 
                     // Search for connections
                     let (layers, connections) = match to {
@@ -151,7 +152,7 @@ impl Developer {
                         // Develop the node's cppn
                         let mut cppn = self
                             .cppn_developer
-                            .develop(genome.get_node_cppn(node_ref).clone());
+                            .develop(genome.get_node_cppn(node_ref).clone()).0;
 
                         // Develop substrate
                         let (layers, connections) = search::explore_substrate(
@@ -195,8 +196,11 @@ impl Developer {
     }
 }
 
-impl<G: DesGenome> Develop<G, Executor> for Developer {
-    fn develop(&self, genome: G) -> Executor {
+impl<G: DesGenome> Develop<G> for Developer {
+    type Phenotype = Executor;
+    type Stats = NoStats;
+
+    fn develop(&self, genome: G) -> (Self::Phenotype, Self::Stats) {
         // Let the genome prepeare to provide cppns and depth
         let mut genome = genome;
         genome.init_desgenome();
@@ -231,7 +235,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                     // Develop the link's cppn
                     let mut cppn = self
                         .cppn_developer
-                        .develop(genome.get_link_cppn(*from, *to).clone());
+                        .develop(genome.get_link_cppn(*from, *to).clone()).0;
 
                     // Search for connections
                     let (layers, connections) = match to {
@@ -293,7 +297,7 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
                         // Develop the node's cppn
                         let mut cppn = self
                             .cppn_developer
-                            .develop(genome.get_node_cppn(node_ref).clone());
+                            .develop(genome.get_node_cppn(node_ref).clone()).0;
 
                         // Develop substrate
                         let (layers, connections) = search::explore_substrate(
@@ -395,7 +399,9 @@ impl<G: DesGenome> Develop<G, Executor> for Developer {
             })
             .collect();
 
-        Executor::create(nodes.len(), inputs, outputs, actions)
+        let network = Executor::create(nodes.len(), inputs, outputs, actions);
+
+        (network, NoStats {})
     }
 }
 

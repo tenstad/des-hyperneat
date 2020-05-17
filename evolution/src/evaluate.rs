@@ -1,22 +1,72 @@
 use crate::develop::Develop;
 use crate::environment::Environment;
+use crate::Stats;
 use crossbeam::queue;
+use serde::Serialize;
 use std::{sync::Arc, thread, time};
 
+#[derive(Serialize, new)]
+pub struct PopulationStats<G: Serialize, P: Serialize, E: Serialize> {
+    organism: Vec<OrganismStats<G, P, E>>,
+}
+#[derive(Serialize, new)]
+pub struct OrganismStats<G: Serialize, P: Serialize, E: Serialize> {
+    pub fitness: f64,
+    pub genome: G,
+    pub phenotype: P,
+    pub evaluation: E,
+}
+
+pub trait GetPopulationStats {
+    type G: Serialize;
+    type P: Serialize;
+    type E: Serialize;
+
+    fn population(&self) -> &PopulationStats<Self::G, Self::P, Self::E>;
+    fn best(&self) -> Option<&OrganismStats<Self::G, Self::P, Self::E>>;
+}
+
+impl<G: Serialize, P: Serialize, E: Serialize> GetPopulationStats for PopulationStats<G, P, E> {
+    type G = G;
+    type P = P;
+    type E = E;
+
+    fn population(&self) -> &Self {
+        self
+    }
+
+    fn best(&self) -> Option<&OrganismStats<Self::G, Self::P, Self::E>> {
+        self.organism
+            .iter()
+            .max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap())
+    }
+}
+
 type Input<G> = (u64, usize, G);
-type Output<S> = (u64, usize, f64, S);
+type Output<P, E> = (u64, usize, f64, P, E);
 
-pub trait Evaluate<G, S> {
-    fn evaluate(&self, organisms: impl Iterator<Item = Input<G>>) -> Vec<Output<S>>;
+pub trait Evaluate<G> {
+    type PhenotypeStats: Stats;
+    type EvaluationStats: Stats;
+
+    fn evaluate(
+        &self,
+        organisms: impl Iterator<Item = Input<G>>,
+    ) -> Vec<Output<Self::PhenotypeStats, Self::EvaluationStats>>;
 }
 
-pub struct MultiEvaluator<G, E: Environment> {
+pub struct MultiEvaluator<G, D: Develop<G>, E: Environment> {
     input: Arc<queue::ArrayQueue<Input<G>>>,
-    output: Arc<queue::ArrayQueue<Output<E::Stats>>>,
+    output: Arc<queue::ArrayQueue<Output<D::Stats, E::Stats>>>,
 }
 
-impl<G: Send + 'static, E: Environment + 'static> MultiEvaluator<G, E> {
-    pub fn new<D: Develop<G, E::Phenotype>>(task_count: u64, thread_count: u64) -> Self {
+impl<
+        G: Send + 'static,
+        D: Develop<G, Phenotype = E::Phenotype> + 'static,
+        E: Environment + 'static,
+    > MultiEvaluator<G, D, E>
+{
+    pub fn new(task_count: u64, thread_count: u64) -> Self {
         let input = Arc::new(queue::ArrayQueue::new(task_count as usize));
         let output = Arc::new(queue::ArrayQueue::new(task_count as usize));
 
@@ -30,8 +80,15 @@ impl<G: Send + 'static, E: Environment + 'static> MultiEvaluator<G, E> {
 
                 loop {
                     if let Ok((species_index, organism_index, genome)) = input.pop() {
-                        let (fitness, stats) = environment.evaluate(&mut developer.develop(genome));
-                        let mut result = (species_index, organism_index, fitness, stats);
+                        let (mut phenotype, phenotype_stats) = developer.develop(genome);
+                        let (fitness, evaluation_stats) = environment.evaluate(&mut phenotype);
+                        let mut result = (
+                            species_index,
+                            organism_index,
+                            fitness,
+                            phenotype_stats,
+                            evaluation_stats,
+                        );
 
                         while let Err(queue::PushError(ret)) = output.push(result) {
                             result = ret;
@@ -48,8 +105,16 @@ impl<G: Send + 'static, E: Environment + 'static> MultiEvaluator<G, E> {
     }
 }
 
-impl<G, E: Environment> Evaluate<G, E::Stats> for MultiEvaluator<G, E> {
-    fn evaluate(&self, organisms: impl Iterator<Item = Input<G>>) -> Vec<Output<E::Stats>> {
+impl<G, E: Environment, D: Develop<G, Phenotype = E::Phenotype>> Evaluate<G>
+    for MultiEvaluator<G, D, E>
+{
+    type PhenotypeStats = D::Stats;
+    type EvaluationStats = E::Stats;
+
+    fn evaluate(
+        &self,
+        organisms: impl Iterator<Item = Input<G>>,
+    ) -> Vec<Output<Self::PhenotypeStats, Self::EvaluationStats>> {
         let mut count = 0;
         for mut organism in organisms {
             while let Err(queue::PushError(ret)) = self.input.push(organism) {
