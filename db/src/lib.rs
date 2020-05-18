@@ -161,6 +161,7 @@ fn str_to_id(string: &String) -> ObjectId {
 }
 
 fn loop_insert(collection: Collection, document: OrderedDocument) -> ObjectId {
+    let mut sleep_time = 10;
     loop {
         if let Ok(result) = collection.insert_one(document.clone(), None) {
             if let Bson::ObjectId(id) = result.inserted_id {
@@ -169,17 +170,20 @@ fn loop_insert(collection: Collection, document: OrderedDocument) -> ObjectId {
                 panic!("unable to get inserted entry id");
             }
         } else {
-            thread::sleep(time::Duration::from_nanos(10000000));
+            thread::sleep(time::Duration::from_millis(sleep_time));
+            sleep_time *= 2;
         }
     }
 }
 
 fn loop_update(collection: Collection, query: OrderedDocument, update: OrderedDocument) {
+    let mut sleep_time = 10;
     loop {
         if let Ok(_) = collection.update_one(query.clone(), update.clone(), None) {
             break;
         } else {
-            thread::sleep(time::Duration::from_nanos(10000000));
+            thread::sleep(time::Duration::from_millis(sleep_time));
+            sleep_time *= 2;
         }
     }
 }
