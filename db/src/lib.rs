@@ -120,7 +120,7 @@ impl Mongo {
         let document = doc! {
             "job_id": job_id,
             "start_time": Utc::now(),
-            "node_name": env::var("NAME").unwrap_or("".to_owned()),
+            "node_name": env::var("HOSTNAME").unwrap_or("".to_owned()),
         };
 
         loop_insert(self.db.collection(&DB.log_collection), document)
