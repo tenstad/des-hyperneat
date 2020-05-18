@@ -175,15 +175,18 @@ impl<G: Genome> Population<G> {
             let elites_taken_from_offspring = self
                 .population_config
                 .elites_from_offspring
-                .min(species.offsprings.floor() as u64)
-                .min(species.len() as u64);
+                .min(species.offsprings.floor() as u64);
             species.elites += elites_taken_from_offspring;
             species.offsprings -= elites_taken_from_offspring as f64;
+
             drop(species);
 
             // Directly copy elites, without crossover or mutation
             for j in 0..(self.species[i].elites as usize) {
-                self.push(self.species[i].organisms[j].as_elite(), true);
+                self.push(
+                    self.species[i].organisms[j % self.species[i].len()].as_elite(),
+                    true,
+                );
             }
         }
 
