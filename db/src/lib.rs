@@ -61,6 +61,7 @@ impl Mongo {
     }
 
     pub fn reconnect(&mut self) {
+        println!("Reconnecting...");
         let new = Mongo::new();
         self.client = new.client;
         self.db = new.db;
@@ -168,7 +169,7 @@ fn str_to_id(string: &String) -> ObjectId {
 }
 
 fn loop_insert(mongo: &mut Mongo, collection: &String, document: OrderedDocument) -> ObjectId {
-    let mut sleep_time = 10;
+    let mut sleep_time = 5;
     loop {
         if let Ok(result) = mongo
             .db
@@ -181,8 +182,8 @@ fn loop_insert(mongo: &mut Mongo, collection: &String, document: OrderedDocument
                 panic!("unable to get inserted entry id");
             }
         } else {
-            thread::sleep(time::Duration::from_millis(sleep_time));
-            sleep_time *= 2;
+            thread::sleep(time::Duration::from_secs(sleep_time));
+            sleep_time = (2 * sleep_time).min(60);
             mongo.reconnect();
         }
     }
