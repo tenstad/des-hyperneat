@@ -19,7 +19,7 @@ use conf::DB;
 use hex;
 use mongodb::{
     options::{auth::Credential, ClientOptions, StreamAddress},
-    sync::{Client, Collection, Database},
+    sync::{Client, Database},
 };
 use serde::Serialize;
 use std::env;
@@ -33,7 +33,7 @@ pub struct Mongo {
 
 #[allow(dead_code)]
 pub struct Entry {
-    db: Database,
+    mongo: Mongo,
     id_query: OrderedDocument,
 }
 
@@ -60,6 +60,12 @@ impl Mongo {
         Self { client, db }
     }
 
+    pub fn reconnect(&mut self) {
+        let new = Mongo::new();
+        self.client = new.client;
+        self.db = new.db;
+    }
+
     /// Returns a job instance entry, able to
     /// push future events in this job instance.
     pub fn entry<T: Serialize>(&mut self, data: &T) -> Entry {
@@ -71,7 +77,7 @@ impl Mongo {
         let entry_id = self.create_log_entry(job_id);
 
         Entry {
-            db: self.db.clone(),
+            mongo: Self::new(),
             id_query: doc! {
                 "_id": entry_id
             },
@@ -101,7 +107,7 @@ impl Mongo {
             "config": document,
         };
 
-        loop_insert(self.db.collection(&DB.job_collection), document)
+        loop_insert(self, &DB.job_collection, document)
     }
 
     fn add_details_to_existing_job(&mut self, document: OrderedDocument) {
@@ -113,18 +119,18 @@ impl Mongo {
             "$set": {"config": document},
         };
 
-        loop_update(self.db.collection(&DB.job_collection), query, update);
+        loop_update(self, &DB.job_collection, query, update);
     }
 
     /// Creates a new log entry for this job instance, returns id.
-    fn create_log_entry(&self, job_id: ObjectId) -> ObjectId {
+    fn create_log_entry(&mut self, job_id: ObjectId) -> ObjectId {
         let document = doc! {
             "job_id": job_id,
             "start_time": Utc::now(),
             "node_name": env::var("HOSTNAME").unwrap_or("".to_owned()),
         };
 
-        loop_insert(self.db.collection(&DB.log_collection), document)
+        loop_insert(self, &DB.log_collection, document)
     }
 }
 
@@ -136,7 +142,8 @@ impl Entry {
             "$push": {"events": document}
         };
         loop_update(
-            self.db.collection(&DB.log_collection),
+            &mut self.mongo,
+            &DB.log_collection,
             self.id_query.clone(),
             update,
         );
@@ -160,10 +167,14 @@ fn str_to_id(string: &String) -> ObjectId {
     ObjectId::with_bytes(byte_array)
 }
 
-fn loop_insert(collection: Collection, document: OrderedDocument) -> ObjectId {
+fn loop_insert(mongo: &mut Mongo, collection: &String, document: OrderedDocument) -> ObjectId {
     let mut sleep_time = 10;
     loop {
-        if let Ok(result) = collection.insert_one(document.clone(), None) {
+        if let Ok(result) = mongo
+            .db
+            .collection(collection)
+            .insert_one(document.clone(), None)
+        {
             if let Bson::ObjectId(id) = result.inserted_id {
                 return id;
             } else {
@@ -172,18 +183,30 @@ fn loop_insert(collection: Collection, document: OrderedDocument) -> ObjectId {
         } else {
             thread::sleep(time::Duration::from_millis(sleep_time));
             sleep_time *= 2;
+            mongo.reconnect();
         }
     }
 }
 
-fn loop_update(collection: Collection, query: OrderedDocument, update: OrderedDocument) {
+fn loop_update(
+    mongo: &mut Mongo,
+    collection: &String,
+    query: OrderedDocument,
+    update: OrderedDocument,
+) {
     let mut sleep_time = 10;
     loop {
-        if let Ok(_) = collection.update_one(query.clone(), update.clone(), None) {
+        if let Ok(_) =
+            mongo
+                .db
+                .collection(collection)
+                .update_one(query.clone(), update.clone(), None)
+        {
             break;
         } else {
             thread::sleep(time::Duration::from_millis(sleep_time));
             sleep_time *= 2;
+            mongo.reconnect();
         }
     }
 }
