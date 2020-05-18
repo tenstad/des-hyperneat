@@ -23,6 +23,7 @@ use mongodb::{
 };
 use serde::Serialize;
 use std::env;
+use std::{thread, time};
 
 #[allow(dead_code)]
 pub struct Mongo {
@@ -167,6 +168,8 @@ fn loop_insert(collection: Collection, document: OrderedDocument) -> ObjectId {
             } else {
                 panic!("unable to get inserted entry id");
             }
+        } else {
+            thread::sleep(time::Duration::from_nanos(10000000));
         }
     }
 }
@@ -175,6 +178,8 @@ fn loop_update(collection: Collection, query: OrderedDocument, update: OrderedDo
     loop {
         if let Ok(_) = collection.update_one(query.clone(), update.clone(), None) {
             break;
+        } else {
+            thread::sleep(time::Duration::from_nanos(10000000));
         }
     }
 }
