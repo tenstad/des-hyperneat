@@ -68,7 +68,7 @@ pub fn evolve<
     );
     let mut logger = L::new(&environment_description, &config);
 
-    for i in 0..EVOLUTION.iterations {
+    for i in 0..(EVOLUTION.iterations + 1) {
         let population_stats = population.evaluate(&evaluator);
         logger.log(i, &population, &population_stats);
 
