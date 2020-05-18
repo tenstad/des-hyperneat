@@ -5,7 +5,7 @@ use serde::Serialize;
 
 #[derive(Envconfig, Serialize, Clone)]
 pub struct MethodConfig {
-    #[envconfig(from = "BLUEPRINT_DEVELOPMENTS", default = "5")]
+    #[envconfig(from = "BLUEPRINT_DEVELOPMENTS", default = "1")]
     #[serde(with = "bson::compat::u2f")]
     pub blueprint_developments: u64,
 }
