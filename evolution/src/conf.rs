@@ -61,7 +61,7 @@ pub struct PopulationConfig {
     pub survival_ratio: f64,
 
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "GLOBAL_ELITES", default = "0")]
+    #[envconfig(from = "GLOBAL_ELITES", default = "1")]
     pub global_elites: u64,
 
     #[serde(with = "bson::compat::u2f")]
@@ -75,7 +75,7 @@ pub struct PopulationConfig {
 
 #[derive(new, Serialize)]
 pub struct CombinedConfig<G: Serialize, M: Serialize, E: Serialize, C: Serialize> {
-    evoltuion: EvolutionConfig,
+    evolution: EvolutionConfig,
     population: PopulationConfig,
     genome: G,
     method: M,
