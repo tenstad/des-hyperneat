@@ -31,24 +31,36 @@ class Scheduler:
         else:
             print('Unable to create job')
 
-    def reset_job(self, job_id):
+    def reset_jobs(self):
         db = getattr(self.client, os.environ.get(
             'DATABASE', 'deshyperneat'))
 
-        job_query = {'_id': ObjectId(job_id)}
-        job = db.jobs.find(job_query)
+        for job in db.jobs.find():
+            if not 'config' in job:
+                continue
 
-        try:
-            job = job.next()
-            db.jobs.update_one(job_query, {'$set': {
-                'started': 0,
-                'completed': 0,
-                'aborted': 0,
-            }})
+            job_id = job['_id']
+            job_name = job['name']
 
-            result = db.logs.delete_many({'job_id': ObjectId(job_id)})
+            correct_length = job['config']['evolution']['iterations'] / 10 + 1
+
+            delete_result = db.logs.delete_many({
+                'job_id': ObjectId(job_id),
+                'events': {'$not': {'$size': correct_length}}
+            })
+
+            num_completed = db.logs.find({
+                'job_id': ObjectId(job_id),
+                'events': {'$size': correct_length}
+            }).count()
+
+            db.jobs.update_one(
+                {'_id': job_id},
+                {'$set': {
+                    'started': num_completed,
+                    'completed': num_completed,
+                    'aborted': 0,
+                }})
+
             print(
-                f'Cleared job and deleted {result.deleted_count} log entries')
-
-        except StopIteration:
-            print(f'Job does not exist: {job_id}')
+                f'Cleared job {job_name} and deleted {delete_result.deleted_count} log entries')
