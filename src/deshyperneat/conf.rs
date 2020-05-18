@@ -13,6 +13,12 @@ pub struct MethodConfig {
 
     #[envconfig(from = "OUTPUT_CONFIG", default = "line")]
     pub output_config: String,
+
+    #[envconfig(from = "MUTATE_NODE_DEPTH_PROBABILITY", default = "0.1")]
+    pub mutate_node_depth_probability: f64,
+
+    #[envconfig(from = "MUTATE_ALL_COMPONENTS", default = "true")]
+    pub mutate_all_components: bool,
 }
 
 impl Default for MethodConfig {

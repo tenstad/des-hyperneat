@@ -68,7 +68,7 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, DESGenomeStats> for
         let link_mut_prob = 3.0 / self.neat.links.len() as f64;
 
         for node in self.neat.hidden_nodes.values_mut() {
-            if rng.gen::<f64>() < node_mut_prob {
+            if DESHYPERNEAT.mutate_all_components || rng.gen::<f64>() < node_mut_prob {
                 node.cppn.mutate(
                     &config.cppn,
                     if DESHYPERNEAT.single_cppn_state {
@@ -83,8 +83,9 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, DESGenomeStats> for
                 );
             }
         }
+
         for link in self.neat.links.values_mut() {
-            if rng.gen::<f64>() < link_mut_prob {
+            if DESHYPERNEAT.mutate_all_components || rng.gen::<f64>() < link_mut_prob {
                 link.cppn.mutate(
                     &config.cppn,
                     if DESHYPERNEAT.single_cppn_state {
@@ -107,7 +108,7 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, DESGenomeStats> for
             }
         }
 
-        if rng.gen::<f64>() < 0.05 {
+        if rng.gen::<f64>() < DESHYPERNEAT.mutate_node_depth_probability {
             if let Some(key) = self
                 .neat
                 .hidden_nodes

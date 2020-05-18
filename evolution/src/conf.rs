@@ -23,7 +23,7 @@ pub struct EvolutionConfig {
 #[derive(Envconfig, Serialize, Clone)]
 pub struct PopulationConfig {
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "POPULATION_SIZE", default = "200")]
+    #[envconfig(from = "POPULATION_SIZE", default = "300")]
     pub population_size: u64,
 
     #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.7")]
