@@ -19,9 +19,10 @@ use conf::DB;
 use hex;
 use mongodb::{
     options::{auth::Credential, ClientOptions, StreamAddress},
-    sync::{Client, Database},
+    sync::{Client, Collection, Database},
 };
 use serde::Serialize;
+use std::env;
 
 #[allow(dead_code)]
 pub struct Mongo {
@@ -98,16 +99,8 @@ impl Mongo {
             "start_time": Utc::now(),
             "config": document,
         };
-        let result = self
-            .db
-            .collection(&DB.job_collection)
-            .insert_one(document, None)
-            .unwrap();
-        if let Bson::ObjectId(id) = result.inserted_id {
-            id
-        } else {
-            panic!("unable to get inserted entry id")
-        }
+
+        loop_insert(self.db.collection(&DB.job_collection), document)
     }
 
     fn add_details_to_existing_job(&mut self, document: OrderedDocument) {
@@ -118,10 +111,8 @@ impl Mongo {
         let update = doc! {
             "$set": {"config": document},
         };
-        self.db
-            .collection(&DB.job_collection)
-            .update_one(query, update, None)
-            .unwrap();
+
+        loop_update(self.db.collection(&DB.job_collection), query, update);
     }
 
     /// Creates a new log entry for this job instance, returns id.
@@ -129,19 +120,10 @@ impl Mongo {
         let document = doc! {
             "job_id": job_id,
             "start_time": Utc::now(),
+            "node_name": env::var("NAME").unwrap_or("".to_owned()),
         };
 
-        let result = self
-            .db
-            .collection(&DB.log_collection)
-            .insert_one(document, None)
-            .unwrap();
-
-        if let Bson::ObjectId(id) = result.inserted_id {
-            id
-        } else {
-            panic!("unable to get inserted entry id")
-        }
+        loop_insert(self.db.collection(&DB.log_collection), document)
     }
 }
 
@@ -152,10 +134,11 @@ impl Entry {
         let update = doc! {
             "$push": {"events": document}
         };
-        self.db
-            .collection(&DB.log_collection)
-            .update_one(self.id_query.clone(), update, None)
-            .unwrap();
+        loop_update(
+            self.db.collection(&DB.log_collection),
+            self.id_query.clone(),
+            update,
+        );
     }
 
     fn add_event_data<T: Serialize>(&mut self, event: &T, iteration: u64) -> OrderedDocument {
@@ -174,4 +157,24 @@ fn str_to_id(string: &String) -> ObjectId {
     let mut byte_array: [u8; 12] = [0; 12];
     byte_array[..].copy_from_slice(&bytes[..]);
     ObjectId::with_bytes(byte_array)
+}
+
+fn loop_insert(collection: Collection, document: OrderedDocument) -> ObjectId {
+    loop {
+        if let Ok(result) = collection.insert_one(document.clone(), None) {
+            if let Bson::ObjectId(id) = result.inserted_id {
+                return id;
+            } else {
+                panic!("unable to get inserted entry id");
+            }
+        }
+    }
+}
+
+fn loop_update(collection: Collection, query: OrderedDocument, update: OrderedDocument) {
+    loop {
+        if let Ok(_) = collection.update_one(query.clone(), update.clone(), None) {
+            break;
+        }
+    }
 }
