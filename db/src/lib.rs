@@ -171,20 +171,25 @@ fn str_to_id(string: &String) -> ObjectId {
 fn loop_insert(mongo: &mut Mongo, collection: &String, document: OrderedDocument) -> ObjectId {
     let mut sleep_time = 5;
     loop {
-        if let Ok(result) = mongo
+        match mongo
             .db
             .collection(collection)
             .insert_one(document.clone(), None)
         {
-            if let Bson::ObjectId(id) = result.inserted_id {
-                return id;
-            } else {
-                panic!("unable to get inserted entry id");
+            Ok(result) => {
+                if let Bson::ObjectId(id) = result.inserted_id {
+                    return id;
+                } else {
+                    panic!("unable to get inserted entry id");
+                }
             }
-        } else {
-            thread::sleep(time::Duration::from_secs(sleep_time));
-            sleep_time = (2 * sleep_time).min(60);
-            mongo.reconnect();
+            Err(error) => {
+                println!("Connection error: {:#?}", error);
+
+                thread::sleep(time::Duration::from_secs(sleep_time));
+                sleep_time = (2 * sleep_time).min(60);
+                mongo.reconnect();
+            }
         }
     }
 }
@@ -197,17 +202,21 @@ fn loop_update(
 ) {
     let mut sleep_time = 5;
     loop {
-        if let Ok(_) =
-            mongo
-                .db
-                .collection(collection)
-                .update_one(query.clone(), update.clone(), None)
+        match mongo
+            .db
+            .collection(collection)
+            .update_one(query.clone(), update.clone(), None)
         {
-            break;
-        } else {
-            thread::sleep(time::Duration::from_secs(sleep_time));
-            sleep_time = (2 * sleep_time).min(60);
-            mongo.reconnect();
+            Ok(_) => {
+                break;
+            }
+            Err(error) => {
+                println!("Connection error: {:#?}", error);
+
+                thread::sleep(time::Duration::from_secs(sleep_time));
+                sleep_time = (2 * sleep_time).min(60);
+                mongo.reconnect();
+            }
         }
     }
 }
