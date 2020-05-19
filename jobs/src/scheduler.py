@@ -31,7 +31,7 @@ class Scheduler:
         else:
             print('Unable to create job')
 
-    def reset_jobs(self):
+    def clean_jobs(self):
         db = getattr(self.client, os.environ.get(
             'DATABASE', 'deshyperneat'))
 
@@ -61,7 +61,7 @@ class Scheduler:
                     }})
 
                 print(
-                    f'Cleared job {job_name} and deleted {delete_result.deleted_count} log entries')
+                    f'Cleaned job {job_name} and deleted {delete_result.deleted_count} log entries')
             else:
                 db.jobs.update_one(
                     {'_id': job_id},
@@ -71,4 +71,4 @@ class Scheduler:
                         'aborted': 0,
                     }})
 
-                print(f'Cleared job {job_name}')
+                print(f'Cleaned job {job_name}')
