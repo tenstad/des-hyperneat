@@ -195,7 +195,7 @@ fn loop_update(
     query: OrderedDocument,
     update: OrderedDocument,
 ) {
-    let mut sleep_time = 10;
+    let mut sleep_time = 5;
     loop {
         if let Ok(_) =
             mongo
@@ -205,7 +205,7 @@ fn loop_update(
         {
             break;
         } else {
-            thread::sleep(time::Duration::from_millis(sleep_time));
+            thread::sleep(time::Duration::from_secs(sleep_time));
             sleep_time *= 2;
             mongo.reconnect();
         }
