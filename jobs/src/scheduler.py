@@ -64,7 +64,7 @@ class Scheduler:
                     f'Cleaned job {job_name} and deleted {delete_result.deleted_count} log entries')
             else:
                 db.jobs.update_one(
-                    {'_id': job_id},
+                    {'_id': ObjectId(job_id)},
                     {'$set': {
                         'started': 0,
                         'completed': 0,
