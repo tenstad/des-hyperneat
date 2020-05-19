@@ -206,7 +206,7 @@ fn loop_update(
             break;
         } else {
             thread::sleep(time::Duration::from_secs(sleep_time));
-            sleep_time *= 2;
+            sleep_time = (2 * sleep_time).min(60);
             mongo.reconnect();
         }
     }
