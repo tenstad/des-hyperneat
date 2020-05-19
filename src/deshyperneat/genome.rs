@@ -25,10 +25,10 @@ pub struct Genome {
 #[derive(Serialize)]
 pub struct DESGenomeStats {
     topology: NeatGenomeStats,
-    input_node_cppns: Vec<NeatGenomeStats>,
-    hidden_node_cppns: Vec<NeatGenomeStats>,
-    output_node_cppns: Vec<NeatGenomeStats>,
-    link_cppns: Vec<NeatGenomeStats>,
+    input_node_cppns: NeatGenomeStats,
+    hidden_node_cppns: NeatGenomeStats,
+    output_node_cppns: NeatGenomeStats,
+    link_cppns: NeatGenomeStats,
 }
 impl Stats for DESGenomeStats {}
 
@@ -138,30 +138,38 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, DESGenomeStats> for
     fn get_stats(&self) -> DESGenomeStats {
         DESGenomeStats {
             topology: self.neat.get_stats(),
-            input_node_cppns: self
-                .neat
-                .inputs
-                .values()
-                .map(|x| x.cppn.get_stats())
-                .collect::<Vec<NeatGenomeStats>>(),
-            hidden_node_cppns: self
-                .neat
-                .hidden_nodes
-                .values()
-                .map(|x| x.cppn.get_stats())
-                .collect::<Vec<NeatGenomeStats>>(),
-            output_node_cppns: self
-                .neat
-                .outputs
-                .values()
-                .map(|x| x.cppn.get_stats())
-                .collect::<Vec<NeatGenomeStats>>(),
-            link_cppns: self
-                .neat
-                .links
-                .values()
-                .map(|x| x.cppn.get_stats())
-                .collect::<Vec<NeatGenomeStats>>(),
+            input_node_cppns: accumulate_neat_stats(
+                self.neat.inputs.values().map(|x| x.cppn.get_stats()),
+            ),
+            hidden_node_cppns: accumulate_neat_stats(
+                self.neat.hidden_nodes.values().map(|x| x.cppn.get_stats()),
+            ),
+            output_node_cppns: accumulate_neat_stats(
+                self.neat.outputs.values().map(|x| x.cppn.get_stats()),
+            ),
+            link_cppns: accumulate_neat_stats(self.neat.links.values().map(|x| x.cppn.get_stats())),
+        }
+    }
+}
+
+fn accumulate_neat_stats(iter: impl Iterator<Item = NeatGenomeStats>) -> NeatGenomeStats {
+    let (hidden_nodes, links, len) = iter.fold((0, 0, 0), |(hidden_nodes, links, len), stats| {
+        (
+            hidden_nodes + stats.hidden_nodes,
+            links + stats.links,
+            len + 1,
+        )
+    });
+
+    if len == 0 {
+        NeatGenomeStats {
+            hidden_nodes: 0,
+            links: 0,
+        }
+    } else {
+        NeatGenomeStats {
+            hidden_nodes: hidden_nodes / len,
+            links: links / len,
         }
     }
 }

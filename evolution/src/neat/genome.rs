@@ -25,9 +25,9 @@ pub struct NeatGenome<N, L> {
 #[derive(Serialize)]
 pub struct NeatGenomeStats {
     #[serde(with = "bson::compat::u2f")]
-    hidden_nodes: u64,
+    pub hidden_nodes: u64,
     #[serde(with = "bson::compat::u2f")]
-    links: u64,
+    pub links: u64,
 }
 impl Stats for NeatGenomeStats {}
 
