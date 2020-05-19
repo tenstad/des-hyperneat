@@ -18,12 +18,13 @@ use chrono::offset::Utc;
 use conf::DB;
 use hex;
 use mongodb::{
+    error::ErrorKind,
     options::{auth::Credential, ClientOptions, StreamAddress},
     sync::{Client, Database},
 };
 use serde::Serialize;
 use std::env;
-use std::{thread, time};
+use std::{sync::Arc, thread, time};
 
 #[allow(dead_code)]
 pub struct Mongo {
@@ -186,9 +187,16 @@ fn loop_insert(mongo: &mut Mongo, collection: &String, document: OrderedDocument
             Err(error) => {
                 println!("Connection error: {:#?}", error);
 
-                thread::sleep(time::Duration::from_secs(sleep_time));
-                sleep_time = (2 * sleep_time).min(60);
-                mongo.reconnect();
+                match Arc::try_unwrap(error.kind) {
+                    Ok(ErrorKind::WriteError(_)) => {
+                        panic!("unable to insert document and get id");
+                    }
+                    _ => {
+                        thread::sleep(time::Duration::from_secs(sleep_time));
+                        sleep_time = (2 * sleep_time).min(60);
+                        mongo.reconnect();
+                    }
+                }
             }
         }
     }
@@ -213,9 +221,16 @@ fn loop_update(
             Err(error) => {
                 println!("Connection error: {:#?}", error);
 
-                thread::sleep(time::Duration::from_secs(sleep_time));
-                sleep_time = (2 * sleep_time).min(60);
-                mongo.reconnect();
+                match Arc::try_unwrap(error.kind) {
+                    Ok(ErrorKind::WriteError(_)) => {
+                        panic!("unable to update document");
+                    }
+                    _ => {
+                        thread::sleep(time::Duration::from_secs(sleep_time));
+                        sleep_time = (2 * sleep_time).min(60);
+                        mongo.reconnect();
+                    }
+                }
             }
         }
     }
