@@ -38,19 +38,19 @@ impl<G: Genome> Log<G> for Logger {
         stats: &S,
     ) {
         if iteration % self.log_interval == 0 {
-            print!("Iter: {}", iteration);
+            println!("Iter: {}", iteration);
 
             let population_stats = stats.population();
 
             if let Some(best) = population_stats.best() {
-                print!("\n{}", serde_yaml::to_string(best).unwrap());
+                println!("{}", serde_yaml::to_string(best).unwrap());
             }
 
             if let Some(entry) = &mut self.entry {
                 entry.push(&population_stats, iteration);
             }
 
-            println!("\n{}", population);
+            println!("{}", population);
         }
     }
 }
