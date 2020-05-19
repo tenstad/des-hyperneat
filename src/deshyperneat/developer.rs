@@ -27,7 +27,7 @@ pub struct Developer {
 
 impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
-        let r = ESHYPERNEAT.resolution as i64;
+        let r = ESHYPERNEAT.resolution as f64;
         let input_nodes = parse_nodes(&DESHYPERNEAT.input_config, r, description.inputs);
         let output_nodes = parse_nodes(&DESHYPERNEAT.output_config, r, description.outputs);
 
@@ -451,14 +451,19 @@ impl<G: DesGenome> Develop<G> for Developer {
     }
 }
 
-pub fn parse_nodes(conf: &String, r: i64, num: u64) -> Vec<Vec<(i64, i64)>> {
+pub fn parse_nodes(conf: &String, r: f64, num: u64) -> Vec<Vec<(i64, i64)>> {
     match &conf[..] {
         "line" => vec![substrate::horizontal_row(num, 0)],
         "separate" => vec![vec![(0, 0)]; num as usize],
-        _ => serde_json::from_str::<Vec<Vec<(i64, i64)>>>(conf)
+        _ => serde_json::from_str::<Vec<Vec<Vec<f64>>>>(conf)
             .expect("unable to parse nodes")
             .iter()
-            .map(|nodes| nodes.iter().map(|node| (node.0 * r, node.1 * r)).collect())
+            .map(|points| {
+                points
+                    .iter()
+                    .map(|point| ((point[0] * r) as i64, (point[1] * r) as i64))
+                    .collect()
+            })
             .collect(),
     }
 }
@@ -467,7 +472,7 @@ pub fn parse_num_substrates(conf: &String, num: u64) -> u64 {
     match &conf[..] {
         "line" => 1,
         "separate" => num,
-        _ => serde_json::from_str::<Vec<Vec<(i64, i64)>>>(conf)
+        _ => serde_json::from_str::<Vec<Vec<Vec<f64>>>>(conf)
             .expect("unable to parse num substrates")
             .len() as u64,
     }
