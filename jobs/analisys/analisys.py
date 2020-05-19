@@ -25,7 +25,7 @@ def analyse(batch):
         print(job_name)
 
         repeats = int(job['scheduled'])
-        iterations = int(job['config']['evoltuion']['iterations'] / 10) - 1
+        iterations = int(job['config']['evolution']['iterations'] / 10 + 1)
         population_size = int(job['config']['population']['population_size'])
 
         fitnesses = np.zeros(
