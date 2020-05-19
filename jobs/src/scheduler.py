@@ -36,31 +36,39 @@ class Scheduler:
             'DATABASE', 'deshyperneat'))
 
         for job in db.jobs.find():
-            if not 'config' in job:
-                continue
-
             job_id = job['_id']
             job_name = job['name']
 
-            correct_length = job['config']['evolution']['iterations'] / 10 + 1
+            if 'config' in job:
+                correct_length = job['config']['evolution']['iterations'] / 10 + 1
 
-            delete_result = db.logs.delete_many({
-                'job_id': ObjectId(job_id),
-                'events': {'$not': {'$size': correct_length}}
-            })
+                delete_result = db.logs.delete_many({
+                    'job_id': ObjectId(job_id),
+                    'events': {'$not': {'$size': correct_length}}
+                })
 
-            num_completed = db.logs.find({
-                'job_id': ObjectId(job_id),
-                'events': {'$size': correct_length}
-            }).count()
+                num_completed = db.logs.find({
+                    'job_id': ObjectId(job_id),
+                    'events': {'$size': correct_length}
+                }).count()
 
-            db.jobs.update_one(
-                {'_id': job_id},
-                {'$set': {
-                    'started': num_completed,
-                    'completed': num_completed,
-                    'aborted': 0,
-                }})
+                db.jobs.update_one(
+                    {'_id': job_id},
+                    {'$set': {
+                        'started': num_completed,
+                        'completed': num_completed,
+                        'aborted': 0,
+                    }})
 
-            print(
-                f'Cleared job {job_name} and deleted {delete_result.deleted_count} log entries')
+                print(
+                    f'Cleared job {job_name} and deleted {delete_result.deleted_count} log entries')
+            else:
+                db.jobs.update_one(
+                    {'_id': job_id},
+                    {'$set': {
+                        'started': 0,
+                        'completed': 0,
+                        'aborted': 0,
+                    }})
+
+                print(f'Cleared job {job_name}')
