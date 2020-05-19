@@ -17,14 +17,14 @@ def work():
     def running():
         return minute_limit <= 0 or (time.time() - start_time) < minute_limit * 60
 
-    client = get_client()
-
     while 1:
         if not running():
             print_now('out of time, terminating')
             break
 
+        client = get_client()
         job = run_transaction(client, find_job_transaction)
+        client.close()
 
         if job:
             try:
@@ -32,12 +32,16 @@ def work():
                 time.sleep(0.5)
             except KeyboardInterrupt:
                 print_now('terminating')
+                client = get_client()
                 run_transaction(
                     client, create_complete_job_transaction(job['_id'], abort=True))
+                client.close()
                 break
 
+            client = get_client()
             run_transaction(
                 client, create_complete_job_transaction(job['_id']))
+            client.close()
         elif stop_if_idle:
             print_now('no more jobs, terminating')
             break
