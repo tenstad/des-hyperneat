@@ -2,6 +2,7 @@ from src.client import get_client
 import os
 import numpy as np
 from matplotlib import pyplot as plt
+from sklearn.model_selection import ParameterGrid
 
 
 def analyse(batch):
@@ -50,17 +51,35 @@ def analyse(batch):
         plt.ylim([0, 1])
         plt.legend()
 
+        fname = job_name.replace("'", '').replace(
+            '{', '').replace('}', '').replace('/', '_')
         plt.savefig(
-            f'jobs/analisys/plots/batch_{batch}/{job_name}.png', dpi=300)
+            f'jobs/analisys/plots/batch_{batch}/{fname}.png', dpi=300)
+
+    styles = ParameterGrid({
+        'color': ('#C0C0C0', '#808080', '#000000', '#FF0000', '#800000',
+                  '#FFFF00', '#808000', '#00FF00', '#008000', '#00FFFF',
+                  '#008080', '#0000FF', '#000080', '#FF00FF', '#800080',
+                  ),
+        'line': ('dotted', 'dashed', 'dashdot', 'solid'), })
+    scoreboard = []
 
     fig = plt.figure(figsize=(10, 10))
-    for job_name, fitnesses in results:
+    for i, (job_name, fitnesses) in enumerate(results):
+        line_style = styles[i]['line']
+        line_color = styles[i]['color']
         max_fitness = fitnesses.max(axis=2).mean(axis=0)
-        plt.plot(max_fitness, label=job_name)
+        scoreboard.append((max_fitness[-1], job_name))
+        plt.plot(max_fitness, label=f'{line_style} {job_name}',
+                 linestyle=line_style, linewidth=0.6, color=line_color)
     plt.ylim([0, 1])
-    plt.legend()
+    plt.legend(prop={'size': 2})
     plt.savefig(
-        f'jobs/analisys/plots/batch_{batch}/all.png', dpi=300)
+        f'jobs/analisys/plots/batch_{batch}/all.png', dpi=1000)
+
+    scoreboard = sorted(scoreboard)[::-1]
+    print('\n'.join([f'{i}: {score}, {job_name}' for (
+        i, (score, job_name)) in enumerate(scoreboard)]))
 
     if first:
         print(f'Batch does not exist: {batch}')
