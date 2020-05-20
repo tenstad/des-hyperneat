@@ -250,16 +250,11 @@ where
 
         // Copy links only in fitter parent, perform crossover if in both parents
         for (link_ref, link) in parent1.links.iter() {
-            /*if !genome
-                .connections
-                .creates_cycle(link.neat().from, link.neat().to)
-            {*/
             if let Some(link2) = parent2.links.get(link_ref) {
                 genome.insert_link(link.crossover(link_config, link2, fitness, other_fitness));
             } else {
                 genome.insert_link(link.clone());
             }
-            //}
         }
 
         // Copy nodes only in fitter parent, perform crossover if in both parents
@@ -397,12 +392,17 @@ where
     }
 
     pub fn insert_link(&mut self, link: L) {
-        // Add link
-        self.links
-            .insert((link.neat().from, link.neat().to), link.clone());
+        if !self
+            .connections
+            .creates_cycle(link.neat().from, link.neat().to)
+        {
+            // Add link
+            self.links
+                .insert((link.neat().from, link.neat().to), link.clone());
 
-        // Add connections
-        self.connections.add(link.neat().from, link.neat().to, ());
+            // Add connections
+            self.connections.add(link.neat().from, link.neat().to, ());
+        }
     }
 
     fn mutate_link_weight<C: ConfigProvider<N::Config, L::Config>>(&mut self, config: &C) {
