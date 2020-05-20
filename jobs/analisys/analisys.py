@@ -53,6 +53,15 @@ def analyse(batch):
         plt.savefig(
             f'jobs/analisys/plots/batch_{batch}/{job_name}.png', dpi=300)
 
+    fig = plt.figure(figsize=(10, 10))
+    for job_name, fitnesses in results:
+        max_fitness = fitnesses.max(axis=2).mean(axis=0)
+        plt.plot(max_fitness, label=job_name)
+    plt.ylim([0, 1])
+    plt.legend()
+    plt.savefig(
+        f'jobs/analisys/plots/batch_{batch}/all.png', dpi=300)
+
     if first:
         print(f'Batch does not exist: {batch}')
     else:
