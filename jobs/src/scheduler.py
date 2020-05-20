@@ -40,7 +40,8 @@ class Scheduler:
             job_name = job['name']
 
             if 'config' in job:
-                correct_length = job['config']['evolution']['iterations'] / 10 + 1
+                ecfg = job['config']['evolution']
+                correct_length = ecfg['iterations'] / ecfg['log_interval'] + 1
 
                 delete_result = db.logs.delete_many({
                     'job_id': ObjectId(job_id),
