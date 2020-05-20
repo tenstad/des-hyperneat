@@ -11,18 +11,10 @@ pub fn genome_to_dot<P: AsRef<Path>>(fname: P, genome: &CppnGenome) -> std::io::
     file.write_all(b"digraph g {\n")?;
 
     for link in genome.neat.links.values() {
-        let s = if link.enabled {
-            format!(
-                "    {} -> {} [ label = \"{:.2}\" ];\n",
-                link.from, link.to, link.weight
-            )
-        } else {
-            //format!("")
-            format!(
-                "    {} -> {} [ label = \"{:.2}\" style=dotted ];\n",
-                link.from, link.to, link.weight
-            )
-        };
+        let s = format!(
+            "    {} -> {} [ label = \"{:.2}\" ];\n",
+            link.from, link.to, link.weight
+        );
         file.write_all(s.as_bytes())?;
     }
 

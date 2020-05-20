@@ -16,7 +16,7 @@ pub struct Connection<N, E> {
     pub edge: E,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum OrderedAction<N, E> {
     Edge(N, N, E),
     Node(N),
@@ -110,6 +110,14 @@ impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
         self.connections.get(from).into_iter().flatten()
     }
 
+    pub fn edge_count(&self, from: &N) -> usize {
+        if let Some(vec) = self.connections.get(from) {
+            vec.len()
+        } else {
+            0
+        }
+    }
+
     pub fn get_targets<'a>(&'a self, from: &'a N) -> impl Iterator<Item = &'a N> {
         self.get_edges(from).map(|t| &t.node)
     }
@@ -122,11 +130,49 @@ impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
         !self.get_edges(from).position(|t| t.node == to).is_none()
     }
 
+    pub fn contains_node(&self, node: &N) -> bool {
+        self.get_all_nodes().contains(node)
+    }
+
     pub fn remove(&mut self, from: &N, to: N) -> E {
         let error = "cannot remove non-existent connection";
         let vec = self.connections.get_mut(from).expect(error);
-        let index = vec.iter().position(|t| t.node == to).expect(error);
-        vec.swap_remove(index).edge
+        if vec.len() == 1 {
+            let edge = vec[0].edge;
+            self.connections.remove(from);
+            edge
+        } else {
+            let index = vec.iter().position(|t| t.node == to).expect(error);
+            vec.swap_remove(index).edge
+        }
+    }
+
+    pub fn remove_node(&mut self, node: N) -> Vec<Connection<N, E>> {
+        // Remove outgoing
+        let mut removed_connections = self
+            .connections
+            .remove(&node)
+            .into_iter()
+            .flatten()
+            .map(|target| Connection::new(node, target.node, target.edge))
+            .collect::<Vec<Connection<N, E>>>();
+
+        // Remove inbound
+        let mut delete_keys = Vec::<N>::new();
+        for (source, targets) in self.connections.iter_mut() {
+            if let Some(index) = targets.iter().position(|t| t.node == node) {
+                let target = targets.swap_remove(index);
+                removed_connections.push(Connection::new(*source, node, target.edge));
+                if targets.len() == 0 {
+                    delete_keys.push(*source);
+                }
+            }
+        }
+        for source in delete_keys {
+            self.connections.remove(&source);
+        }
+
+        removed_connections
     }
 
     /// DFS search to check for cycles.
@@ -362,6 +408,25 @@ mod tests {
         connections.add(2, 0, ());
         connections.remove(&2, 0);
         assert!(!connections.contains(&2, 0));
+    }
+
+    #[test]
+    fn test_remove_node() {
+        let mut connections = Connections::<u8, ()>::new();
+
+        connections.add(10, 0, ());
+        connections.add(0, 1, ());
+        connections.add(1, 2, ());
+        connections.add(1, 9, ());
+        connections.add(2, 3, ());
+        connections.add(2, 4, ());
+        connections.remove_node(1);
+        assert!(connections.contains(&10, 0));
+        assert!(!connections.contains(&0, 1));
+        assert!(!connections.contains(&1, 2));
+        assert!(!connections.contains(&1, 9));
+        assert!(connections.contains(&2, 3));
+        assert!(connections.contains(&2, 4));
     }
 
     #[test]

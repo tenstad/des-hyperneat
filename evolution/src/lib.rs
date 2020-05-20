@@ -79,6 +79,10 @@ pub fn evolve<
         u64::MAX
     };
 
+    for _ in 0..EVOLUTION.initial_mutations {
+        population.mutate();
+    }
+
     for i in 0..iterations {
         let population_stats = population.evaluate(&evaluator);
         logger.log(i, &population, &population_stats);

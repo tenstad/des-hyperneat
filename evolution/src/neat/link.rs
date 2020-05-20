@@ -24,9 +24,7 @@ pub struct NeatLink {
     pub from: NodeRef,
     pub to: NodeRef,
     pub weight: f64,
-    pub enabled: bool,
-    pub split: bool,       // Link has been split
-    pub innovation: u64,   // Global innovation number
+    pub innovation: u64, // Global innovation number
 }
 
 impl NeatLink {
@@ -35,8 +33,6 @@ impl NeatLink {
             from,
             to,
             weight,
-            enabled: true,
-            split: false,
             innovation,
         }
     }
@@ -49,15 +45,12 @@ impl NeatLink {
             from: self.from,
             to: self.to,
             weight: (self.weight + other.weight) / 2.0,
-            enabled: self.enabled || other.enabled,
-            split: self.split && other.split,
             innovation: self.innovation,
         }
     }
 
     pub fn distance(&self, other: &Self) -> f64 {
-        0.5 * (self.weight - other.weight).abs().tanh()
-            + 0.5 * ((self.enabled != other.enabled) as u8) as f64
+        (self.weight - other.weight).abs().tanh()
     }
 }
 

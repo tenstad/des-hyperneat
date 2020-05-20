@@ -14,18 +14,10 @@ pub fn genome_to_dot<P: AsRef<Path>>(fname: P, genome: &Genome) -> std::io::Resu
     file.write_all(b"digraph g {\n")?;
 
     for link in genome.topology.links.values() {
-        let s = if link.neat.enabled {
-            format!(
-                "    {} -> {} [ label = \"{:.2}\" ];\n",
-                link.neat.from, link.neat.to, link.neat.weight
-            )
-        } else {
-            //format!("")
-            format!(
-                "    {} -> {} [ label = \"{:.2} {}\" style=dotted ];\n",
-                link.neat.from, link.neat.to, link.neat.weight, link.cppn_output_id
-            )
-        };
+        let s = format!(
+            "    {} -> {} [ label = \"{:.2}\" ];\n",
+            link.neat.from, link.neat.to, link.neat.weight
+        );
         file.write_all(s.as_bytes())?;
     }
 

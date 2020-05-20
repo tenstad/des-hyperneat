@@ -71,24 +71,20 @@ impl Develop<NeatGenome<NeatNode, NeatLink>> for Developer {
         // these are present in Connections to avoid cycles when re-enabling disabled edges.
         let actions = order
             .iter()
-            .filter_map(|action| match action {
+            .map(|action| match action {
                 connection::OrderedAction::Edge(from, to, _) => {
                     let link = genome.links.get(&(*from, *to)).unwrap();
-                    if link.enabled {
-                        Some(execute::Action::Link(
-                            *node_mapping.get(from).unwrap(),
-                            *node_mapping.get(to).unwrap(),
-                            link.weight,
-                        ))
-                    } else {
-                        None
-                    }
+                    execute::Action::Link(
+                        *node_mapping.get(from).unwrap(),
+                        *node_mapping.get(to).unwrap(),
+                        link.weight,
+                    )
                 }
-                connection::OrderedAction::Node(node) => Some(execute::Action::Activation(
+                connection::OrderedAction::Node(node) => execute::Action::Activation(
                     *node_mapping.get(node).unwrap(),
                     0.0,
                     network::activation::Activation::Sigmoid,
-                )),
+                ),
             })
             .collect();
 
@@ -96,7 +92,7 @@ impl Develop<NeatGenome<NeatNode, NeatLink>> for Developer {
         let network = Executor::create(nodes.len(), inputs, outputs, actions);
         let stats = NetworkStats {
             nodes: nodes.len() as u64,
-            edges: genome.links.values().filter(|link| link.enabled).count() as u64,
+            edges: genome.links.len() as u64,
         };
 
         (network, stats)

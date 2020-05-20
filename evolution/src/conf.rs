@@ -17,6 +17,10 @@ pub struct EvolutionConfig {
     pub iterations: u64,
 
     #[serde(with = "bson::compat::u2f")]
+    #[envconfig(from = "INITIAL_MUTATIONS", default = "200")]
+    pub initial_mutations: u64,
+
+    #[serde(with = "bson::compat::u2f")]
     #[envconfig(from = "SECONDS_LIMIT", default = "0")]
     pub seconds_limit: u64,
 
@@ -38,8 +42,18 @@ pub struct PopulationConfig {
     #[envconfig(from = "POPULATION_SIZE", default = "300")]
     pub population_size: u64,
 
-    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.7")]
+    #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.8")]
     pub speciation_threshold: f64,
+
+    #[envconfig(from = "ADAPTIVE_SPECIATION_THRESHOLD", default = "true")]
+    pub adaptive_speciation_threshold: bool,
+
+    #[serde(with = "bson::compat::u2f")]
+    #[envconfig(from = "SPECIES_TARGET", default = "30")]
+    pub species_target: u64,
+
+    #[envconfig(from = "SPECIATION_THRESHOLD_MOVE_AMOUNT", default = "0.01")]
+    pub speciation_threshold_move_amount: f64,
 
     #[envconfig(from = "ASEXUAL_REPRODUCTION_PROBABILITY", default = "0.2")]
     pub asexual_reproduction_probability: f64,

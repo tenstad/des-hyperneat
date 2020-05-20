@@ -17,6 +17,8 @@ pub struct InnovationLog {
     pub connect_innovations: HashMap<(NodeRef, NodeRef), u64>,
     // Link connect innovation -> Source and target node
     pub reverse_connect_innovations: HashMap<u64, (NodeRef, NodeRef)>,
+    // Hidden node -> Source and target node
+    pub hidden_to_link: HashMap<NodeRef, (NodeRef, NodeRef)>,
 }
 
 #[derive(Default, Clone, new)]
@@ -64,6 +66,10 @@ impl StateProvider<(), ()> for NeatState {
 }
 
 impl NeatState {
+    pub fn get_link_split_by_hidden(&self, hidden_node: &NodeRef) -> Option<&(NodeRef, NodeRef)> {
+        self.innovation_log.hidden_to_link.get(hidden_node)
+    }
+
     pub fn get_split_innovation(&mut self, link_innovation: u64) -> &Innovation {
         if !self
             .innovation_log
@@ -75,6 +81,11 @@ impl NeatState {
                 .reverse_connect_innovations
                 .get(&link_innovation)
                 .unwrap();
+
+            self.innovation_log.hidden_to_link.insert(
+                NodeRef::Hidden(self.next_innovation.node_number),
+                (from, to),
+            );
             // Add the two connections of this innovation to connection log
             self.innovation_log.connect_innovations.insert(
                 (from, NodeRef::Hidden(self.next_innovation.node_number)),

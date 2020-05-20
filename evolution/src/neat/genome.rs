@@ -59,12 +59,16 @@ where
             self.mutation_add_node(config, state);
         }
 
-        if rng.gen::<f64>() < neat_config.add_connection_probability {
-            self.mutation_add_connection(config, state);
+        if rng.gen::<f64>() < neat_config.add_link_probability {
+            self.mutation_add_link(config, state);
         }
 
-        if rng.gen::<f64>() < neat_config.disable_connection_probability {
-            self.mutation_disable_connection();
+        if rng.gen::<f64>() < neat_config.remove_link_probability {
+            self.mutation_remove_link();
+        }
+
+        if rng.gen::<f64>() < neat_config.remove_node_probability {
+            self.mutation_remove_node();
         }
 
         if rng.gen::<f64>() < neat_config.mutate_link_weight_probability {
@@ -246,16 +250,16 @@ where
 
         // Copy links only in fitter parent, perform crossover if in both parents
         for (link_ref, link) in parent1.links.iter() {
-            if !genome
+            /*if !genome
                 .connections
                 .creates_cycle(link.neat().from, link.neat().to)
-            {
-                if let Some(link2) = parent2.links.get(link_ref) {
-                    genome.insert_link(link.crossover(link_config, link2, fitness, other_fitness));
-                } else {
-                    genome.insert_link(link.clone());
-                }
+            {*/
+            if let Some(link2) = parent2.links.get(link_ref) {
+                genome.insert_link(link.crossover(link_config, link2, fitness, other_fitness));
+            } else {
+                genome.insert_link(link.clone());
             }
+            //}
         }
 
         // Copy nodes only in fitter parent, perform crossover if in both parents
@@ -343,23 +347,14 @@ where
         let link = self
             .links
             .get_mut(&(from, to))
-            .expect("unable to split nonexistent link");
-        let neat_link = link.neat_mut();
+            .expect("unable to split nonexistent link")
+            .clone();
 
-        // Disable link
-        assert!(neat_link.enabled);
-        neat_link.enabled = false;
-        neat_link.split = true;
+        // Remove old link and connection
+        self.links.remove(&(from, to));
+        self.connections.remove(&from, to);
 
         let new_node_ref = NodeRef::Hidden(new_node_id);
-
-        // Might have inherited that the connection is not split, but also the nodes splitting it
-        if self.hidden_nodes.contains_key(&new_node_ref) {
-            return;
-        }
-
-        // Remove connection
-        self.connections.remove(&from, to);
 
         self.hidden_nodes.insert(
             new_node_ref,
@@ -397,14 +392,7 @@ where
             state.link_mut(),
         );
 
-        assert!(!self
-            .links
-            .contains_key(&(link1.neat().from, link1.neat().to)));
         self.insert_link(link1);
-
-        assert!(!self
-            .links
-            .contains_key(&(link2.neat().from, link2.neat().to)));
         self.insert_link(link2);
     }
 
@@ -444,30 +432,39 @@ where
         state: &mut S,
     ) {
         // Select random enabled link
-        if let Some(index) = self
-            .links
-            .iter()
-            .filter(|(_, link)| !link.neat().split && link.neat().enabled)
-            .map(|(i, _)| *i)
-            .collect::<Vec<(NodeRef, NodeRef)>>()
-            .choose(&mut rand::thread_rng())
-        {
-            let link = self.links.get(index).unwrap().neat().clone();
-            let innovation = state.neat_mut().get_split_innovation(link.innovation);
+        for _ in 0..50 {
+            if let Some(index) = self
+                .links
+                .keys()
+                .cloned()
+                .collect::<Vec<(NodeRef, NodeRef)>>()
+                .choose(&mut rand::thread_rng())
+            {
+                let link = self.links.get(index).unwrap().neat().clone();
+                let innovation = state.neat_mut().get_split_innovation(link.innovation);
 
-            self.split_link(
-                config,
-                link.from,
-                link.to,
-                innovation.node_number,
-                innovation.innovation_number,
-                state,
-            );
+                if !self
+                    .links
+                    .contains_key(&(link.from, NodeRef::Hidden(innovation.node_number)))
+                    && !self
+                        .links
+                        .contains_key(&(NodeRef::Hidden(innovation.node_number), link.to))
+                {
+                    self.split_link(
+                        config,
+                        link.from,
+                        link.to,
+                        innovation.node_number,
+                        innovation.innovation_number,
+                        state,
+                    );
+                    break;
+                }
+            }
         }
     }
 
-    // TODO: avoid retries
-    fn mutation_add_connection<
+    fn mutation_add_link<
         C: ConfigProvider<N::Config, L::Config>,
         S: StateProvider<N::State, L::State>,
     >(
@@ -477,71 +474,97 @@ where
     ) {
         let mut rng = rand::thread_rng();
 
-        // Retry 50 times
-        for _ in 0..50 {
-            // Select random source and target nodes for new link
-            let from_index = rng.gen_range(0, self.inputs.len() + self.hidden_nodes.len());
-            let to_index = rng.gen_range(0, self.hidden_nodes.len() + self.outputs.len());
+        // Select random source and target nodes for new link
+        let num_sources = self.inputs.len() + self.hidden_nodes.len();
+        let num_targets = self.hidden_nodes.len() + self.outputs.len();
 
-            let from_option = if from_index < self.inputs.len() {
-                self.inputs.keys().skip(from_index).next()
-            } else {
-                self.hidden_nodes
-                    .keys()
-                    .skip(from_index - self.inputs.len())
-                    .next()
-            };
-            let to_option = if to_index < self.outputs.len() {
-                self.outputs.keys().skip(to_index).next()
-            } else {
-                self.hidden_nodes
-                    .keys()
-                    .skip(to_index - self.outputs.len())
-                    .next()
-            };
+        if num_sources == 0 || num_targets == 0 {
+            return;
+        }
 
-            if let (Some(&from), Some(&to)) = (from_option, to_option) {
-                // If connection does not exist and its addition does not create cycle
-                if !self.links.contains_key(&(from, to))
-                    && !self.connections.creates_cycle(from, to)
-                {
-                    let innovation = state.neat_mut().get_connect_innovation(from, to);
+        let source_nodes = self
+            .inputs
+            .keys()
+            .chain(self.hidden_nodes.keys())
+            .cloned()
+            .collect::<Vec<NodeRef>>();
+        let source_weights = source_nodes
+            .iter()
+            .map(|node_ref| num_targets - self.connections.edge_count(node_ref))
+            .collect::<Vec<usize>>();
+        let mut wheel = vec![source_weights[0]];
+        for (i, w) in source_weights.iter().skip(1).enumerate() {
+            wheel.push(wheel[i] + w);
+        }
 
-                    self.insert_link(L::new(
-                        config.neat_link(),
-                        NeatLink::new(
-                            from,
-                            to,
-                            (rng.gen::<f64>() - 0.5) * 2.0 * config.neat().initial_link_weight_size,
-                            innovation,
-                        ),
-                        state.link_mut(),
-                    ));
-                    break;
-                }
-            } else {
+        // Netowrk is fully saturated with links
+        if *wheel.last().unwrap() <= 0 {
+            return;
+        }
+
+        let val = rng.gen_range(1, wheel.last().unwrap() + 1);
+        let source_index = wheel.binary_search(&val).unwrap_or_else(|x| x);
+        let source = source_nodes[source_index];
+
+        let target_nodes = self
+            .hidden_nodes
+            .keys()
+            .chain(self.outputs.keys())
+            .filter(|node| !self.links.contains_key(&(source, **node)))
+            .cloned()
+            .collect::<Vec<NodeRef>>();
+        let mut order = (0..target_nodes.len()).collect::<Vec<usize>>();
+        order.shuffle(&mut rand::thread_rng());
+
+        // Try to create link with potential target nodes in random order
+        for index in order {
+            let target = target_nodes[index];
+
+            if !self.connections.creates_cycle(source, target) {
+                let innovation = state.neat_mut().get_connect_innovation(source, target);
+
+                self.insert_link(L::new(
+                    config.neat_link(),
+                    NeatLink::new(
+                        source,
+                        target,
+                        (rng.gen::<f64>() - 0.5) * 2.0 * config.neat().initial_link_weight_size,
+                        innovation,
+                    ),
+                    state.link_mut(),
+                ));
+
                 break;
             }
         }
     }
 
-    fn mutation_disable_connection(&mut self) {
-        if let Some(&connection_ref) = self
+    fn mutation_remove_link(&mut self) {
+        if let Some(link_ref) = self
             .links
-            .iter()
-            .filter_map(|(i, link)| if link.neat().enabled { Some(i) } else { None })
-            .collect::<Vec<&(NodeRef, NodeRef)>>()
+            .keys()
+            .cloned()
+            .collect::<Vec<(NodeRef, NodeRef)>>()
             .choose(&mut rand::thread_rng())
         {
-            let connection_ref = *connection_ref;
+            self.links.remove(link_ref);
+            self.connections.remove(&link_ref.0, link_ref.1);
+        }
+    }
 
-            // Do not remove connection as it is needed to check for cycles and might be enabled again
-            // self.connections.remove(&connection_ref.0, connection_ref.1);
-            self.links
-                .get_mut(&connection_ref)
-                .unwrap()
-                .neat_mut()
-                .enabled = false;
+    fn mutation_remove_node(&mut self) {
+        if let Some(node_ref) = self
+            .hidden_nodes
+            .keys()
+            .cloned()
+            .collect::<Vec<NodeRef>>()
+            .choose(&mut rand::thread_rng())
+        {
+            self.hidden_nodes.remove(node_ref);
+
+            for connection in self.connections.remove_node(*node_ref).iter() {
+                self.links.remove(&(connection.from, connection.to));
+            }
         }
     }
 }
