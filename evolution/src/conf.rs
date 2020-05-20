@@ -21,7 +21,7 @@ pub struct EvolutionConfig {
     pub seconds_limit: u64,
 
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "LOG_INTERVAL", default = "5")]
+    #[envconfig(from = "LOG_INTERVAL", default = "10")]
     pub log_interval: u64,
 
     #[envconfig(from = "DB_LOG", default = "false")]
