@@ -6,6 +6,7 @@ use crate::stats::GetPopulationStats;
 use db::{Entry, Mongo};
 use serde::Serialize;
 use serde_yaml;
+use std::time::{Duration, SystemTime};
 
 pub trait Log<G: Genome> {
     fn new<C: Serialize>(description: &EnvironmentDescription, config: &C) -> Self;
@@ -14,6 +15,8 @@ pub trait Log<G: Genome> {
 
 pub struct Logger {
     pub log_interval: u64,
+    pub log_seconds: u64,
+    pub prev_log_time: SystemTime,
     pub entry: Option<Entry>,
 }
 
@@ -27,6 +30,8 @@ impl<G: Genome> Log<G> for Logger {
 
         Self {
             log_interval: EVOLUTION.log_interval,
+            log_seconds: EVOLUTION.log_sec_interval,
+            prev_log_time: SystemTime::now() - Duration::from_secs(EVOLUTION.log_sec_interval + 1),
             entry,
         }
     }
@@ -37,7 +42,14 @@ impl<G: Genome> Log<G> for Logger {
         population: &Population<G>,
         stats: &S,
     ) {
-        if iteration % self.log_interval == 0 {
+        let log = (self.log_interval > 0 && iteration % self.log_interval == 0)
+            || (self.log_seconds > 0
+                && SystemTime::elapsed(&self.prev_log_time).unwrap()
+                    > Duration::from_secs(self.log_seconds));
+
+        if log {
+            self.prev_log_time = SystemTime::now();
+
             println!("Iter: {}", iteration);
 
             let population_stats = stats.population();
