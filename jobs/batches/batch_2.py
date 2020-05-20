@@ -2,41 +2,124 @@ from src.scheduler import Scheduler
 
 
 def run():
-    BATCH = 2
-    REPEATS = 20
-
-    WINE_INPUT = '[[[-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5], [1.0, 1.0], [0.0, 0.0]], [[-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5], [1.0, 1.0]], [[-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5], [1.0, 1.0]]]'
-    IRIS_INPUT = '[[[-1.0, 0.0], [0.0, 0.0], [1.0, 0.0]]]'
-
+    BATCH = 1
+    REPEATS = 30
     sheduler = Scheduler()
 
-    for method in ('CPPN', 'HyperNEAT', 'ES-HyperNEAT', 'DES-HyperNEAT'):
-        for (dataset, input_conf) in (('iris', IRIS_INPUT), ('wine', WINE_INPUT)):
-            sheduler.create_job(BATCH, f'{method}_{dataset}_1000_150', REPEATS,
+    for dataset in ('iris', 'wine'):
+        for method in ('CPPN', 'HyperNEAT', 'SiDES-HyperNEAT'):
+            sheduler.create_job(BATCH, f'{method}_{dataset}', REPEATS,
                                 {
                                     'METHOD': method,
-                                    'ITERATIONS': 1000,
-                                    'POPULATION_SIZE': 150,
-                                    'DATASET': f'datasets/generated/{dataset}',
-                                    'VARIANCE_THRESHOLD': 0.4,
-                                    'DIVISION_THRESHOLD': 0.4,
-                                    'MAX_VARIANCE': True,
-                                    'RELATIVE_VARIANCE': True,
-                                    'MEDIAN_VARIANCE': True,
-                                    'ONLY_LEAF_VARIANCE': False,
-                                    'INPUT_CONFIG': input_conf
+                                    'ITERATIONS': 500,
+                                    'DATASET': f'datasets/generated/{dataset}'
                                 })
-            sheduler.create_job(BATCH, f'{method}_{dataset}_250_600', REPEATS,
-                                {
-                                    'METHOD': method,
-                                    'ITERATIONS': 250,
-                                    'POPULATION_SIZE': 600,
-                                    'DATASET': f'datasets/generated/{dataset}',
-                                    'VARIANCE_THRESHOLD': 0.4,
-                                    'DIVISION_THRESHOLD': 0.4,
-                                    'MAX_VARIANCE': True,
-                                    'RELATIVE_VARIANCE': True,
-                                    'MEDIAN_VARIANCE': True,
-                                    'ONLY_LEAF_VARIANCE': False,
-                                    'INPUT_CONFIG': input_conf
-                                })
+
+    for dataset in ('iris', 'wine'):
+        method = 'DES-HyperNEAT'
+        sheduler.create_job(BATCH, f'{method}_{dataset}_custom_var', REPEATS,
+                            {
+                                'METHOD': method,
+                                'ITERATIONS': 500,
+                                'DATASET': f'datasets/generated/{dataset}',
+                                'VARIANCE_THRESHOLD': 0.2,
+                                'DIVISION_THRESHOLD': 0.2,
+                                'MAX_VARIANCE': True,
+                                'RELATIVE_VARIANCE': True,
+                                'MEDIAN_VARIANCE': True,
+                                'ONLY_LEAF_VARIANCE': False,
+                            })
+        sheduler.create_job(BATCH, f'{method}_{dataset}_custom_var_04', REPEATS,
+                            {
+                                'METHOD': method,
+                                'ITERATIONS': 500,
+                                'DATASET': f'datasets/generated/{dataset}',
+                                'VARIANCE_THRESHOLD': 0.4,
+                                'DIVISION_THRESHOLD': 0.4,
+                                'MAX_VARIANCE': True,
+                                'RELATIVE_VARIANCE': True,
+                                'MEDIAN_VARIANCE': True,
+                                'ONLY_LEAF_VARIANCE': False,
+                            })
+        sheduler.create_job(BATCH, f'{method}_{dataset}_custom_var_mutate_all', REPEATS,
+                            {
+                                'METHOD': method,
+                                'ITERATIONS': 500,
+                                'DATASET': f'datasets/generated/{dataset}',
+                                'VARIANCE_THRESHOLD': 0.2,
+                                'DIVISION_THRESHOLD': 0.2,
+                                'MAX_VARIANCE': True,
+                                'RELATIVE_VARIANCE': True,
+                                'MEDIAN_VARIANCE': True,
+                                'ONLY_LEAF_VARIANCE': False,
+                                'MUTATE_ALL_COMPONENTS': True,
+                            })
+
+        method = 'ES-HyperNEAT'
+        sheduler.create_job(BATCH, f'{method}_{dataset}_custom_var', REPEATS,
+                            {
+                                'METHOD': method,
+                                'ITERATIONS': 500,
+                                'DATASET': f'datasets/generated/{dataset}',
+                                'VARIANCE_THRESHOLD': 0.2,
+                                'DIVISION_THRESHOLD': 0.2,
+                                'MAX_VARIANCE': True,
+                                'RELATIVE_VARIANCE': True,
+                                'MEDIAN_VARIANCE': True,
+                                'ONLY_LEAF_VARIANCE': False,
+                            })
+        sheduler.create_job(BATCH, f'{method}_{dataset}_custom_var_04', REPEATS,
+                            {
+                                'METHOD': method,
+                                'ITERATIONS': 500,
+                                'DATASET': f'datasets/generated/{dataset}',
+                                'VARIANCE_THRESHOLD': 0.4,
+                                'DIVISION_THRESHOLD': 0.4,
+                                'MAX_VARIANCE': True,
+                                'RELATIVE_VARIANCE': True,
+                                'MEDIAN_VARIANCE': True,
+                                'ONLY_LEAF_VARIANCE': False,
+                            })
+        sheduler.create_job(BATCH, f'{method}_{dataset}_default', REPEATS,
+                            {
+                                'METHOD': method,
+                                'ITERATIONS': 500,
+                                'DATASET': f'datasets/generated/{dataset}',
+                                'VARIANCE_THRESHOLD': 0.03,
+                                'DIVISION_THRESHOLD': 0.03,
+                                'MAX_VARIANCE': False,
+                                'RELATIVE_VARIANCE': False,
+                                'MEDIAN_VARIANCE': False,
+                                'ONLY_LEAF_VARIANCE': True,
+                            })
+
+    method = 'DES-HyperNEAT'
+    dataset = 'wine'
+    sheduler.create_job(BATCH, f'{method}_{dataset}_custom_var_04_io', REPEATS,
+                        {
+                            'METHOD': method,
+                            'ITERATIONS': 500,
+                            'DATASET': f'datasets/generated/{dataset}',
+                            'VARIANCE_THRESHOLD': 0.4,
+                            'DIVISION_THRESHOLD': 0.4,
+                            'MAX_VARIANCE': True,
+                            'RELATIVE_VARIANCE': True,
+                            'MEDIAN_VARIANCE': True,
+                            'ONLY_LEAF_VARIANCE': False,
+                            'INPUT_CONFIG': '[[[-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5], [1.0, 1.0], [0.0, 0.0]], [[-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5], [1.0, 1.0]], [[-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5], [1.0, 1.0]]]'
+                        })
+
+    dataset = 'iris'
+    sheduler.create_job(BATCH, f'{method}_{dataset}_custom_var_04_io', REPEATS,
+                        {
+                            'METHOD': method,
+                            'ITERATIONS': 500,
+                            'DATASET': f'datasets/generated/{dataset}',
+                            'VARIANCE_THRESHOLD': 0.4,
+                            'DIVISION_THRESHOLD': 0.4,
+                            'MAX_VARIANCE': True,
+                            'RELATIVE_VARIANCE': True,
+                            'MEDIAN_VARIANCE': True,
+                            'ONLY_LEAF_VARIANCE': False,
+                            'INPUT_CONFIG': '[[[-1.0, -1.0], [-0.25, 1.0], [1.0, -0.25]]]'
+                        })

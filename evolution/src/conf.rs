@@ -58,7 +58,7 @@ pub struct PopulationConfig {
     #[envconfig(from = "ASEXUAL_REPRODUCTION_PROBABILITY", default = "0.2")]
     pub asexual_reproduction_probability: f64,
 
-    #[envconfig(from = "INTERSPECIES_REPRODUCTION_PROBABILITY", default = "0.15")]
+    #[envconfig(from = "INTERSPECIES_REPRODUCTION_PROBABILITY", default = "0.001")]
     pub interspecies_reproduction_probability: f64,
 
     #[serde(with = "bson::compat::u2f")]
