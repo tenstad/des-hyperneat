@@ -4,16 +4,16 @@ from src.scheduler import Scheduler
 
 def run():
     BATCH = 0
-    REPEATS = 20
+    REPEATS = 50
     sheduler = Scheduler()
 
     param_grid = {
-        'METHOD': ['NEAT', 'CPPN'],
+        'METHOD': ['CPPN', 'HyperNEAT'],
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine'],
-        'SPECIES_TARGET': [10, 20, 40],
-        'INITIAL_MUTATIONS': [100, 300],
-        'DROPOFF_AGE': [20, 50],
+        'SPECIES_TARGET': [5, 10, 20],
+        'INITIAL_MUTATIONS': [100, 250, 500],
+        'DROPOFF_AGE': [20, 100],
     }
 
     static_params = {
@@ -23,5 +23,6 @@ def run():
     }
 
     for params in ParameterGrid(param_grid):
+        name = str(params)
         params.update(static_params)
-        sheduler.create_job(BATCH, str(params), REPEATS, params)
+        sheduler.create_job(BATCH, name, REPEATS, params)
