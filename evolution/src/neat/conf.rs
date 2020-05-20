@@ -1,4 +1,6 @@
 use envconfig::Envconfig;
+use lazy_static::lazy_static;
+use network::activation::Activation;
 use serde::Serialize;
 
 #[derive(Envconfig, Clone, Serialize)]
@@ -35,6 +37,22 @@ impl Default for NeatConfig {
     fn default() -> Self {
         Self::init().unwrap()
     }
+}
+
+#[derive(Envconfig, Clone, Serialize)]
+pub struct MethodConfig {
+    #[envconfig(from = "OUTPUT_ACTIVATION", default = "Sigmoid")]
+    pub output_activation: Activation,
+}
+
+impl Default for MethodConfig {
+    fn default() -> Self {
+        Self::init().unwrap()
+    }
+}
+
+lazy_static! {
+    pub static ref NEAT: MethodConfig = MethodConfig::default();
 }
 
 pub trait ConfigProvider<N, L>: Clone {

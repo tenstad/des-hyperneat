@@ -1,8 +1,8 @@
 use crate::algorithm::Algorithm;
 use crate::environment::EnvironmentDescription;
 use crate::log::Logger;
-use crate::neat::genome::DefaultNeatGenome;
-use crate::{conf::NoConfig, environment::Environment, evolve};
+use crate::neat::{conf::MethodConfig, genome::DefaultNeatGenome};
+use crate::{environment::Environment, evolve};
 use developer::Developer;
 use network::execute::Executor;
 use serde::Serialize;
@@ -17,7 +17,7 @@ pub mod state;
 pub struct Neat;
 
 impl<E: Environment<Phenotype = Executor>> Algorithm<E> for Neat {
-    type Config = NoConfig;
+    type Config = MethodConfig;
     type Genome = DefaultNeatGenome;
     type Developer = Developer;
 

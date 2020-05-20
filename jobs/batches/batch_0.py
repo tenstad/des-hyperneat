@@ -8,7 +8,7 @@ def run():
     sheduler = Scheduler()
 
     param_grid = {
-        'METHOD': ['CPPN', 'HyperNEAT'],
+        'METHOD': ['NEAT', 'CPPN', 'HyperNEAT'],
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine'],
         'SPECIES_TARGET': [5, 10, 20],
@@ -23,6 +23,11 @@ def run():
     }
 
     for params in ParameterGrid(param_grid):
+        if params['METHOD'] in ('NEAT', 'HyperNEAT'):
+            params['OUTPUT_ACTIVATION'] = 'Softmax'
+        elif params['METHOD'] == 'CPPN':
+            params['OUTPUT_ACTIVATIONS'] = 'Softmax'
+
         name = str(params)
         params.update(static_params)
         sheduler.create_job(BATCH, name, REPEATS, params)

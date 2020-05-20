@@ -1,6 +1,7 @@
 use crate::develop::Develop;
 use crate::environment::EnvironmentDescription;
 use crate::neat::{
+    conf::NEAT,
     genome::NeatGenome,
     link::NeatLink,
     node::{NeatNode, NodeRef},
@@ -83,7 +84,11 @@ impl Develop<NeatGenome<NeatNode, NeatLink>> for Developer {
                 connection::OrderedAction::Node(node) => execute::Action::Activation(
                     *node_mapping.get(node).unwrap(),
                     0.0,
-                    network::activation::Activation::Sigmoid,
+                    if let NodeRef::Output(_) = node {
+                        NEAT.output_activation
+                    } else {
+                        network::activation::Activation::Sigmoid
+                    },
                 ),
             })
             .collect();
