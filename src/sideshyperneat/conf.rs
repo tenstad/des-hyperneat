@@ -10,6 +10,9 @@ pub struct MethodConfig {
 
     #[envconfig(from = "CPPN_MUTATION_PROBABILITY", default = "1.0")]
     pub cppn_mutation_probability: f64,
+
+    #[envconfig(from = "LOG_VISUALIZATIONS", default = "false")]
+    pub log_visualizations: bool,
 }
 
 impl Default for MethodConfig {

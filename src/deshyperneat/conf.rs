@@ -19,6 +19,9 @@ pub struct MethodConfig {
 
     #[envconfig(from = "MUTATE_ALL_COMPONENTS", default = "true")]
     pub mutate_all_components: bool,
+
+    #[envconfig(from = "LOG_VISUALIZATIONS", default = "false")]
+    pub log_visualizations: bool,
 }
 
 impl Default for MethodConfig {

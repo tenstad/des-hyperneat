@@ -16,6 +16,14 @@ pub struct EvolutionConfig {
     #[envconfig(from = "ITERATIONS", default = "10000")]
     pub iterations: u64,
 
+    #[serde(with = "bson::compat::u2f")]
+    #[envconfig(from = "SECONDS_LIMIT", default = "0")]
+    pub seconds_limit: u64,
+
+    #[serde(with = "bson::compat::u2f")]
+    #[envconfig(from = "LOG_INTERVAL", default = "5")]
+    pub log_interval: u64,
+
     #[envconfig(from = "DB_LOG", default = "false")]
     pub db_log: bool,
 }

@@ -35,7 +35,7 @@ impl log::Log<Genome> for Logger {
     ) {
         self.hyperneat_logger.log(iteration, population, stats);
 
-        if iteration % self.log_interval == 0 {
+        if ESHYPERNEAT.log_visualizations && iteration % self.log_interval == 0 {
             let (mut phenotype, _) = self
                 .neat_developer
                 .develop(population.best().unwrap().genome.clone());

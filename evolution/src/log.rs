@@ -26,7 +26,7 @@ impl<G: Genome> Log<G> for Logger {
         };
 
         Self {
-            log_interval: 10,
+            log_interval: EVOLUTION.log_interval,
             entry,
         }
     }

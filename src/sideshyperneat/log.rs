@@ -1,7 +1,7 @@
 use crate::deshyperneat::log::Logger as DeshyperneatLogger;
-use crate::sideshyperneat::{dot::genome_to_dot, genome::Genome};
+use crate::sideshyperneat::{conf::SIDESHYPERNEAT, dot::genome_to_dot, genome::Genome};
 use evolution::{
-    environment::EnvironmentDescription, stats::GetPopulationStats, log, population::Population,
+    environment::EnvironmentDescription, log, population::Population, stats::GetPopulationStats,
 };
 use serde::Serialize;
 
@@ -26,7 +26,7 @@ impl log::Log<Genome> for Logger {
     ) {
         self.deshyperneat_logger.log(iteration, population, stats);
 
-        if iteration % self.log_interval == 0 {
+        if SIDESHYPERNEAT.log_visualizations && iteration % self.log_interval == 0 {
             if let Some(best) = &population.best() {
                 genome_to_dot("g", &best.genome).ok();
             }

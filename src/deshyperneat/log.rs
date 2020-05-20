@@ -1,4 +1,6 @@
-use crate::deshyperneat::{desgenome::DesGenome, developer::Developer, figure::save_fig_to_file};
+use crate::deshyperneat::{
+    conf::DESHYPERNEAT, desgenome::DesGenome, developer::Developer, figure::save_fig_to_file,
+};
 use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::{
     environment::EnvironmentDescription, genome::Genome, log, population::Population,
@@ -29,7 +31,7 @@ impl<G: Genome + DesGenome> log::Log<G> for Logger {
     ) {
         self.default_logger.log(iteration, population, stats);
 
-        if iteration % self.log_interval == 0 {
+        if DESHYPERNEAT.log_visualizations && iteration % self.log_interval == 0 {
             save_fig_to_file(
                 self.developer
                     .connections(population.best().unwrap().genome.clone()),

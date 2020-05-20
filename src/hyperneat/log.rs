@@ -1,8 +1,8 @@
 use crate::cppn::{developer::Developer, genome::Genome, log::Logger as CppnLogger};
-use crate::hyperneat::img;
+use crate::hyperneat::{conf::HYPERNEAT, img};
 use evolution::{
-    develop::Develop, environment::EnvironmentDescription, stats::GetPopulationStats, log,
-    population::Population,
+    develop::Develop, environment::EnvironmentDescription, log, population::Population,
+    stats::GetPopulationStats,
 };
 use serde::Serialize;
 
@@ -29,7 +29,7 @@ impl log::Log<Genome> for Logger {
     ) {
         self.cppn_logger.log(iteration, population, stats);
 
-        if iteration % self.log_interval == 0 {
+        if HYPERNEAT.log_visualizations && iteration % self.log_interval == 0 {
             let (mut phenotype, _) = self
                 .developer
                 .develop(population.best().unwrap().genome.clone());

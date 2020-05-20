@@ -13,6 +13,9 @@ pub struct MethodConfig {
 
     #[envconfig(from = "OUTPUT_ACTIVATION", default = "Softmax")]
     pub output_activation: Activation,
+
+    #[envconfig(from = "LOG_VISUALIZATIONS", default = "false")]
+    pub log_visualizations: bool,
 }
 
 impl Default for MethodConfig {

@@ -31,6 +31,9 @@ pub struct MethodConfig {
 
     #[envconfig(from = "PAD_MISSING_OUTPUTS", default = "false")]
     pub pad_missing_outputs: bool,
+
+    #[envconfig(from = "LOG_VISUALIZATIONS", default = "false")]
+    pub log_visualizations: bool,
 }
 
 impl Default for MethodConfig {

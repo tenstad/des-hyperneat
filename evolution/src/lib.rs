@@ -31,6 +31,10 @@ use evaluate::MultiEvaluator;
 use log::Log;
 use population::Population;
 use serde::Serialize;
+use std::{
+    time::{Duration, SystemTime},
+    u64,
+};
 
 pub fn evolve<
     E: Environment + 'static,
@@ -68,9 +72,23 @@ pub fn evolve<
     );
     let mut logger = L::new(&environment_description, &config);
 
-    for i in 0..(EVOLUTION.iterations + 1) {
+    let start_time = SystemTime::now();
+    let iterations = if EVOLUTION.iterations > 0 {
+        EVOLUTION.iterations + 1
+    } else {
+        u64::MAX
+    };
+
+    for i in 0..iterations {
         let population_stats = population.evaluate(&evaluator);
         logger.log(i, &population, &population_stats);
+
+        if EVOLUTION.seconds_limit > 0
+            && SystemTime::elapsed(&start_time).unwrap()
+                >= Duration::from_secs(EVOLUTION.seconds_limit)
+        {
+            break;
+        }
 
         population.evolve();
     }

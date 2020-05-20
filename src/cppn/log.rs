@@ -1,4 +1,4 @@
-use crate::cppn::{dot::genome_to_dot, genome::Genome};
+use crate::cppn::{conf::CPPN, dot::genome_to_dot, genome::Genome};
 use evolution::{
     environment::EnvironmentDescription, log, population::Population, stats::GetPopulationStats,
 };
@@ -25,7 +25,7 @@ impl log::Log<Genome> for Logger {
     ) {
         self.default_logger.log(iteration, population, stats);
 
-        if iteration % self.log_interval == 0 {
+        if CPPN.log_visualizations && iteration % self.log_interval == 0 {
             if let Some(best) = &population.best() {
                 genome_to_dot("g", &best.genome).ok();
             }

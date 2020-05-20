@@ -55,6 +55,9 @@ pub struct MethodConfig {
 
     #[envconfig(from = "ONLY_LEAF_VARIANCE", default = "false")]
     pub only_leaf_variance: bool,
+
+    #[envconfig(from = "LOG_VISUALIZATIONS", default = "false")]
+    pub log_visualizations: bool,
 }
 
 impl Default for MethodConfig {
