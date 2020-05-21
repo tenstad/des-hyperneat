@@ -72,12 +72,15 @@ impl Dataset {
                 }
             }
 
-            let line: Vec<f64> = line
+            let mut line: Vec<f64> = line
                 .split(|c| c == ',')
                 .map(|val| val.parse().unwrap())
                 .collect();
 
             if !read_state {
+                if DATA.add_bias_input {
+                    line.push(1.0);
+                }
                 inputs.push(line);
             } else {
                 targets.push(line);

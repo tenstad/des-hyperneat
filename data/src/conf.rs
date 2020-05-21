@@ -17,6 +17,9 @@ pub struct DatasetConfig {
 
     #[envconfig(from = "TEST_FRACTION", default = "0.0")]
     pub test_fraction: f64,
+
+    #[envconfig(from = "ADD_BIAS_INPUT", default = "false")]
+    pub add_bias_input: bool,
 }
 
 impl Default for DatasetConfig {

@@ -1,5 +1,6 @@
 from sklearn.model_selection import ParameterGrid
 from src.scheduler import Scheduler
+import json
 
 
 def run():
@@ -37,7 +38,9 @@ def run():
                 params['OUTPUT_ACTIVATION'] = 'Softmax'
             elif params['METHOD'] == 'CPPN':
                 params['OUTPUT_ACTIVATIONS'] = 'Softmax'
-            name = str(params)
+            if params['METHOD'] == 'NEAT':
+                params['ADD_BIAS_INPUT'] = True
+            name = json.dumps(params)
             params.update(static_params)
             sheduler.create_job(BATCH, name, REPEATS, params)
 
