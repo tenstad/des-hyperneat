@@ -38,8 +38,9 @@ impl LinkExtension for Link {
         )
     }
 
-    fn clone_with(&self, _: &Self::Config, neat: NeatLink, _: &mut Self::State) -> Self {
-        Self::new(neat, self.depth, self.cppn_output_id, self.is_identity)
+    fn clone_with(&self, _: &Self::Config, neat: NeatLink, state: &mut Self::State) -> Self {
+        let cppn_output_id = state.output_id_innovation_offset + neat.innovation;
+        Self::new(neat, self.depth, cppn_output_id, false)
     }
 
     fn crossover(
@@ -50,7 +51,7 @@ impl LinkExtension for Link {
         other_fitness: &f64,
     ) -> Self {
         assert_eq!(self.cppn_output_id, other.cppn_output_id);
-        assert_eq!(self.is_identity, other.is_identity);
+        // Not the case when deleted and reconnected: assert_eq!(self.is_identity, other.is_identity);
 
         Self {
             neat: self.neat.crossover(&other.neat, fitness, other_fitness),
