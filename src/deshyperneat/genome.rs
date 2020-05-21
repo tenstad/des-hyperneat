@@ -4,7 +4,6 @@ use crate::deshyperneat::{
     node::Node,
     state::State,
 };
-use crate::eshyperneat::conf::ESHYPERNEAT;
 use evolution::{
     genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
     neat::{
@@ -67,7 +66,13 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, DESGenomeStats> for
         let node_mut_prob = 3.0 / self.neat.hidden_nodes.len() as f64;
         let link_mut_prob = 3.0 / self.neat.links.len() as f64;
 
-        for node in self.neat.hidden_nodes.values_mut() {
+        for node in self
+            .neat
+            .hidden_nodes
+            .values_mut()
+            .chain(self.neat.inputs.values_mut())
+            .chain(self.neat.outputs.values_mut())
+        {
             if DESHYPERNEAT.mutate_all_components || rng.gen::<f64>() < node_mut_prob {
                 node.cppn.mutate(
                     &config.cppn,
@@ -109,24 +114,31 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, DESGenomeStats> for
         }
 
         if rng.gen::<f64>() < DESHYPERNEAT.mutate_node_depth_probability {
-            if let Some(key) = self
+            if let Some(node_ref) = self
                 .neat
-                .hidden_nodes
+                .inputs
                 .keys()
+                .chain(self.neat.hidden_nodes.keys())
+                .chain(self.neat.outputs.keys())
                 .cloned()
                 .collect::<Vec<NodeRef>>()
                 .choose(&mut rng)
             {
-                let mut node = self.neat.hidden_nodes.get_mut(&key).unwrap();
-                if node.depth == 0 {
-                    node.depth = 1;
-                } else {
-                    node.depth = if rng.gen::<f64>() < 0.5 {
-                        (node.depth + 1).min(ESHYPERNEAT.iteration_level)
-                    } else {
-                        node.depth - 1
-                    };
-                }
+                let (mut node, limit) = match node_ref {
+                    NodeRef::Input(_) => (
+                        self.neat.inputs.get_mut(&node_ref).unwrap(),
+                        DESHYPERNEAT.max_input_substrate_depth,
+                    ),
+                    NodeRef::Hidden(_) => (
+                        self.neat.hidden_nodes.get_mut(&node_ref).unwrap(),
+                        DESHYPERNEAT.max_hidden_substrate_depth,
+                    ),
+                    NodeRef::Output(_) => (
+                        self.neat.outputs.get_mut(&node_ref).unwrap(),
+                        DESHYPERNEAT.max_output_substrate_depth,
+                    ),
+                };
+                mutate_node(&mut node, limit, &mut rng);
             }
         }
     }
@@ -150,6 +162,27 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, DESGenomeStats> for
             link_cppns: accumulate_neat_stats(self.neat.links.values().map(|x| x.cppn.get_stats())),
         }
     }
+}
+
+fn mutate_node<R: Rng>(node: &mut Node, limit: u64, rng: &mut R) {
+    if limit == 0 {
+        assert_eq!(node.depth, 0);
+        return;
+    }
+
+    if node.depth == 0 {
+        node.depth += 1;
+    } else if node.depth == limit {
+        node.depth -= 1;
+    } else {
+        node.depth = if rng.gen::<bool>() {
+            node.depth + 1
+        } else {
+            node.depth - 1
+        };
+    }
+
+    node.depth = node.depth.min(limit).max(0);
 }
 
 fn accumulate_neat_stats(iter: impl Iterator<Item = NeatGenomeStats>) -> NeatGenomeStats {

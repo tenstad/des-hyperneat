@@ -28,7 +28,7 @@ impl DesGenome for Genome {
                 let mut cppn = self.cppn.clone();
                 cppn.neat
                     .connections
-                    .prune_dangling_outputs(&vec![NodeRef::Output(node.cppn_output_id)]);
+                    .prune_dangling_outputs(&vec![NodeRef::Output(node.cppn_output_id)], false);
                 cppn.neat
                     .outputs
                     .retain(|node_ref, _| node_ref.id() == node.cppn_output_id);
@@ -43,7 +43,7 @@ impl DesGenome for Genome {
                 let mut cppn = self.cppn.clone();
                 cppn.neat
                     .connections
-                    .prune_dangling_outputs(&vec![NodeRef::Output(node.cppn_output_id)]);
+                    .prune_dangling_outputs(&vec![NodeRef::Output(node.cppn_output_id)], false);
                 cppn.neat
                     .outputs
                     .retain(|node_ref, _| node_ref.id() == node.cppn_output_id);
@@ -58,7 +58,7 @@ impl DesGenome for Genome {
                 let mut cppn = self.cppn.clone();
                 cppn.neat
                     .connections
-                    .prune_dangling_outputs(&vec![NodeRef::Output(node.cppn_output_id)]);
+                    .prune_dangling_outputs(&vec![NodeRef::Output(node.cppn_output_id)], false);
                 cppn.neat
                     .outputs
                     .retain(|node_ref, _| node_ref.id() == node.cppn_output_id);
@@ -73,7 +73,7 @@ impl DesGenome for Genome {
                 let mut cppn = self.cppn.clone();
                 cppn.neat
                     .connections
-                    .prune_dangling_outputs(&vec![NodeRef::Output(link.cppn_output_id)]);
+                    .prune_dangling_outputs(&vec![NodeRef::Output(link.cppn_output_id)], false);
                 cppn.neat
                     .outputs
                     .retain(|node_ref, _| node_ref.id() == link.cppn_output_id);

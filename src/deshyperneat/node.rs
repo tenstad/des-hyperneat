@@ -5,7 +5,7 @@ use evolution::{
     neat::{
         conf::NeatConfig,
         genome::GetNeat,
-        node::{NeatNode, NodeExtension},
+        node::{NeatNode, NodeExtension, NodeRef},
         state::{InitConfig, NeatState},
     },
 };
@@ -42,7 +42,15 @@ impl NodeExtension for Node {
             cppn
         };
 
-        Self::new(neat, cppn, 1)
+        let depth = 1
+            .min(match neat.neat().node_ref {
+                NodeRef::Input(_) => DESHYPERNEAT.max_input_substrate_depth,
+                NodeRef::Hidden(_) => DESHYPERNEAT.max_hidden_substrate_depth,
+                NodeRef::Output(_) => DESHYPERNEAT.max_output_substrate_depth,
+            })
+            .max(0);
+
+        Self::new(neat, cppn, depth)
     }
 
     fn crossover(

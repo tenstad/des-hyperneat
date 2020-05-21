@@ -1,5 +1,6 @@
 use crate::codeshyperneat::{link::Link, node::Node, state::State};
 use crate::cppn::genome::Genome as CppnGenome;
+use crate::deshyperneat::conf::DESHYPERNEAT;
 use evolution::{
     genome::{GenericGenome as GenericEvolvableGenome, Genome as EvolvableGenome},
     neat::{conf::NeatConfig, genome::NeatGenome, node::NodeRef, state::InitConfig},
@@ -77,25 +78,32 @@ impl GenericEvolvableGenome<NeatConfig, State, InitConfig, NoStats> for Genome {
             }
         }
 
-        if rng.gen::<f64>() < 0.05 {
-            if let Some(key) = self
+        if rng.gen::<f64>() < DESHYPERNEAT.mutate_node_depth_probability {
+            if let Some(node_ref) = self
                 .neat
-                .hidden_nodes
+                .inputs
                 .keys()
+                .chain(self.neat.hidden_nodes.keys())
+                .chain(self.neat.outputs.keys())
                 .cloned()
                 .collect::<Vec<NodeRef>>()
                 .choose(&mut rng)
             {
-                let mut node = self.neat.hidden_nodes.get_mut(&key).unwrap();
-                if node.depth == 0 {
-                    node.depth = 1;
-                } else {
-                    node.depth = if rng.gen::<f64>() < 0.5 {
-                        (node.depth + 1).min(5)
-                    } else {
-                        node.depth - 1
-                    };
-                }
+                let (mut node, limit) = match node_ref {
+                    NodeRef::Input(_) => (
+                        self.neat.inputs.get_mut(&node_ref).unwrap(),
+                        DESHYPERNEAT.max_input_substrate_depth,
+                    ),
+                    NodeRef::Hidden(_) => (
+                        self.neat.hidden_nodes.get_mut(&node_ref).unwrap(),
+                        DESHYPERNEAT.max_hidden_substrate_depth,
+                    ),
+                    NodeRef::Output(_) => (
+                        self.neat.outputs.get_mut(&node_ref).unwrap(),
+                        DESHYPERNEAT.max_output_substrate_depth,
+                    ),
+                };
+                mutate_node(&mut node, limit, &mut rng);
             }
         }
     }
@@ -143,4 +151,25 @@ impl Genome {
 
         genomes
     }
+}
+
+fn mutate_node<R: Rng>(node: &mut Node, limit: u64, rng: &mut R) {
+    if limit == 0 {
+        assert_eq!(node.depth, 0);
+        return;
+    }
+
+    if node.depth == 0 {
+        node.depth += 1;
+    } else if node.depth == limit {
+        node.depth -= 1;
+    } else {
+        node.depth = if rng.gen::<bool>() {
+            node.depth + 1
+        } else {
+            node.depth - 1
+        };
+    }
+
+    node.depth = node.depth.min(limit).max(0);
 }

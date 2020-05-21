@@ -1,7 +1,8 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::fmt;
-use std::hash::Hash;
+use std::{
+    collections::{HashMap, HashSet},
+    fmt,
+    hash::Hash,
+};
 
 #[derive(Clone, Debug, new)]
 pub struct Target<N, E> {
@@ -241,12 +242,13 @@ impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
         actions
     }
 
-    pub fn prune(&mut self, inputs: &Vec<N>, outputs: &Vec<N>) {
-        self.prune_dangling_inputs(inputs);
-        self.prune_dangling_outputs(outputs);
+    pub fn prune(&mut self, inputs: &Vec<N>, outputs: &Vec<N>, collect: bool) -> Vec<N> {
+        let mut pruned = self.prune_dangling_inputs(inputs, collect);
+        pruned.append(&mut self.prune_dangling_outputs(outputs, collect));
+        pruned
     }
 
-    pub fn prune_dangling_inputs(&mut self, inputs: &Vec<N>) {
+    pub fn prune_dangling_inputs(&mut self, inputs: &Vec<N>, collect: bool) -> Vec<N> {
         let mut backward_count: HashMap<N, u64> = HashMap::new();
         for (_, targets) in self.connections.iter() {
             for target in targets.iter() {
@@ -257,8 +259,10 @@ impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
             }
         }
 
+        let mut pruned = Vec::new();
+
         loop {
-            let dangling_inputs = self
+            let mut dangling_inputs = self
                 .connections
                 .keys()
                 .filter(|n| !inputs.contains(n) && *backward_count.get(n).unwrap_or(&0) == 0)
@@ -275,10 +279,17 @@ impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
                 }
                 self.connections.remove(node);
             }
+            if collect {
+                pruned.append(&mut dangling_inputs);
+            }
         }
+
+        pruned
     }
 
-    pub fn prune_dangling_outputs(&mut self, outputs: &Vec<N>) {
+    pub fn prune_dangling_outputs(&mut self, outputs: &Vec<N>, collect: bool) -> Vec<N> {
+        let mut pruned = HashSet::new();
+
         loop {
             let mut deleted_node = false;
             for source in self.get_sources().cloned().collect::<Vec<N>>().iter() {
@@ -293,11 +304,25 @@ impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
                 if delete_indexes.len() > 0 {
                     deleted_node = true;
                     if delete_indexes.len() == targets.len() {
-                        self.connections.remove(source);
+                        if collect {
+                            pruned.extend(
+                                self.connections
+                                    .remove(source)
+                                    .unwrap()
+                                    .iter()
+                                    .map(|target| target.node),
+                            );
+                        } else {
+                            self.connections.remove(source);
+                        }
                     } else {
                         let targets = self.connections.get_mut(source).unwrap();
                         for delete_index in delete_indexes.iter() {
-                            targets.swap_remove(*delete_index);
+                            if collect {
+                                pruned.insert(targets.swap_remove(*delete_index).node);
+                            } else {
+                                targets.swap_remove(*delete_index);
+                            }
                         }
                     }
                 }
@@ -306,6 +331,8 @@ impl<N: Hash + Eq + Copy, E: Copy> Connections<N, E> {
                 break;
             }
         }
+
+        pruned.into_iter().collect::<Vec<_>>()
     }
 }
 
@@ -486,7 +513,15 @@ mod tests {
         connections.add(11, 12, ());
         connections.add(14, 12, ());
 
-        connections.prune_dangling_inputs(&vec![3]);
+        assert_eq!(
+            connections.clone().prune_dangling_inputs(&vec![3], false),
+            vec![]
+        );
+
+        let mut nodes = connections.prune_dangling_inputs(&vec![3], true);
+        nodes.sort();
+        assert_eq!(nodes, vec![0, 1, 2, 4, 5, 6, 7, 14]);
+
         assert!(!connections.contains(&5, 10));
         assert!(!connections.contains(&6, 10));
         assert!(!connections.contains(&7, 10));
@@ -522,7 +557,15 @@ mod tests {
         connections.add(12, 11, ());
         connections.add(12, 14, ());
 
-        connections.prune_dangling_outputs(&vec![3]);
+        assert_eq!(
+            connections.clone().prune_dangling_outputs(&vec![3], false),
+            vec![]
+        );
+
+        let mut nodes = connections.prune_dangling_outputs(&vec![3], true);
+        nodes.sort();
+        assert_eq!(nodes, vec![0, 1, 2, 4, 5, 6, 7, 14]);
+
         assert!(!connections.contains(&10, 5));
         assert!(!connections.contains(&10, 6));
         assert!(!connections.contains(&10, 7));

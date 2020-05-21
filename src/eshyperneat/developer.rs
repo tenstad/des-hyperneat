@@ -62,7 +62,7 @@ impl Developer {
         let reverse_connections = connection::Connections::from(reverse_connections);
 
         connections.extend(&reverse_connections);
-        connections.prune(&self.input_nodes, &self.output_nodes);
+        connections.prune(&self.input_nodes, &self.output_nodes, false);
 
         connections
     }
@@ -99,7 +99,8 @@ impl Develop<Genome> for Developer {
         let reverse_connections = connection::Connections::from(reverse_connections);
 
         connections.extend(&reverse_connections);
-        connections.prune(&self.input_nodes, &self.output_nodes);
+        let pruned = connections.prune(&self.input_nodes, &self.output_nodes, true);
+        let pruned = pruned.iter().collect::<HashSet<_>>();
 
         // Make sure the order is inputs - hidden - outputs
         let nodes = self
@@ -112,6 +113,7 @@ impl Develop<Genome> for Developer {
                     .skip(1)
                     .flatten()
                     .chain(reverse_layers.iter().skip(1).flatten())
+                    .filter(|n| !pruned.contains(n))
                     .cloned()
                     .collect::<HashSet<(i64, i64)>>()
                     .into_iter(),

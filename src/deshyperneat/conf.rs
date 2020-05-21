@@ -22,6 +22,18 @@ pub struct MethodConfig {
 
     #[envconfig(from = "LOG_VISUALIZATIONS", default = "false")]
     pub log_visualizations: bool,
+
+    #[serde(with = "bson::compat::u2f")]
+    #[envconfig(from = "MAX_INPUT_SUBSTRATE_DEPTH", default = "0")]
+    pub max_input_substrate_depth: u64,
+
+    #[serde(with = "bson::compat::u2f")]
+    #[envconfig(from = "MAX_OUTPUT_SUBSTRATE_DEPTH", default = "0")]
+    pub max_output_substrate_depth: u64,
+
+    #[serde(with = "bson::compat::u2f")]
+    #[envconfig(from = "MAX_HIDDEN_SUBSTRATE_DEPTH", default = "3")]
+    pub max_hidden_substrate_depth: u64,
 }
 
 impl Default for MethodConfig {

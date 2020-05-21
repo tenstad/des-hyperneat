@@ -21,8 +21,11 @@ pub struct Developer {
     cppn_developer: CppnDeveloper,
     input_nodes: Vec<Vec<(i64, i64)>>,
     output_nodes: Vec<Vec<(i64, i64)>>,
+    output_nodes_hash: Vec<HashSet<(i64, i64)>>,
     flattened_inputs: Vec<(NodeRef, i64, i64)>,
     flattened_outputs: Vec<(NodeRef, i64, i64)>,
+    flattened_inputs_hash: HashSet<(NodeRef, i64, i64)>,
+    flattened_outputs_hash: HashSet<(NodeRef, i64, i64)>,
 }
 
 impl From<EnvironmentDescription> for Developer {
@@ -53,7 +56,13 @@ impl From<EnvironmentDescription> for Developer {
         Self {
             cppn_developer: CppnDeveloper::from(description),
             input_nodes,
+            output_nodes_hash: output_nodes
+                .iter()
+                .map(|nodes| nodes.iter().cloned().collect::<HashSet<_>>())
+                .collect::<Vec<_>>(),
             output_nodes,
+            flattened_inputs_hash: flattened_inputs.iter().cloned().collect::<HashSet<_>>(),
+            flattened_outputs_hash: flattened_outputs.iter().cloned().collect::<HashSet<_>>(),
             flattened_inputs,
             flattened_outputs,
         }
@@ -114,6 +123,7 @@ impl Developer {
 
                     // Search for connections
                     let (layers, connections) = match to {
+                        NodeRef::Input(_) => panic!("target is input substrate"),
                         NodeRef::Hidden(_) => search::explore_substrate(
                             substrate_nodes
                                 .get(from)
@@ -127,20 +137,64 @@ impl Developer {
                             false,
                             true,
                         ),
-                        NodeRef::Output(_) => search::explore_substrate(
-                            substrate_nodes
-                                .get(to)
-                                .unwrap()
-                                .iter()
-                                .cloned()
-                                .collect::<Vec<(i64, i64)>>(),
-                            &vec![],
-                            &mut cppn,
-                            1,
-                            true,
-                            true,
-                        ),
-                        NodeRef::Input(_) => panic!("target is input substrate"),
+                        NodeRef::Output(id) => {
+                            let (mut layers_reverse, mut connections_reverse) =
+                                search::explore_substrate(
+                                    self.output_nodes[*id as usize].clone(),
+                                    &vec![],
+                                    &mut cppn,
+                                    1,
+                                    true,
+                                    true,
+                                );
+                            if genome.get_depth(to) > 0 {
+                                // When depth of output substrate is > 0, search for additional non-reverse connections.
+                                // These can potentially be conencted to the output when the output substrate is developed.
+
+                                let (mut layers, mut connections) = search::explore_substrate(
+                                    substrate_nodes
+                                        .get(from)
+                                        .unwrap()
+                                        .iter()
+                                        .cloned()
+                                        .collect::<Vec<(i64, i64)>>(),
+                                    &vec![],
+                                    &mut cppn,
+                                    1,
+                                    false,
+                                    true,
+                                );
+
+                                // If therere are any connections to output nodes, these will also be
+                                // present in the reverse search. Remvove to avoid duplicates.
+                                if layers.len() > 1 {
+                                    layers[1].retain(|node| {
+                                        !self.output_nodes_hash[*id as usize].contains(node)
+                                    });
+                                }
+
+                                connections.retain(|connection| {
+                                    !self.output_nodes_hash[*id as usize].contains(&connection.to)
+                                });
+
+                                // Merge the normal and reverse search.
+                                layers = vec![
+                                    vec![],
+                                    layers
+                                        .drain(..)
+                                        .skip(1)
+                                        .take(1)
+                                        .flatten()
+                                        .chain(layers_reverse.drain(..).skip(1).take(1).flatten())
+                                        .collect::<Vec<_>>(),
+                                ];
+                                connections.append(&mut connections_reverse);
+
+                                (layers, connections)
+                            } else {
+                                (layers_reverse, connections_reverse)
+                            }
+                        }
                     };
 
                     // Add discovered nodes to target substrate
@@ -156,12 +210,20 @@ impl Developer {
                         assembled_connections.add(
                             (*from, connection.from.0, connection.from.1),
                             (*to, connection.to.0, connection.to.1),
-                            connection.edge,
+                            connection.edge
+                                * genome
+                                    .get_neat()
+                                    .links
+                                    .get(&(*from, *to))
+                                    .unwrap()
+                                    .neat()
+                                    .weight,
                         );
                     }
                 }
-                connection::OrderedAction::Node(node_ref) => match node_ref {
-                    NodeRef::Hidden(_) => {
+                connection::OrderedAction::Node(node_ref) => {
+                    let depth = genome.get_depth(node_ref);
+                    if depth > 0 {
                         // Develop the node's cppn
                         let mut cppn = self
                             .cppn_developer
@@ -169,19 +231,30 @@ impl Developer {
                             .0;
 
                         // Develop substrate
-                        let (layers, connections) = search::explore_substrate(
-                            substrate_nodes
-                                .get(node_ref)
-                                .unwrap()
-                                .iter()
-                                .cloned()
-                                .collect::<Vec<(i64, i64)>>(),
-                            &vec![],
-                            &mut cppn,
-                            genome.get_depth(node_ref),
-                            false,
-                            false,
-                        );
+                        let (layers, connections) = match node_ref {
+                            NodeRef::Input(_) | NodeRef::Hidden(_) => search::explore_substrate(
+                                substrate_nodes
+                                    .get(node_ref)
+                                    .unwrap()
+                                    .iter()
+                                    .cloned()
+                                    .collect::<Vec<(i64, i64)>>(),
+                                &vec![],
+                                &mut cppn,
+                                depth,
+                                false,
+                                false,
+                            ),
+                            // Output substrates are searched in reverse, starting at the output nodes
+                            NodeRef::Output(id) => search::explore_substrate(
+                                self.output_nodes[*id as usize].clone(),
+                                &vec![],
+                                &mut cppn,
+                                depth,
+                                true,
+                                false,
+                            ),
+                        };
 
                         // Add discovered nodes to target substrate
                         let nodes = substrate_nodes.get_mut(node_ref).unwrap();
@@ -200,12 +273,11 @@ impl Developer {
                             );
                         }
                     }
-                    _ => {}
-                },
+                }
             }
         }
 
-        assembled_connections.prune(&self.flattened_inputs, &self.flattened_outputs);
+        assembled_connections.prune(&self.flattened_inputs, &self.flattened_outputs, false);
         assembled_connections
     }
 }
@@ -254,6 +326,7 @@ impl<G: DesGenome> Develop<G> for Developer {
 
                     // Search for connections
                     let (layers, connections) = match to {
+                        NodeRef::Input(_) => panic!("target is input substrate"),
                         NodeRef::Hidden(_) => search::explore_substrate(
                             substrate_nodes
                                 .get(from)
@@ -267,20 +340,64 @@ impl<G: DesGenome> Develop<G> for Developer {
                             false,
                             true,
                         ),
-                        NodeRef::Output(_) => search::explore_substrate(
-                            substrate_nodes
-                                .get(to)
-                                .unwrap()
-                                .iter()
-                                .cloned()
-                                .collect::<Vec<(i64, i64)>>(),
-                            &vec![],
-                            &mut cppn,
-                            1,
-                            true,
-                            true,
-                        ),
-                        NodeRef::Input(_) => panic!("target is input substrate"),
+                        NodeRef::Output(id) => {
+                            let (mut layers_reverse, mut connections_reverse) =
+                                search::explore_substrate(
+                                    self.output_nodes[*id as usize].clone(),
+                                    &vec![],
+                                    &mut cppn,
+                                    1,
+                                    true,
+                                    true,
+                                );
+                            if genome.get_depth(to) > 0 {
+                                // When depth of output substrate is > 0, search for additional non-reverse connections.
+                                // These can potentially be conencted to the output when the output substrate is developed.
+
+                                let (mut layers, mut connections) = search::explore_substrate(
+                                    substrate_nodes
+                                        .get(from)
+                                        .unwrap()
+                                        .iter()
+                                        .cloned()
+                                        .collect::<Vec<(i64, i64)>>(),
+                                    &vec![],
+                                    &mut cppn,
+                                    1,
+                                    false,
+                                    true,
+                                );
+
+                                // If therere are any connections to output nodes, these will also be
+                                // present in the reverse search. Remvove to avoid duplicates.
+                                if layers.len() > 1 {
+                                    layers[1].retain(|node| {
+                                        !self.output_nodes_hash[*id as usize].contains(node)
+                                    });
+                                }
+
+                                connections.retain(|connection| {
+                                    !self.output_nodes_hash[*id as usize].contains(&connection.to)
+                                });
+
+                                // Merge the normal and reverse search.
+                                layers = vec![
+                                    vec![],
+                                    layers
+                                        .drain(..)
+                                        .skip(1)
+                                        .take(1)
+                                        .flatten()
+                                        .chain(layers_reverse.drain(..).skip(1).take(1).flatten())
+                                        .collect::<Vec<_>>(),
+                                ];
+                                connections.append(&mut connections_reverse);
+
+                                (layers, connections)
+                            } else {
+                                (layers_reverse, connections_reverse)
+                            }
+                        }
                     };
 
                     // Add discovered nodes to target substrate
@@ -307,8 +424,9 @@ impl<G: DesGenome> Develop<G> for Developer {
                         );
                     }
                 }
-                connection::OrderedAction::Node(node_ref) => match node_ref {
-                    NodeRef::Hidden(_) => {
+                connection::OrderedAction::Node(node_ref) => {
+                    let depth = genome.get_depth(node_ref);
+                    if depth > 0 {
                         // Develop the node's cppn
                         let mut cppn = self
                             .cppn_developer
@@ -316,19 +434,31 @@ impl<G: DesGenome> Develop<G> for Developer {
                             .0;
 
                         // Develop substrate
-                        let (layers, connections) = search::explore_substrate(
-                            substrate_nodes
-                                .get(node_ref)
-                                .unwrap()
-                                .iter()
-                                .cloned()
-                                .collect::<Vec<(i64, i64)>>(),
-                            &vec![],
-                            &mut cppn,
-                            genome.get_depth(node_ref),
-                            false,
-                            false,
-                        );
+                        let (layers, connections) = match node_ref {
+                            NodeRef::Input(_) | NodeRef::Hidden(_) => search::explore_substrate(
+                                substrate_nodes
+                                    .get(node_ref)
+                                    .unwrap()
+                                    .iter()
+                                    .cloned()
+                                    .collect::<Vec<(i64, i64)>>(),
+                                &vec![],
+                                &mut cppn,
+                                depth,
+                                false,
+                                false,
+                            ),
+                            // Output substrates are searched in reverse, starting at the output nodes
+                            NodeRef::Output(id) => search::explore_substrate(
+                                self.output_nodes[*id as usize].clone(),
+                                &vec![],
+                                &mut cppn,
+                                depth,
+                                true,
+                                false,
+                            ),
+                        };
+
                         // Add discovered nodes to target substrate
                         let nodes = substrate_nodes.get_mut(node_ref).unwrap();
                         // First layer contains source nodes
@@ -337,7 +467,6 @@ impl<G: DesGenome> Develop<G> for Developer {
                                 nodes.insert(*node);
                             }
                         }
-
                         // Add discovered connections to assembled network
                         for connection in connections.iter() {
                             assembled_connections.add(
@@ -347,12 +476,16 @@ impl<G: DesGenome> Develop<G> for Developer {
                             );
                         }
                     }
-                    _ => {}
-                },
+                }
             }
         }
 
-        // Collect all hidden nodes (in all hidden substrates)
+        // Remove any node not on a path between input and output nodes
+        let pruned =
+            assembled_connections.prune(&self.flattened_inputs, &self.flattened_outputs, true);
+        let pruned = pruned.iter().collect::<HashSet<_>>();
+
+        // Collect all hidden nodes, in all hidden substrates and I/O substrates
         let mut hidden_nodes = Vec::<(NodeRef, i64, i64)>::new();
         for node_ref in genome.get_neat().hidden_nodes.keys() {
             hidden_nodes.extend(
@@ -363,13 +496,33 @@ impl<G: DesGenome> Develop<G> for Developer {
                     .map(|node| (*node_ref, node.0, node.1)),
             );
         }
+        for node_ref in genome.get_neat().inputs.keys() {
+            hidden_nodes.extend(
+                substrate_nodes
+                    .get(node_ref)
+                    .unwrap()
+                    .iter()
+                    .map(|node| (*node_ref, node.0, node.1))
+                    .filter(|node| !self.flattened_inputs_hash.contains(node)),
+            );
+        }
+        for node_ref in genome.get_neat().outputs.keys() {
+            hidden_nodes.extend(
+                substrate_nodes
+                    .get(node_ref)
+                    .unwrap()
+                    .iter()
+                    .map(|node| (*node_ref, node.0, node.1))
+                    .filter(|node| !self.flattened_outputs_hash.contains(node)),
+            );
+        }
 
         // Collect all nodes (in all substrates)
         let nodes = self
             .flattened_inputs
             .iter()
             .cloned()
-            .chain(hidden_nodes.drain(..))
+            .chain(hidden_nodes.drain(..).filter(|node| !pruned.contains(node)))
             .chain(self.flattened_outputs.iter().cloned())
             .collect::<Vec<(NodeRef, i64, i64)>>();
 
@@ -383,9 +536,6 @@ impl<G: DesGenome> Develop<G> for Developer {
             .enumerate()
             .map(|(i, node)| (*node, i))
             .collect();
-
-        // Remove any node not on a path between input and output nodes
-        assembled_connections.prune(&self.flattened_inputs, &self.flattened_outputs);
 
         // Map topologically sorted order to neural network actions.
         let actions = assembled_connections

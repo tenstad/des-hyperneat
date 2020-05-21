@@ -1,3 +1,4 @@
+use crate::deshyperneat::conf::DESHYPERNEAT;
 use crate::sideshyperneat::state::State;
 use evolution::neat::{
     genome::GetNeat,
@@ -37,7 +38,15 @@ impl NodeExtension for Node {
             innovation
         };
 
-        Self::new(neat, 1, innovation)
+        let depth = 1
+            .min(match neat.neat().node_ref {
+                NodeRef::Input(_) => DESHYPERNEAT.max_input_substrate_depth,
+                NodeRef::Hidden(_) => DESHYPERNEAT.max_hidden_substrate_depth,
+                NodeRef::Output(_) => DESHYPERNEAT.max_output_substrate_depth,
+            })
+            .max(0);
+
+        Self::new(neat, depth, innovation)
     }
 
     fn crossover(

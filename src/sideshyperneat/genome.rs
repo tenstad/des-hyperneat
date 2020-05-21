@@ -1,5 +1,5 @@
 use crate::cppn::{genome::Genome as CppnGenome, node::Node as CppnNode};
-use crate::deshyperneat::genome::Genome as DesGenome;
+use crate::deshyperneat::{conf::DESHYPERNEAT, genome::Genome as DesGenome};
 use crate::eshyperneat::genome::insert_identity;
 use crate::sideshyperneat::{
     conf::{GenomeConfig, SIDESHYPERNEAT},
@@ -17,7 +17,7 @@ use evolution::{
     },
     stats::Stats,
 };
-use rand::Rng;
+use rand::{seq::SliceRandom, Rng};
 use serde::Serialize;
 
 #[derive(Clone)]
@@ -118,6 +118,35 @@ impl GenericEvolvableGenome<GenomeConfig, State, InitConfig, SiDESgenomeStats> f
         if rng.gen::<f64>() < SIDESHYPERNEAT.cppn_mutation_probability {
             self.cppn.mutate(&config.cppn, &mut state.cppn_state);
         }
+
+        if rng.gen::<f64>() < DESHYPERNEAT.mutate_node_depth_probability {
+            if let Some(node_ref) = self
+                .topology
+                .inputs
+                .keys()
+                .chain(self.topology.hidden_nodes.keys())
+                .chain(self.topology.outputs.keys())
+                .cloned()
+                .collect::<Vec<NodeRef>>()
+                .choose(&mut rng)
+            {
+                let (mut node, limit) = match node_ref {
+                    NodeRef::Input(_) => (
+                        self.topology.inputs.get_mut(&node_ref).unwrap(),
+                        DESHYPERNEAT.max_input_substrate_depth,
+                    ),
+                    NodeRef::Hidden(_) => (
+                        self.topology.hidden_nodes.get_mut(&node_ref).unwrap(),
+                        DESHYPERNEAT.max_hidden_substrate_depth,
+                    ),
+                    NodeRef::Output(_) => (
+                        self.topology.outputs.get_mut(&node_ref).unwrap(),
+                        DESHYPERNEAT.max_output_substrate_depth,
+                    ),
+                };
+                mutate_node(&mut node, limit, &mut rng);
+            }
+        }
     }
 
     fn distance(&self, config: &GenomeConfig, other: &Self) -> f64 {
@@ -145,4 +174,25 @@ impl Genome {
             ),
         );
     }
+}
+
+fn mutate_node<R: Rng>(node: &mut Node, limit: u64, rng: &mut R) {
+    if limit == 0 {
+        assert_eq!(node.depth, 0);
+        return;
+    }
+
+    if node.depth == 0 {
+        node.depth += 1;
+    } else if node.depth == limit {
+        node.depth -= 1;
+    } else {
+        node.depth = if rng.gen::<bool>() {
+            node.depth + 1
+        } else {
+            node.depth - 1
+        };
+    }
+
+    node.depth = node.depth.min(limit).max(0);
 }
