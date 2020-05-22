@@ -11,7 +11,8 @@ def run():
     param_grid = {
         'METHOD': ['NEAT', 'CPPN', 'HyperNEAT'],
         'DATASET': ['datasets/generated/iris',
-                    'datasets/generated/wine'],
+                    'datasets/generated/wine',
+                    'datasets/generated/retina'],
         'SPECIES_TARGET': [5, 10, 20],
         'INITIAL_MUTATIONS': [100, 250, 500],
         'DROPOFF_AGE': [20, 100],
@@ -20,7 +21,8 @@ def run():
     param_grid_non_adaptive = {
         'METHOD': ['NEAT', 'CPPN', 'HyperNEAT'],
         'DATASET': ['datasets/generated/iris',
-                    'datasets/generated/wine'],
+                    'datasets/generated/wine',
+                    'datasets/generated/retina'],
         'ADAPTIVE_SPECIATION_THRESHOLD': [False],
         'INITIAL_MUTATIONS': [100, 250, 500],
         'DROPOFF_AGE': [20, 100],
@@ -40,6 +42,9 @@ def run():
                 params['OUTPUT_ACTIVATIONS'] = 'Softmax'
             if params['METHOD'] == 'NEAT':
                 params['ADD_BIAS_INPUT'] = True
+            if params['METHOD'] == 'NEAT' and params['DATASET'] == 'datasets/generated/retina':
+                params['INPUT_CONFIG'] = "[[-1.0, -0.5], [-0.33, -0.5], [-1.0, -1.0], [-0.33, -1.0], [0.33, -0.5], [1.0, -0.5], [0.33, -1.0], [1.0, -1.0]]"
+                params['HIDDEN_LAYERS'] = "[[[-1.0, 0.0], [-0.33, 0.0], [0.33, 0.0], [1.0, 0.0]], [[-1.0, 0.5], [-0.33, 0.5], [0.33, 0.5], [1.0, 0.5]]]"
             name = json.dumps(params)
             params.update(static_params)
             sheduler.create_job(BATCH, name, REPEATS, params)

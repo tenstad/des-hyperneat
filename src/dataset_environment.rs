@@ -51,7 +51,7 @@ impl DatasetEnvironment {
         } else if self.dataset.one_hot_output {
             accuracy::one_hot_accuracy(targets, predictions)
         } else {
-            accuracy::rounded_accuracy(targets, predictions)
+            accuracy::binary_accuracy(targets, predictions)
         }
     }
 
@@ -61,7 +61,12 @@ impl DatasetEnvironment {
         if self.dataset.is_classification && self.dataset.one_hot_output {
             (-error::crossentropy(targets, predictions, norm)).exp()
         } else {
-            1.0 - error::mse(targets, predictions, norm)
+            let e = 1.0 - error::mse(targets, predictions, norm);
+            if e.is_finite() {
+                e
+            } else {
+                0.0
+            }
         }
     }
 }
