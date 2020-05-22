@@ -1,5 +1,8 @@
 use crate::cppn::{developer::Developer as CppnDeveloper, genome::Genome};
-use crate::hyperneat::{conf::HYPERNEAT, substrate};
+use crate::hyperneat::{
+    conf::HYPERNEAT,
+    substrate::{self, Network},
+};
 use evolution::{
     develop::Develop, environment::EnvironmentDescription, neat::developer::NetworkStats,
 };
@@ -17,7 +20,7 @@ impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
         Developer {
             neat_developer: CppnDeveloper::from(description),
-            network: substrate::Network::layered(vec![description.inputs, 8, description.outputs]),
+            network: Network::load(description.inputs, description.outputs),
         }
     }
 }

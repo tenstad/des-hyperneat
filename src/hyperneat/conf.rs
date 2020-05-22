@@ -16,6 +16,18 @@ pub struct MethodConfig {
 
     #[envconfig(from = "LOG_VISUALIZATIONS", default = "false")]
     pub log_visualizations: bool,
+
+    #[envconfig(from = "INPUT_CONFIG", default = "line")]
+    pub input_config: String,
+
+    #[envconfig(from = "OUTPUT_CONFIG", default = "line")]
+    pub output_config: String,
+
+    #[envconfig(from = "HIDDEN_LAYER_SIZES", default = "[4, 4]")]
+    pub hidden_layer_sizes: String,
+
+    #[envconfig(from = "HIDDEN_LAYERS", default = "")]
+    pub hidden_layers: String,
 }
 
 impl Default for MethodConfig {
