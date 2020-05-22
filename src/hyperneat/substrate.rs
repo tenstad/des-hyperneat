@@ -1,4 +1,5 @@
 use crate::eshyperneat::conf::ESHYPERNEAT;
+use crate::eshyperneat::figure::save_fig_to_file;
 use crate::hyperneat::conf::HYPERNEAT;
 use network::connection;
 use std::collections::HashMap;
@@ -109,6 +110,21 @@ impl Network {
             .enumerate()
             .map(|(i, point)| (*point, i))
             .collect();
+
+        if HYPERNEAT.log_visualizations {
+            save_fig_to_file(
+                connection::Connections::<(i64, i64), f64>::from(
+                    connections
+                        .get_all_connections()
+                        .drain(..)
+                        .map(|con| connection::Connection::new(con.from, con.to, 1.0))
+                        .collect::<Vec<_>>(),
+                ),
+                "g.tex",
+                0.5 / ESHYPERNEAT.resolution,
+                4.0,
+            );
+        }
 
         let actions = connections
             .sort_topologically()
