@@ -44,7 +44,7 @@ impl Activation {
             Activation::Cos => (2.0 * x).cos(),
             Activation::Square => x * x,
             Activation::Abs => x.abs(),
-            Activation::Exp => x.exp(),
+            Activation::Exp => x.min(1.0).exp(),
         }
     }
 }
