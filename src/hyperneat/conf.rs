@@ -8,7 +8,7 @@ pub struct MethodConfig {
     #[envconfig(from = "WEIGHT_THRESHOLD", default = "0.1")]
     pub weight_threshold: f64,
 
-    #[envconfig(from = "HIDDEN_ACTIVATION", default = "ReLU")]
+    #[envconfig(from = "HIDDEN_ACTIVATION", default = "None")]
     pub hidden_activation: Activation,
 
     #[envconfig(from = "OUTPUT_ACTIVATION", default = "Softmax")]
