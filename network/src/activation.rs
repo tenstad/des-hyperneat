@@ -84,7 +84,7 @@ impl str::FromStr for Activation {
             "Step" => Ok(Activation::Step),
             "ReLU" => Ok(Activation::ReLU),
             "Sigmoid" => Ok(Activation::Sigmoid),
-            "Tanh" => Ok(Activation::Sigmoid),
+            "Tanh" => Ok(Activation::Tanh),
             "Softmax" => Ok(Activation::Softmax),
             "Gaussian" => Ok(Activation::Gaussian),
             "OffsetGaussian" => Ok(Activation::OffsetGaussian),
