@@ -49,6 +49,7 @@ def map_mul(li, n):
 with open('generated/retina', 'w') as f:
     f.write('true\nfalse\n\n')
 
+    inputs = []
     outputs = []
     for _ in range(N):
         is_pattern = (np.random.random((2, )) < 0.5).astype(np.int)
@@ -65,8 +66,21 @@ with open('generated/retina', 'w') as f:
         left = map_neg(left)
         right = map_neg(right)
 
+        inputs.append([*left, *right])
         outputs.append(map_neg(is_pattern))
-        f.write(', '.join(map(str, [*left, *right])))
+
+    left_ans = {}
+    right_ans = {}
+    for i, o in zip(inputs, outputs):
+        if not tuple(i[:4]) in left_ans:
+            left_ans[tuple(i[:4])] = o[0]
+        if not tuple(i[4:]) in right_ans:
+            right_ans[tuple(i[4:])] = o[1]
+        assert left_ans[tuple(i[:4])] == o[0]
+        assert right_ans[tuple(i[4:])] == o[1]
+
+    for inp in inputs:
+        f.write(', '.join(map(str, inp)))
         f.write('\n')
 
     f.write('\n')
