@@ -58,7 +58,7 @@ def do_job(job):
     params = []
     for k, v in parameters.items():
         v = v if type(v) == str else json.dumps(v)
-        params.append(f'{k}={v}')
+        params.append(f'{k}="{v}"')
     params = ' '.join(params)
 
     job_id = job.get('_id', -1)
