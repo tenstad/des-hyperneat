@@ -59,6 +59,7 @@ def do_job(job):
         v = v if type(v) == str else json.dumps(v)
         os.putenv(k, v)
     os.putenv("DB_LOG", "true")
+    os.putenv("RUST_BACKTRACE", "1")
     os.putenv("JOB_ID", str(job.get('_id', -1)))
 
     print_now('running job...')
