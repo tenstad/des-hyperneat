@@ -55,15 +55,18 @@ def do_job(job):
     print_now('found job:', name, job_id)
 
     parameters = job.get('parameters', {})
+    params = []
     for k, v in parameters.items():
         v = v if type(v) == str else json.dumps(v)
-        os.putenv(k, v)
-    os.putenv("DB_LOG", "true")
-    os.putenv("RUST_BACKTRACE", "1")
-    os.putenv("JOB_ID", str(job.get('_id', -1)))
+        params.append(f'{k}={v}')
+    params = ' '.join(params)
+
+    job_id = job.get('_id', -1)
+    env_vars = f'RUST_BACKTRACE=1 DB_LOG=true JOB_ID={job_id} {params}'
 
     print_now('running job...')
-    os.system('cargo run --release')
+    print(f'{env_vars} cargo run --release')
+    os.system(f'{env_vars} cargo run --release')
 
     print_now('completed job')
 
