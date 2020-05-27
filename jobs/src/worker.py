@@ -6,6 +6,7 @@ from src.client import get_client
 from datetime import datetime
 import time
 import json
+import random
 
 
 def work():
@@ -16,6 +17,8 @@ def work():
 
     def running():
         return minute_limit <= 0 or (time.time() - start_time) < minute_limit * 60
+
+    time.sleep(random.random() * 10)
 
     while 1:
         if not running():
