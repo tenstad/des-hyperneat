@@ -19,16 +19,23 @@ pub struct Developer {
 
 impl From<EnvironmentDescription> for Developer {
     fn from(description: EnvironmentDescription) -> Self {
+        let input_nodes = substrate::parse_nodes(
+            &ESHYPERNEAT.input_config,
+            ESHYPERNEAT.resolution,
+            description.inputs,
+            -1.0,
+        );
+        let output_nodes = substrate::parse_nodes(
+            &ESHYPERNEAT.output_config,
+            ESHYPERNEAT.resolution,
+            description.outputs,
+            1.0,
+        );
+
         Self {
             neat_developer: CppnDeveloper::from(description),
-            input_nodes: substrate::horizontal_row(
-                description.inputs,
-                -ESHYPERNEAT.resolution as i64,
-            ),
-            output_nodes: substrate::horizontal_row(
-                description.outputs,
-                ESHYPERNEAT.resolution as i64,
-            ),
+            input_nodes,
+            output_nodes,
             depth: ESHYPERNEAT.iteration_level + 1,
         }
     }

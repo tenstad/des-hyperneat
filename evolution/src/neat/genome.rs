@@ -409,18 +409,20 @@ where
         let neat_config = config.neat();
         let mut rng = rand::thread_rng();
 
-        // Mutate single link
-        if !self.links.is_empty() {
-            let link_index = rng.gen_range(0, self.links.len());
-            if let Some(link) = self.links.values_mut().skip(link_index).next() {
+        if neat_config.mutate_only_one_link {
+            if !self.links.is_empty() {
+                let link_index = rng.gen_range(0, self.links.len());
+                if let Some(link) = self.links.values_mut().skip(link_index).next() {
+                    link.neat_mut().weight +=
+                        (rng.gen::<f64>() - 0.5) * 2.0 * neat_config.mutate_link_weight_size;
+                }
+            }
+        } else {
+            for link in self.links.values_mut() {
                 link.neat_mut().weight +=
                     (rng.gen::<f64>() - 0.5) * 2.0 * neat_config.mutate_link_weight_size;
             }
         }
-
-        /*for link in self.links.values_mut() {
-            link.weight += (rng.gen::<f64>() - 0.5) * 2.0 * NEAT.mutate_link_weight_size;
-        }*/
     }
 
     fn mutation_add_node<

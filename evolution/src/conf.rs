@@ -45,17 +45,14 @@ pub struct PopulationConfig {
     #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.8")]
     pub speciation_threshold: f64,
 
-    #[envconfig(from = "ADAPTIVE_SPECIATION_THRESHOLD", default = "true")]
-    pub adaptive_speciation_threshold: bool,
-
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "SPECIES_TARGET", default = "30")]
+    #[envconfig(from = "SPECIES_TARGET", default = "10")]
     pub species_target: u64,
 
-    #[envconfig(from = "SPECIATION_THRESHOLD_MOVE_AMOUNT", default = "0.01")]
+    #[envconfig(from = "SPECIATION_THRESHOLD_MOVE_AMOUNT", default = "0.05")]
     pub speciation_threshold_move_amount: f64,
 
-    #[envconfig(from = "ASEXUAL_REPRODUCTION_PROBABILITY", default = "0.2")]
+    #[envconfig(from = "ASEXUAL_REPRODUCTION_PROBABILITY", default = "0.25")]
     pub asexual_reproduction_probability: f64,
 
     #[envconfig(from = "INTERSPECIES_REPRODUCTION_PROBABILITY", default = "0.001")]
@@ -70,10 +67,10 @@ pub struct PopulationConfig {
     pub interspecies_tournament_size: u64,
 
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "DROPOFF_AGE", default = "30")]
+    #[envconfig(from = "DROPOFF_AGE", default = "20")]
     pub dropoff_age: u64,
 
-    #[envconfig(from = "YOUNG_SPECIES_FITNESS_MULTIPLIER", default = "1.05")]
+    #[envconfig(from = "YOUNG_SPECIES_FITNESS_MULTIPLIER", default = "1.01")]
     pub young_species_fitness_multiplier: f64,
 
     #[serde(with = "bson::compat::u2f")]

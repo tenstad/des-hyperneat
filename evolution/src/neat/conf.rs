@@ -14,23 +14,26 @@ pub struct NeatConfig {
     #[envconfig(from = "INITIAL_LINK_WEIGHT_SIZE", default = "0.5")]
     pub initial_link_weight_size: f64,
 
-    #[envconfig(from = "MUTATE_LINK_WEIGHT_PROBABILITY", default = "0.8")]
+    #[envconfig(from = "MUTATE_LINK_WEIGHT_PROBABILITY", default = "0.9")]
     pub mutate_link_weight_probability: f64,
 
     #[envconfig(from = "MUTATE_LINK_WEIGHT_SIZE", default = "0.5")]
     pub mutate_link_weight_size: f64,
 
-    #[envconfig(from = "REMOVE_LINK_PROBABILITY", default = "0.005")]
-    pub remove_link_probability: f64,
-
-    #[envconfig(from = "REMOVE_NODE_PROBABILITY", default = "0.003")]
+    #[envconfig(from = "REMOVE_NODE_PROBABILITY", default = "0.006")]
     pub remove_node_probability: f64,
+
+    #[envconfig(from = "REMOVE_LINK_PROBABILITY", default = "0.01")]
+    pub remove_link_probability: f64,
 
     #[envconfig(from = "ONLY_HIDDEN_NODE_DISTANCE", default = "true")]
     pub only_hidden_node_distance: bool,
 
     #[envconfig(from = "LINK_DISTANCE_WEIGHT", default = "0.5")]
     pub link_distance_weight: f64,
+
+    #[envconfig(from = "MUTATE_ONLY_ONE_LINK", default = "true")]
+    pub mutate_only_one_link: bool,
 }
 
 impl Default for NeatConfig {

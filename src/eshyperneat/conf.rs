@@ -6,6 +6,12 @@ use serde::Serialize;
 
 #[derive(Envconfig, Serialize, Clone)]
 pub struct MethodConfig {
+    #[envconfig(from = "INPUT_CONFIG", default = "line")]
+    pub input_config: String,
+
+    #[envconfig(from = "OUTPUT_CONFIG", default = "line")]
+    pub output_config: String,
+
     #[envconfig(from = "VARIANCE_THRESHOLD", default = "0.2")]
     pub variance_threshold: f64,
 
@@ -30,11 +36,11 @@ pub struct MethodConfig {
     #[envconfig(from = "RESOLUTION", default = "1048576.0")]
     pub resolution: f64,
 
-    #[envconfig(from = "MAX_DISCOVERIES", default = "512")]
+    #[envconfig(from = "MAX_DISCOVERIES", default = "0")]
     #[serde(with = "bson::compat::u2f")]
     pub max_discoveries: u64,
 
-    #[envconfig(from = "MAX_OUTGOING", default = "16")]
+    #[envconfig(from = "MAX_OUTGOING", default = "0")]
     #[serde(with = "bson::compat::u2f")]
     pub max_outgoing: u64,
 

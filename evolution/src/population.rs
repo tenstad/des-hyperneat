@@ -246,12 +246,14 @@ impl<G: Genome> Population<G> {
             "wrong number of individuals in population"
         );
 
-        if self.population_config.adaptive_speciation_threshold {
-            let target = self.population_config.species_target as f64;
-            let offset = ((target - self.species.len() as f64) / target).tanh();
-            self.population_config.speciation_threshold -=
-                self.population_config.speciation_threshold_move_amount * offset;
-
+        if self.population_config.species_target > 0 {
+            if (self.species.len() as u64) < self.population_config.species_target {
+                self.population_config.speciation_threshold -=
+                    self.population_config.speciation_threshold_move_amount;
+            } else if (self.species.len() as u64) > self.population_config.species_target {
+                self.population_config.speciation_threshold +=
+                    self.population_config.speciation_threshold_move_amount;
+            }
             self.population_config.speciation_threshold =
                 self.population_config.speciation_threshold.max(0.0);
         }
