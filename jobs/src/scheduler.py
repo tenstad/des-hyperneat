@@ -2,6 +2,7 @@ import os
 from src.client import get_client
 from datetime import datetime
 from bson.objectid import ObjectId
+from multiprocessing import Pool
 
 
 class Scheduler:
@@ -30,46 +31,3 @@ class Scheduler:
             print(f'with id {job.inserted_id} and parameters\n{parameters}')
         else:
             print('Unable to create job')
-
-    def clean_jobs(self):
-        db = getattr(self.client, os.environ.get(
-            'DATABASE', 'deshyperneat'))
-
-        for job in db.jobs.find():
-            job_id = job['_id']
-            job_name = job['name']
-
-            if 'config' in job:
-                ecfg = job['config']['evolution']
-                correct_length = ecfg['iterations'] / ecfg['log_interval'] + 1
-
-                delete_result = db.logs.delete_many({
-                    'job_id': ObjectId(job_id),
-                    'events': {'$not': {'$size': correct_length}}
-                })
-
-                num_completed = db.logs.find({
-                    'job_id': ObjectId(job_id),
-                    'events': {'$size': correct_length}
-                }).count()
-
-                db.jobs.update_one(
-                    {'_id': job_id},
-                    {'$set': {
-                        'started': num_completed,
-                        'completed': num_completed,
-                        'aborted': 0,
-                    }})
-
-                print(
-                    f'Cleaned job {job_name} and deleted {delete_result.deleted_count} log entries')
-            else:
-                db.jobs.update_one(
-                    {'_id': ObjectId(job_id)},
-                    {'$set': {
-                        'started': 0,
-                        'completed': 0,
-                        'aborted': 0,
-                    }})
-
-                print(f'Cleaned job {job_name}')
