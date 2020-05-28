@@ -39,14 +39,14 @@ pub struct EvolutionConfig {
 #[derive(Envconfig, Serialize, Clone)]
 pub struct PopulationConfig {
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "POPULATION_SIZE", default = "300")]
+    #[envconfig(from = "POPULATION_SIZE", default = "100")]
     pub population_size: u64,
 
     #[envconfig(from = "SPECIATION_THRESHOLD", default = "0.8")]
     pub speciation_threshold: f64,
 
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "SPECIES_TARGET", default = "10")]
+    #[envconfig(from = "SPECIES_TARGET", default = "8")]
     pub species_target: u64,
 
     #[envconfig(from = "SPECIATION_THRESHOLD_MOVE_AMOUNT", default = "0.05")]
