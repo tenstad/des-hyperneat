@@ -58,6 +58,9 @@ def analyse(batch):
     fig, ax = plt.subplots(figsize=(10, 10))
     style_i = -1
     NUM_PLOTS = 3
+    x = set_labels(ax, evo_cfg['iterations'], evo_cfg['seconds_limit'],
+                   evo_cfg['log_interval'], evo_cfg['log_sec_interval'])
+
     for i, (score, job_i) in enumerate(scoreboard):
         job_name = results[job_i][0]
         job_details = results[job_i][2]
@@ -71,7 +74,7 @@ def analyse(batch):
             line_color = styles[style_i]['color']
             fitnesses = results[job_i][1]
             max_fitness = fitnesses.max(axis=2).mean(axis=0)
-            plt.plot(max_fitness, label=f'{line_style} {job_name}',
+            plt.plot(x, max_fitness, label=f'{line_style} {job_name}',
                      linestyle=line_style, linewidth=0.6, color=line_color)
 
             scoreboard_str = f'{i}: {score}, {results[job_i][0]}\n'
@@ -81,7 +84,6 @@ def analyse(batch):
     plt.ylim([0, 1])
     plt.legend(prop={'size': 2})
     fig.canvas.draw()
-    set_labels(ax, evo_cfg['iterations'], evo_cfg['seconds_limit'])
 
     path = f'jobs/analisys/plots/batch_{batch}/all.png'
     plt.savefig(path, dpi=1000)
@@ -146,14 +148,14 @@ def analyse_job(args):
     absolute_max_fitness = fitnesses.max(axis=(0, 2))
     fig, ax = plt.subplots(figsize=(8, 8))
     fig.suptitle(job_name)
-    plt.plot(mean_fitness, label='mean fitness')
-    plt.plot(max_fitness, label='max fitness')
-    plt.plot(absolute_max_fitness, label='absolute max fitness')
+    x = set_labels(ax, evo_cfg['iterations'], evo_cfg['seconds_limit'],
+                   evo_cfg['log_interval'], evo_cfg['log_sec_interval'])
+    plt.plot(x, mean_fitness, label='mean fitness')
+    plt.plot(x, max_fitness, label='max fitness')
+    plt.plot(x, absolute_max_fitness, label='absolute max fitness')
     plt.ylim([0, 1])
     plt.legend()
     fig.canvas.draw()
-
-    set_labels(ax, evo_cfg['iterations'], evo_cfg['seconds_limit'])
 
     fname = job['_id']
     path = f'jobs/analisys/plots/batch_{batch}/{fname}.png'
@@ -161,7 +163,10 @@ def analyse_job(args):
     plt.close()
 
 
-def set_labels(ax, iterations, seconds):
-    value = iterations if iterations != 0 else seconds
-    ticks = list(np.linspace(0, value, len(ax.get_xticklabels())-2))
-    ax.set_xticklabels([''] + ticks + [''])
+def set_labels(ax, iterations, seconds, iter_interval, sec_interval):
+    end_point = iterations if iterations != 0 else seconds
+    interval = iter_interval if iterations != 0 else sec_interval
+    num_ticks = int(end_point / interval) + 1
+    ticks = list(map(int, np.linspace(0, end_point, num_ticks)))
+    ax.set_xticks(ticks)
+    return np.linspace(0, end_point, num_ticks)
