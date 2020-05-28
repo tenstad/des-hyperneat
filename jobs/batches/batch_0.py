@@ -9,45 +9,48 @@ def run():
     sheduler = Scheduler()
 
     param_grid = {
-        'METHOD': ['NEAT', 'CPPN', 'HyperNEAT'],
+        'METHOD': ['NEAT', 'CPPN', 'HyperNEAT', 'ES-HyperNEAT'],
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine',
                     'datasets/generated/retina'],
-        'SPECIES_TARGET': [5, 10, 20],
-        'INITIAL_MUTATIONS': [100, 250, 500],
-        'DROPOFF_AGE': [20, 100],
-    }
-
-    param_grid_non_adaptive = {
-        'METHOD': ['NEAT', 'CPPN', 'HyperNEAT'],
-        'DATASET': ['datasets/generated/iris',
-                    'datasets/generated/wine',
-                    'datasets/generated/retina'],
-        'ADAPTIVE_SPECIATION_THRESHOLD': [False],
-        'INITIAL_MUTATIONS': [100, 250, 500],
-        'DROPOFF_AGE': [20, 100],
+        'POPULATION_SIZE': [100, 400],
+        'SPECIES_TARGET': [0, 10, 20],
+        'SURVIVAL_RATO': [0.2, 0.5],
+        'INITIAL_MUTATIONS': [100, 250],
+        'ASEXUAL_REPRODUCTION_PROBABILITY': [0.15, 0.3],
     }
 
     static_params = {
-        'POPULATION_SIZE': 200,
-        'ITERATIONS': 300,
-        'LOG_INTERVAL': 15,
+        'ITERATIONS': 0,
+        'LOG_INTERVAL': 0,
+        'SECONDS_LIMIT': 30,
+        'LOG_SEC_INTERVAL': 2,
     }
 
     def run_grid(grid):
         for params in ParameterGrid(grid):
-            if params['METHOD'] in ('NEAT', 'HyperNEAT'):
-                params['OUTPUT_ACTIVATION'] = 'Softmax'
-            elif params['METHOD'] == 'CPPN':
-                params['OUTPUT_ACTIVATIONS'] = 'Softmax'
+            if params['METHOD'] == 'CPPN':
+                params['OUTPUT_ACTIVATIONS'] = 'Tanh' if params['DATASET'] == 'datasets/generated/retina' else 'Softmax'
+            else:
+                params['OUTPUT_ACTIVATION'] = 'Tanh' if params['DATASET'] == 'datasets/generated/retina' else 'Softmax'
+
             if params['METHOD'] == 'NEAT':
                 params['ADD_BIAS_INPUT'] = True
-            if params['METHOD'] == 'NEAT' and params['DATASET'] == 'datasets/generated/retina':
+
+            if params['METHOD'] == 'HyperNEAT' and params['DATASET'].endswith('retina'):
                 params['INPUT_CONFIG'] = "[[-1.0, -0.5], [-0.33, -0.5], [-1.0, -1.0], [-0.33, -1.0], [0.33, -0.5], [1.0, -0.5], [0.33, -1.0], [1.0, -1.0]]"
                 params['HIDDEN_LAYERS'] = "[[[-1.0, 0.0], [-0.33, 0.0], [0.33, 0.0], [1.0, 0.0]], [[-1.0, 0.5], [-0.33, 0.5], [0.33, 0.5], [1.0, 0.5]]]"
+            if params['METHOD'] == 'ES-HyperNEAT':
+                if params['DATASET'].endswith('retina'):
+                    params['INPUT_CONFIG'] = "[[-1.0, -0.5], [-0.33, -0.5], [-1.0, -1.0], [-0.33, -1.0], [0.33, -0.5], [1.0, -0.5], [0.33, -1.0], [1.0, -1.0]]"
+                params['VARIANCE_THRESHOLD'] = 0.03
+                params['DIVISION_THRESHOLD'] = 0.03
+                params['RELATIVE_VARIANCE'] = False
+                params['MEDIAN_VARIANCE'] = False
+                params['ONLY_LEAF_VARIANCE'] = True
+
             name = json.dumps(params)
             params.update(static_params)
             sheduler.create_job(BATCH, name, REPEATS, params)
 
     run_grid(param_grid)
-    run_grid(param_grid_non_adaptive)
