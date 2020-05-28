@@ -16,9 +16,11 @@ def analyse(batch):
     client, db = get_database()
     ids = list(db.jobs.find({'batch': int(batch)}, {'_id': 1}))
 
-    if len(ids) == 0:
+    num_jobs = len(ids)
+    if num_jobs == 0:
         print(f'Batch does not exist: {batch}')
         return
+    print(f'Found {num_jobs} jobs')
 
     q = Manager().Queue()
     args = [(_id, batch, q) for _id in ids]
@@ -121,7 +123,7 @@ def analyse_job(args):
                 fitnesses[i, j] = [organism['fitness']
                                    for organism in event['organisms']]
     else:
-        for i, log in enumerate(db.logs.find({'job_id': job['_id']})):
+        for i, log in enumerate(db.logs.find({'job_id': job['_id']}, {'_id': 0, 'events.event_time': 1, 'events.organisms.fitness': 1})):
             event_times = [event['event_time'] for event in log['events']]
             start_time = event_times[0]
             event_times = [e - start_time for e in event_times]
@@ -137,6 +139,7 @@ def analyse_job(args):
                         break
 
     q.put((job_name, fitnesses, job['parameters']))
+    print(q.qsize())
 
     mean_fitness = fitnesses.mean(axis=(0, 2))
     max_fitness = fitnesses.max(axis=2).mean(axis=0)
