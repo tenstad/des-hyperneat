@@ -17,7 +17,7 @@ pub struct EvolutionConfig {
     pub iterations: u64,
 
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "INITIAL_MUTATIONS", default = "200")]
+    #[envconfig(from = "INITIAL_MUTATIONS", default = "100")]
     pub initial_mutations: u64,
 
     #[serde(with = "bson::compat::u2f")]
@@ -80,7 +80,7 @@ pub struct PopulationConfig {
     #[envconfig(from = "STAGNENT_SPECIES_FITNESS_MULTIPLIER", default = "0.2")]
     pub stagnent_species_fitness_multiplier: f64,
 
-    #[envconfig(from = "SURVIVAL_RATO", default = "0.4")]
+    #[envconfig(from = "SURVIVAL_RATO", default = "0.2")]
     pub survival_ratio: f64,
 
     #[serde(with = "bson::compat::u2f")]
