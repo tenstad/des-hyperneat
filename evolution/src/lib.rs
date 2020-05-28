@@ -72,7 +72,6 @@ pub fn evolve<
     );
     let mut logger = L::new(&environment_description, &config);
 
-    let start_time = SystemTime::now();
     let iterations = if EVOLUTION.iterations > 0 {
         EVOLUTION.iterations + 1
     } else {
@@ -83,13 +82,14 @@ pub fn evolve<
         population.mutate();
     }
 
+    let start_time = SystemTime::now();
     for i in 0..iterations {
         let population_stats = population.evaluate(&evaluator);
         logger.log(i, &population, &population_stats);
 
         if EVOLUTION.seconds_limit > 0
             && SystemTime::elapsed(&start_time).unwrap()
-                >= Duration::from_secs(EVOLUTION.seconds_limit)
+                >= Duration::from_secs(EVOLUTION.seconds_limit + 3)
         {
             break;
         }
