@@ -31,7 +31,7 @@ impl<G: Genome> Log<G> for Logger {
         Self {
             log_interval: EVOLUTION.log_interval,
             log_seconds: EVOLUTION.log_sec_interval,
-            prev_log_time: SystemTime::now() - Duration::from_secs(EVOLUTION.log_sec_interval + 1),
+            prev_log_time: SystemTime::now(),
             entry,
         }
     }
@@ -42,13 +42,18 @@ impl<G: Genome> Log<G> for Logger {
         population: &Population<G>,
         stats: &S,
     ) {
+        if iteration == 0 {
+            self.prev_log_time =
+                SystemTime::now() - Duration::from_secs(EVOLUTION.log_sec_interval);
+        }
+
         let log = (self.log_interval > 0 && iteration % self.log_interval == 0)
             || (self.log_seconds > 0
                 && SystemTime::elapsed(&self.prev_log_time).unwrap()
-                    > Duration::from_secs(self.log_seconds));
+                    >= Duration::from_secs(self.log_seconds));
 
         if log {
-            self.prev_log_time = SystemTime::now();
+            self.prev_log_time += Duration::from_secs(self.log_seconds);
 
             println!("Iter: {}", iteration);
 
