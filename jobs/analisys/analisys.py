@@ -28,7 +28,7 @@ def analyse(batch):
     client.close()
     evo_cfg = job['config']['evolution']
 
-    with Pool(8) as p:
+    with Pool(16) as p:
         p.map(analyse_job, args)
     results = []
     while not q.empty():
@@ -99,8 +99,10 @@ def analyse_job(args):
     job = db.jobs.find(job)[0]
     client.close()
 
-    if not f'batch_{batch}' in os.listdir('jobs/analisys/plots/'):
+    try:
         os.mkdir(f'jobs/analisys/plots/batch_{batch}/')
+    except FileExistsError:
+        pass
 
     job_name = job['name']
     print(job_name)
