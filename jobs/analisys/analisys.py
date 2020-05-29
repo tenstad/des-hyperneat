@@ -136,8 +136,8 @@ def analyse_job(args):
 
             for j in range(data_points):
                 target_millis = evo_cfg['log_sec_interval'] * j * 1000
-                for k, millis in enumerate(event_times):
-                    if millis > target_millis:
+                for k, millis in list(enumerate(event_times))[::-1]:
+                    if millis <= target_millis:
                         fitnesses[i][j] = [organism['fitness']
                                            for organism in log['events'][k]['organisms']]
                         break
