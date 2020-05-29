@@ -26,7 +26,11 @@ use evolution::{
 };
 use network::execute::Executor;
 use serde::Serialize;
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    time::{Duration, SystemTime},
+    u64,
+};
 
 #[derive(new, Serialize)]
 struct Config<N: Serialize, E: Serialize> {
@@ -88,6 +92,7 @@ pub fn codeshyperneat<
         blueprints.mutate();
     }
 
+    let start_time = SystemTime::now();
     for i in 0..EVOLUTION.iterations {
         let mut avg_fitnesses = Vec::<f64>::new();
 
@@ -189,6 +194,13 @@ pub fn codeshyperneat<
 
         logger.log(i, &blueprints, &stats);
         // logger.log(i, &modules);
+
+        if EVOLUTION.seconds_limit > 0
+            && SystemTime::elapsed(&start_time).unwrap()
+                >= Duration::from_secs(EVOLUTION.seconds_limit + 3)
+        {
+            break;
+        }
 
         blueprints.evolve();
         modules.evolve();

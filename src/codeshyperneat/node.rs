@@ -1,7 +1,8 @@
 use crate::codeshyperneat::state::CustomState;
+use crate::deshyperneat::conf::DESHYPERNEAT;
 use evolution::neat::{
     genome::GetNeat,
-    node::{NeatNode, NodeExtension},
+    node::{NeatNode, NodeExtension, NodeRef},
 };
 use rand::Rng;
 
@@ -25,10 +26,18 @@ impl NodeExtension for Node {
             0
         };
 
+        let depth = 1
+            .min(match neat.neat().node_ref {
+                NodeRef::Input(_) => DESHYPERNEAT.max_input_substrate_depth,
+                NodeRef::Hidden(_) => DESHYPERNEAT.max_hidden_substrate_depth,
+                NodeRef::Output(_) => DESHYPERNEAT.max_output_substrate_depth,
+            })
+            .max(0);
+
         Self {
             neat,
             module_species,
-            depth: 1,
+            depth,
         }
     }
 
