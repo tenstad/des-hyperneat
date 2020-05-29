@@ -39,4 +39,8 @@ impl log::Log<Genome> for Logger {
                 .ok();
         }
     }
+
+    fn close(&mut self) {
+        self.cppn_logger.close();
+    }
 }

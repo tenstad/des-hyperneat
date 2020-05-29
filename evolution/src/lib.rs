@@ -96,4 +96,5 @@ pub fn evolve<
 
         population.evolve();
     }
+    logger.close();
 }

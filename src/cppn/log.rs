@@ -31,4 +31,8 @@ impl log::Log<Genome> for Logger {
             }
         }
     }
+
+    fn close(&mut self) {
+        <log::Logger as log::Log<Genome>>::close(&mut self.default_logger);
+    }
 }

@@ -130,6 +130,7 @@ impl Mongo {
             "job_id": job_id,
             "start_time": Utc::now(),
             "node_name": env::var("HOSTNAME").unwrap_or("".to_owned()),
+            "completed": false,
         };
 
         loop_insert(self, &DB.log_collection, document)
@@ -142,6 +143,18 @@ impl Entry {
         let document = self.add_event_data(event, iteration);
         let update = doc! {
             "$push": {"events": document}
+        };
+        loop_update(
+            &mut self.mongo,
+            &DB.log_collection,
+            self.id_query.clone(),
+            update,
+        );
+    }
+
+    pub fn complete(&mut self) {
+        let update = doc! {
+            "$set": {"completed": true}
         };
         loop_update(
             &mut self.mongo,

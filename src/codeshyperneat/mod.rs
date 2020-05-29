@@ -83,7 +83,12 @@ pub fn codeshyperneat<
     );
     let mut logger = <Logger as Log<BlueprintGenome>>::new(&environment.description(), &config);
 
-    for i in 1..EVOLUTION.iterations {
+    for _ in 0..EVOLUTION.initial_mutations {
+        modules.mutate();
+        blueprints.mutate();
+    }
+
+    for i in 0..EVOLUTION.iterations {
         let mut avg_fitnesses = Vec::<f64>::new();
 
         let mut stats = HashMap::<
@@ -190,4 +195,5 @@ pub fn codeshyperneat<
 
         blueprints.state.custom.species = modules.next_id;
     }
+    <Logger as Log<BlueprintGenome>>::close(&mut logger);
 }

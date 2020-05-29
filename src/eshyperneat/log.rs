@@ -52,4 +52,8 @@ impl log::Log<Genome> for Logger {
             );
         }
     }
+
+    fn close(&mut self) {
+        self.hyperneat_logger.close();
+    }
 }

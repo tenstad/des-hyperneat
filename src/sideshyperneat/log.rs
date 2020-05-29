@@ -32,4 +32,8 @@ impl log::Log<Genome> for Logger {
             }
         }
     }
+
+    fn close(&mut self) {
+        <DeshyperneatLogger as log::Log<Genome>>::close(&mut self.deshyperneat_logger);
+    }
 }

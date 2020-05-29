@@ -11,6 +11,7 @@ use std::time::{Duration, SystemTime};
 pub trait Log<G: Genome> {
     fn new<C: Serialize>(description: &EnvironmentDescription, config: &C) -> Self;
     fn log<S: GetPopulationStats>(&mut self, iteration: u64, population: &Population<G>, stats: &S);
+    fn close(&mut self);
 }
 
 pub struct Logger {
@@ -68,6 +69,12 @@ impl<G: Genome> Log<G> for Logger {
             }
 
             println!("{}", population);
+        }
+    }
+
+    fn close(&mut self) {
+        if let Some(entry) = &mut self.entry {
+            entry.complete();
         }
     }
 }

@@ -41,4 +41,8 @@ impl<G: Genome + DesGenome> log::Log<G> for Logger {
             );
         }
     }
+
+    fn close(&mut self) {
+        <log::Logger as log::Log<G>>::close(&mut self.default_logger);
+    }
 }
