@@ -8,7 +8,7 @@ pub struct NeatConfig {
     #[envconfig(from = "ADD_NODE_PROBABILITY", default = "0.03")]
     pub add_node_probability: f64,
 
-    #[envconfig(from = "ADD_LINK_PROBABILITY", default = "0.05")]
+    #[envconfig(from = "ADD_LINK_PROBABILITY", default = "0.2")]
     pub add_link_probability: f64,
 
     #[envconfig(from = "INITIAL_LINK_WEIGHT_SIZE", default = "0.5")]
@@ -23,7 +23,7 @@ pub struct NeatConfig {
     #[envconfig(from = "REMOVE_NODE_PROBABILITY", default = "0.006")]
     pub remove_node_probability: f64,
 
-    #[envconfig(from = "REMOVE_LINK_PROBABILITY", default = "0.01")]
+    #[envconfig(from = "REMOVE_LINK_PROBABILITY", default = "0.08")]
     pub remove_link_probability: f64,
 
     #[envconfig(from = "ONLY_HIDDEN_NODE_DISTANCE", default = "true")]
