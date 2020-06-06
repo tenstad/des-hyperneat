@@ -92,8 +92,14 @@ pub fn codeshyperneat<
         blueprints.mutate();
     }
 
+    let iterations = if EVOLUTION.iterations > 0 {
+        EVOLUTION.iterations + 1
+    } else {
+        u64::MAX
+    };
+
     let start_time = SystemTime::now();
-    for i in 0..EVOLUTION.iterations {
+    for i in 0..iterations {
         let mut avg_fitnesses = Vec::<f64>::new();
 
         let mut stats = HashMap::<
