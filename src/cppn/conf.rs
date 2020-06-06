@@ -23,10 +23,16 @@ pub struct MethodConfig {
     #[envconfig(from = "MUTATE_OUTPUT_ACTIVATION_PROBABILITY", default = "0.1")]
     pub mutate_output_activation_probability: f64,
 
-    #[envconfig(from = "HIDDEN_ACTIVATIONS", default = "All")]
+    #[envconfig(
+        from = "HIDDEN_ACTIVATIONS",
+        default = "Tanh OffsetGaussian Gaussian Sine Sigmoid"
+    )]
     pub hidden_activations: Activations,
 
-    #[envconfig(from = "OUTPUT_ACTIVATIONS", default = "All")]
+    #[envconfig(
+        from = "OUTPUT_ACTIVATIONS",
+        default = "Tanh OffsetGaussian Gaussian Sine Sigmoid"
+    )]
     pub output_activations: Activations,
 
     #[envconfig(from = "PAD_MISSING_OUTPUTS", default = "false")]
