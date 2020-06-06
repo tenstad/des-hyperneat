@@ -35,8 +35,8 @@ use std::{
 #[derive(new, Serialize)]
 struct Config<N: Serialize, E: Serialize> {
     evolution: EvolutionConfig,
-    blueprint_population: PopulationConfig,
-    blueprint_genome: NeatConfig,
+    population: PopulationConfig,
+    genome: NeatConfig,
     module_population: PopulationConfig,
     module_genome: NeatConfig,
     method: MethodConfig,
