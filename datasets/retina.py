@@ -1,7 +1,5 @@
 import numpy as np
 
-N = 2000
-
 combinations = [(a, b, c, d) for a in (0, 1)
                 for b in (0, 1) for c in (0, 1) for d in (0, 1)]
 
@@ -51,33 +49,16 @@ with open('generated/retina', 'w') as f:
 
     inputs = []
     outputs = []
-    for _ in range(N):
-        is_pattern = (np.random.random((2, )) < 0.5).astype(np.int)
-        pattern_index = (8 * np.random.random((2, ))).astype(np.int)
+    for left in combinations:
+        for right in combinations:
+            is_pattern = [int(left in left_patterns),
+                          int(right in right_patterns)]
 
-        left = left_patterns[pattern_index[0]] \
-            if is_pattern[0] \
-            else left_not_patterns[pattern_index[0]]
+            left_mapped = map_neg(left)
+            right_mapped = map_neg(right)
 
-        right = right_patterns[pattern_index[1]] \
-            if is_pattern[1] \
-            else right_not_patterns[pattern_index[1]]
-
-        left = map_neg(left)
-        right = map_neg(right)
-
-        inputs.append([*left, *right])
-        outputs.append(map_neg(is_pattern))
-
-    left_ans = {}
-    right_ans = {}
-    for i, o in zip(inputs, outputs):
-        if not tuple(i[:4]) in left_ans:
-            left_ans[tuple(i[:4])] = o[0]
-        if not tuple(i[4:]) in right_ans:
-            right_ans[tuple(i[4:])] = o[1]
-        assert left_ans[tuple(i[:4])] == o[0]
-        assert right_ans[tuple(i[4:])] == o[1]
+            inputs.append([*left_mapped, *right_mapped])
+            outputs.append(map_neg(is_pattern))
 
     for inp in inputs:
         f.write(', '.join(map(str, inp)))
