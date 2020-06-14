@@ -120,14 +120,28 @@ def analyse_job(args):
 
     fitnesses = np.zeros((repeats, data_points, population_size),
                          dtype=np.float64)
+    training_accuracy = np.zeros((repeats, data_points, population_size),
+                                 dtype=np.float64)
+    validation_accuracy = np.zeros((repeats, data_points, population_size),
+                                   dtype=np.float64)
 
     if evo_cfg['iterations'] != 0:
-        for i, log in enumerate(db.logs.find({'job_id': job['_id']}, {'_id': 0, 'events.organisms.fitness': 1})):
+        for i, log in enumerate(db.logs.find({'job_id': job['_id']}, {'_id': 0, 'events.organisms.fitness': 1, 'events.organisms.evaluation': 1})):
             for j, event in enumerate(log['events']):
                 fitnesses[i, j] = [organism['fitness']
                                    for organism in event['organisms']]
+                if 'validation_accuracy' in event['organisms'][0]['evaluation']:
+                    validation_accuracy[i, j] = [organism['evaluation']['validation_accuracy']
+                                                 for organism in event['organisms']]
+                    training_accuracy[i, j] = [organism['evaluation']['training_accuracy']
+                                               for organism in event['organisms']]
+                elif 'validation_accuracy' in event['organisms'][0]['evaluation'][0]:
+                    validation_accuracy[i, j] = [np.mean([e['validation_accuracy'] for e in organism['evaluation']])
+                                                 for organism in event['organisms']]
+                    training_accuracy[i, j] = [np.mean([e['training_accuracy'] for e in organism['evaluation']])
+                                               for organism in event['organisms']]
     else:
-        for i, log in enumerate(db.logs.find({'job_id': job['_id']}, {'_id': 0, 'events.event_time': 1, 'events.organisms.fitness': 1})):
+        for i, log in enumerate(db.logs.find({'job_id': job['_id']}, {'_id': 0, 'events.event_time': 1, 'events.organisms.fitness': 1, 'events.organisms.evaluation': 1})):
             event_times = [event['event_time'] for event in log['events']]
             start_time = event_times[0]
             event_times = [e - start_time for e in event_times]
@@ -140,6 +154,16 @@ def analyse_job(args):
                     if millis <= target_millis:
                         fitnesses[i][j] = [organism['fitness']
                                            for organism in log['events'][k]['organisms']]
+                        if 'validation_accuracy' in log['events'][k]['organisms'][0]['evaluation']:
+                            validation_accuracy[i][j] = [organism['evaluation']['validation_accuracy']
+                                                         for organism in log['events'][k]['organisms']]
+                            training_accuracy[i][j] = [organism['evaluation']['training_accuracy']
+                                                       for organism in log['events'][k]['organisms']]
+                        elif 'validation_accuracy' in log['events'][k]['organisms'][0]['evaluation'][0]:
+                            validation_accuracy[i][j] = [np.mean([e['validation_accuracy'] for e in organism['evaluation']])
+                                                         for organism in log['events'][k]['organisms']]
+                            training_accuracy[i][j] = [np.mean([e['training_accuracy'] for e in organism['evaluation']])
+                                                       for organism in log['events'][k]['organisms']]
                         break
 
     q.put((job_name, fitnesses, job['parameters']))
@@ -147,6 +171,8 @@ def analyse_job(args):
 
     mean_fitness = fitnesses.mean(axis=(0, 2))
     max_fitness = fitnesses.max(axis=2).mean(axis=0)
+    max_training_accuracy = training_accuracy.max(axis=2).mean(axis=0)
+    max_validation_accuracy = validation_accuracy.max(axis=2).mean(axis=0)
     absolute_max_fitness = fitnesses.max(axis=(0, 2))
     fig, ax = plt.subplots(figsize=(8, 8))
     fig.suptitle(job_name)
@@ -160,9 +186,19 @@ def analyse_job(args):
     fig.canvas.draw()
 
     fname = job['_id']
-    path = f'jobs/analisys/plots/batch_{batch}/{fname}.png'
-    plt.savefig(path, dpi=100)
+    path = f'jobs/analisys/plots/batch_{batch}/{fname}'
+    plt.savefig(f'{path}.png', dpi=100)
     plt.close()
+
+    with open(f'{path}.txt', 'w') as f:
+        f.write(json.dumps(job['parameters']))
+        f.write(2*'\n')
+        f.write(''.join(f'({x},{y})' for x,
+                        y in zip(x, max_fitness)) + 2*'\n')
+        f.write(''.join(f'({x},{y})' for x, y in zip(
+            x, max_training_accuracy)) + 2*'\n')
+        f.write(''.join(f'({x},{y})' for x, y in zip(
+            x, max_validation_accuracy)) + 2*'\n')
 
 
 def set_labels(ax, iterations, seconds, iter_interval, sec_interval):
