@@ -16,7 +16,7 @@ def run():
     }
 
     static_params = {
-        'ITERATIONS': 500,
+        'ITERATIONS': 600,
         'LOG_INTERVAL': 2,
         'VALIDATION_FRACTION': 0.2,
         'TEST_FRACTION': 0.0,
