@@ -6,6 +6,7 @@ tmp.*
 g.*
 *.dot
 *.png
+*.txt
 flamegraph*svg
 *.pyc
 
