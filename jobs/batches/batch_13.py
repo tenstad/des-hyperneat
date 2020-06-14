@@ -19,7 +19,7 @@ def run():
         'ITERATIONS': 0,
         'LOG_INTERVAL': 0,
         'SECONDS_LIMIT': 1200,
-        'LOG_SEC_INTERVAL': 4,
+        'LOG_SEC_INTERVAL': 12,
         'VALIDATION_FRACTION': 0.2,
         'TEST_FRACTION': 0.0,
     }
