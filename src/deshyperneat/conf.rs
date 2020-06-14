@@ -32,7 +32,7 @@ pub struct MethodConfig {
     pub max_output_substrate_depth: u64,
 
     #[serde(with = "bson::compat::u2f")]
-    #[envconfig(from = "MAX_HIDDEN_SUBSTRATE_DEPTH", default = "3")]
+    #[envconfig(from = "MAX_HIDDEN_SUBSTRATE_DEPTH", default = "5")]
     pub max_hidden_substrate_depth: u64,
 }
 
