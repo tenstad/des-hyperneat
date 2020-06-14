@@ -20,8 +20,8 @@ def run():
         'LOG_INTERVAL': 0,
         'SECONDS_LIMIT': 900,
         'LOG_SEC_INTERVAL': 4,
-        'VALIDATION_FRACTION': 0.1,
-        'TEST_FRACTION': 0.1,
+        'VALIDATION_FRACTION': 0.2,
+        'TEST_FRACTION': 0.0,
     }
 
     def run_grid(grid):

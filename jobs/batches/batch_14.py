@@ -17,9 +17,9 @@ def run():
 
     static_params = {
         'ITERATIONS': 500,
-        'LOG_INTERVAL': 10,
-        'VALIDATION_FRACTION': 0.1,
-        'TEST_FRACTION': 0.1,
+        'LOG_INTERVAL': 2,
+        'VALIDATION_FRACTION': 0.2,
+        'TEST_FRACTION': 0.0,
     }
 
     def run_grid(grid):
