@@ -12,7 +12,7 @@ pub fn create() -> figure::Figure {
 
     let mut node = fig.node_builder(&|n| n.size(18.0).edge_offset(2.0));
     let s = node(&|n| n.text("\\raisebox{7ex}{inputs}"));
-    let w = node(&|n| n.x(-1.2).y(2.24).text("depth 2"));
+    let w = node(&|n| n.x(-1.2).y(2.24).text("depth 3"));
     let e = node(&|n| n.x(1.2).y(2.24).text("depth 1"));
     let n = node(&|n| n.y(4.48).text("\\raisebox{7ex}{outputs}"));
     drop(node);

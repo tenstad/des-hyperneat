@@ -29,6 +29,13 @@ pub fn create() -> figure::Figure {
     //let s23 = node(&|n| n.x(2.3).y(2.7));
     drop(node);
 
+    let mut label = fig.label_builder(&|l| l.y(0.6));
+    label(&|l| l.x(1.0 / 3.0-0.3).text("a"));
+    label(&|l| l.x(1.0-0.3).y(0.65).text("b"));
+    label(&|l| l.x(5.0 / 3.0-0.3).text("c"));
+    //label(&|l| l.x(2.9-0.3).y(2.75-0.35).text("h"));
+    drop(label);
+
     let mut edge = fig.edge_builder(&|e| e.width(0.1).color("black"));
     edge(&i1, &s10, &|e| e);
     edge(&i0, &s12, &|e| e);
@@ -36,7 +43,7 @@ pub fn create() -> figure::Figure {
     /*
     edge(&s21, &s23, &|e| e);
     edge(&i1, &s21, &|e| e);
-    edge(&i2, &s21, &|e| e);
+    edge(&i1, &s20, &|e| e);
     edge(&i2, &s20, &|e| e);
 
     edge(&s21, &s22, &|e| e);

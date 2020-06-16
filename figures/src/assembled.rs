@@ -50,7 +50,7 @@ pub fn create() -> figure::Figure {
     edge(&i0, &s12, &|e| e);
 
     edge(&i1, &s21, &|e| e);
-    edge(&i2, &s21, &|e| e);
+    edge(&i1, &s20, &|e| e);
     edge(&i2, &s20, &|e| e);
 
     edge(&s21, &s22, &|e| e);

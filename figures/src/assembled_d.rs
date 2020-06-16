@@ -34,7 +34,7 @@ pub fn create() -> figure::Figure {
     edge(&i0, &s12, &|e| e.color("gray!35"));
 
     edge(&i1, &s21, &|e| e.color("gray!35"));
-    edge(&i2, &s21, &|e| e.color("gray!35"));
+    edge(&i1, &s20, &|e| e.color("gray!35"));
     edge(&i2, &s20, &|e| e.color("gray!35"));
 
     edge(&s21, &s23, &|e| e);
