@@ -10,21 +10,21 @@ pub fn create() -> figure::Figure {
     let n = substrate(&|s| s.y(10.0));
     drop(substrate);
 
-    let mut node = fig.node_builder(&|n| n.size(1.5).edge_offset(0.0).fill("gray!40").y(1.0));
+    let mut node = fig.node_builder(&|n| n.size(1.5).edge_offset(0.0).fill("teal").y(1.0));
     let i0 = node(&|n| n.x(1.0 / 3.0));
     let i1 = node(&|n| n.x(1.0));
     let i2 = node(&|n| n.x(5.0 / 3.0));
-    let o = node(&|n| n.x(1.0).y(6.0).fill("gray"));
+    let o = node(&|n| n.x(1.0).y(6.0).fill("blue"));
     drop(node);
 
-    let mut node = fig.node_builder(&|n| n.size(1.5).edge_offset(0.0));
-    let s10 = node(&|n| n.x(0.4).y(2.95).opacity(0.6));
+    let mut node = fig.node_builder(&|n| n.size(1.5).fill("green").edge_offset(0.0));
+    let s10 = node(&|n| n.x(0.4).y(2.95).opacity(0.4).fill("green!35"));
     //let s11 = node(&|n| n.x(0.0).y(3.55));
-    let s12 = node(&|n| n.x(-0.9).y(4.0).opacity(0.6));
+    let s12 = node(&|n| n.x(-0.9).y(4.0).opacity(0.4).fill("green!35"));
     //let s13 = node(&|n| n.x(0.4).y(4.15));
 
-    let s20 = node(&|n| n.x(2.9).y(2.75).opacity(0.6));
-    let s21 = node(&|n| n.x(1.6).y(3.2).opacity(0.6));
+    let s20 = node(&|n| n.x(2.9).y(2.75).opacity(0.4).fill("green!35"));
+    let s21 = node(&|n| n.x(1.6).y(3.2).opacity(0.4).fill("green!35"));
     let s22 = node(&|n| n.x(2.4).y(4.15));
     let s23 = node(&|n| n.x(2.3).y(2.7));
     drop(node);

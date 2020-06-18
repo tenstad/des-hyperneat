@@ -10,17 +10,17 @@ pub fn create() -> figure::Figure {
     let n = substrate(&|s| s.y(10.0));
     drop(substrate);
 
-    let mut node = fig.node_builder(&|n| n.size(1.5).edge_offset(0.0).fill("gray!40").y(1.0));
+    let mut node = fig.node_builder(&|n| n.size(1.5).edge_offset(0.0).fill("teal").y(1.0));
     let i0 = node(&|n| n.x(1.0 / 3.0));
     let i1 = node(&|n| n.x(1.0));
     let i2 = node(&|n| n.x(5.0 / 3.0));
-    let o = node(&|n| n.x(1.0).y(6.0).fill("gray"));
+    let o = node(&|n| n.x(1.0).y(6.0).fill("blue"));
     drop(node);
 
-    let mut node = fig.node_builder(&|n| n.size(1.5).edge_offset(0.0));
-    let s10 = node(&|n| n.x(0.4).y(2.95).opacity(0.6));
+    let mut node = fig.node_builder(&|n| n.size(1.5).fill("green").edge_offset(0.0));
+    let s10 = node(&|n| n.x(0.4).y(2.95).opacity(0.4).fill("green!35"));
     //let s11 = node(&|n| n.x(0.0).y(3.55));
-    let s12 = node(&|n| n.x(-0.9).y(4.0).opacity(0.6));
+    let s12 = node(&|n| n.x(-0.9).y(4.0).opacity(0.4).fill("green!35"));
     //let s13 = node(&|n| n.x(0.4).y(4.15));
 
     let s20 = node(&|n| n.x(2.9).y(2.75));
@@ -30,10 +30,10 @@ pub fn create() -> figure::Figure {
     drop(node);
 
     let mut label = fig.label_builder(&|l| l.y(0.6));
-    label(&|l| l.x(1.0 / 3.0-0.3).text("a"));
-    label(&|l| l.x(1.0-0.3).y(0.65).text("b"));
-    label(&|l| l.x(5.0 / 3.0-0.3).text("c"));
-    label(&|l| l.x(2.9-0.3).y(2.75-0.35).text("h"));
+    label(&|l| l.x(1.0 / 3.0 - 0.3).text("a"));
+    label(&|l| l.x(1.0 - 0.3).y(0.65).text("b"));
+    label(&|l| l.x(5.0 / 3.0 - 0.3).text("c"));
+    label(&|l| l.x(2.9 - 0.15).y(2.75 - 0.35).text("h"));
     drop(label);
 
     let mut edge = fig.edge_builder(&|e| e.width(0.1).color("black"));

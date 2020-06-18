@@ -5,7 +5,7 @@ pub fn create() -> figure::Figure {
 
     let mut node = fig.node_builder(&|n| n.visible(false));
     node(&|n| n.y(7.0));
-    node(&|n| n.y(-0.2));
+    node(&|n| n.y(-0.35));
     drop(node);
 
     let mut substrate = fig.substrate_builder(&|s| s.size(2.0).cells(2).axis_arrow_offset(0.15));
@@ -22,19 +22,19 @@ pub fn create() -> figure::Figure {
     drop(label);
 
     let mut node = fig.node_builder(&|n| n.x(2.7));
-    node(&|n| n.y(6.75).fill("gray"));
-    node(&|n| n.y(6.3).fill("gray!40"));
-    node(&|n| n.y(5.85));
+    node(&|n| n.y(6.75).fill("blue"));
+    node(&|n| n.y(6.3).fill("teal"));
+    node(&|n| n.y(5.85).fill("green"));
     drop(node);
 
-    let mut node = fig.node_builder(&|n| n.fill("gray!40").y(1.0));
+    let mut node = fig.node_builder(&|n| n.fill("teal").y(1.0));
     let i0 = node(&|n| n.x(1.0 / 3.0));
     let i1 = node(&|n| n.x(1.0));
     let i2 = node(&|n| n.x(5.0 / 3.0));
-    let o = node(&|n| n.x(1.0).y(6.0).fill("gray"));
+    let o = node(&|n| n.x(1.0).y(6.0).fill("blue"));
     drop(node);
 
-    let mut node = fig.node_builder(&|n| n);
+    let mut node = fig.node_builder(&|n| n.fill("green"));
     let s10 = node(&|n| n.x(0.4).y(2.95));
     let s11 = node(&|n| n.x(0.0).y(3.55));
     let s12 = node(&|n| n.x(-0.9).y(4.0));

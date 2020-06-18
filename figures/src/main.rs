@@ -7,8 +7,9 @@ mod assembled_e;
 mod assembled_f;
 mod assembled_g;
 mod assembled_h;
-mod blueprint;
+mod io_config;
 mod jumper_connections;
+mod layout;
 mod local_connections;
 mod module;
 
@@ -22,7 +23,8 @@ fn main() {
     assembled_f::create().save("outputs/assembled_f.tex");
     assembled_g::create().save("outputs/assembled_g.tex");
     assembled_h::create().save("outputs/assembled_h.tex");
-    blueprint::create().save("outputs/blueprint.tex");
+    layout::create().save("outputs/layout.tex");
+    io_config::create().save("outputs/io_config.tex");
     local_connections::create().save("outputs/local_connections.tex");
     jumper_connections::create().save("outputs/jumper_connections.tex");
     module::create().save("outputs/module.tex");
