@@ -8,9 +8,9 @@ pub fn create() -> figure::Figure {
     let i1 = node(&|n| n.text("$y_1$").x(1.0));
     let i2 = node(&|n| n.text("$x_2$").x(2.0));
     let i3 = node(&|n| n.text("$y_2$").x(3.0));
-    let o0 = node(&|n| n.text("$w$").x(0.5).y(2.6));
-    let o1 = node(&|n| n.text("$b$").x(1.5).y(2.6));
-    let o2 = node(&|n| n.text("$e$").x(2.5).y(2.6));
+    let o0 = node(&|n| n.text("$b$").x(0.5).y(2.6));
+    let o1 = node(&|n| n.text("$e$").x(1.5).y(2.6));
+    let o2 = node(&|n| n.text("$w$").x(2.5).y(2.6));
     let c = node(&|n| {
         n.text("CPPN")
             .shape("rectangle")
