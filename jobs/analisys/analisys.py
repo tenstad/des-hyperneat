@@ -180,6 +180,7 @@ def analyse_job(args):
                    evo_cfg['log_interval'], evo_cfg['log_sec_interval'])
     plt.plot(x, mean_fitness, label='mean fitness')
     plt.plot(x, max_fitness, label='max fitness')
+    plt.plot(x, max_validation_accuracy, label='max val acc')
     plt.plot(x, absolute_max_fitness, label='absolute max fitness')
     plt.ylim([0, 1])
     plt.legend()
