@@ -50,13 +50,13 @@ pub struct MethodConfig {
     #[envconfig(from = "OUTPUT_ACTIVATION", default = "Softmax")]
     pub output_activation: Activation,
 
-    #[envconfig(from = "MAX_VARIANCE", default = "true")]
+    #[envconfig(from = "MAX_VARIANCE", default = "false")]
     pub max_variance: bool,
 
     #[envconfig(from = "RELATIVE_VARIANCE", default = "true")]
     pub relative_variance: bool,
 
-    #[envconfig(from = "MEDIAN_VARIANCE", default = "true")]
+    #[envconfig(from = "MEDIAN_VARIANCE", default = "false")]
     pub median_variance: bool,
 
     #[envconfig(from = "ONLY_LEAF_VARIANCE", default = "false")]
