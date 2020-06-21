@@ -4,21 +4,24 @@ import json
 
 
 def run():
-    BATCH = 13
+    BATCH = 15
     REPEATS = 50
     sheduler = Scheduler()
 
     param_grid = {
-        'METHOD': ['SiDES-HyperNEAT', 'CoDES-HyperNEAT', 'DES-HyperNEAT'],
+        'METHOD': ['ES-HyperNEAT', 'DES-HyperNEAT'],
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine',
                     'datasets/generated/retina'],
+        'VARIANCE_THRESHOLD': [0.01, 0.03, 0.1],
+        'DIVISION_THRESHOLD': [0.01, 0.03, 0.1],
+        'BAND_THRESHOLD': [0.15, 0.3, 0.45],
     }
 
     static_params = {
         'ITERATIONS': 0,
         'LOG_INTERVAL': 0,
-        'SECONDS_LIMIT': 1200,
+        'SECONDS_LIMIT': 120,
         'LOG_SEC_INTERVAL': 12,
         'VALIDATION_FRACTION': 0.2,
         'TEST_FRACTION': 0.0,
@@ -31,7 +34,15 @@ def run():
             params['OUTPUT_ACTIVATION'] = 'Tanh' if params['DATASET'] == 'datasets/generated/retina' else 'Softmax'
 
             if params['DATASET'].endswith('retina'):
-                params['INPUT_CONFIG'] = "[[[-1.0, 0.5], [-0.33, 0.5], [-1.0, -0.5], [-0.33, -0.5], [0.33, 0.5], [1.0, 0.5], [0.33, -0.5], [1.0, -0.5]]]"
+                if params['METHOD'].startswith('ES-HyperNEAT'):
+                    params['INPUT_CONFIG'] = "[[-1.0, -0.5], [-0.33, -0.5], [-1.0, -1.0], [-0.33, -1.0], [0.33, -0.5], [1.0, -0.5], [0.33, -1.0], [1.0, -1.0]]"
+                else:
+                    params['INPUT_CONFIG'] = "[[[-1.0, 0.5], [-0.33, 0.5], [-1.0, -0.5], [-0.33, -0.5], [0.33, 0.5], [1.0, 0.5], [0.33, -0.5], [1.0, -0.5]]]"
+
+            params['MAX_VARIANCE'] = False
+            params['RELATIVE_VARIANCE'] = False
+            params['MEDIAN_VARIANCE'] = False
+            params['ONLY_LEAF_VARIANCE'] = True
 
             name = json.dumps(params)
             params.update(static_params)
