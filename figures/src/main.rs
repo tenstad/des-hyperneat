@@ -14,6 +14,8 @@ mod layered_cppn_b;
 mod layout;
 mod local_connections;
 mod module;
+mod single_cppn;
+mod single_cppn_layout;
 
 fn main() {
     assembled::create().save("outputs/assembled.tex");
@@ -32,4 +34,6 @@ fn main() {
     layout::create().save("outputs/layout.tex");
     local_connections::create().save("outputs/local_connections.tex");
     module::create().save("outputs/module.tex");
+    single_cppn::create().save("outputs/single_cppn.tex");
+    single_cppn_layout::create().save("outputs/single_cppn_layout.tex");
 }
