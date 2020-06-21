@@ -132,11 +132,15 @@ impl QuadPoint {
 
         for child in self.children_mut() {
             if child.calc_variance(delta_weight, false, true) <= ESHYPERNEAT.variance_threshold {
-                let d_left = (child.weight - f(child.x - width, child.y)).abs();
-                let d_right = (child.weight - f(child.x + width, child.y)).abs();
-                let d_up = (child.weight - f(child.x, child.y - width)).abs();
-                let d_down = (child.weight - f(child.x, child.y + width)).abs();
-                let band_value = d_up.min(d_down).max(d_left.min(d_right));
+                let band_value = if ESHYPERNEAT.band_threshold > 0.0 {
+                    let d_left = (child.weight - f(child.x - width, child.y)).abs();
+                    let d_right = (child.weight - f(child.x + width, child.y)).abs();
+                    let d_up = (child.weight - f(child.x, child.y - width)).abs();
+                    let d_down = (child.weight - f(child.x, child.y + width)).abs();
+                    d_up.min(d_down).max(d_left.min(d_right))
+                } else {
+                    0.0
+                };
 
                 if band_value >= ESHYPERNEAT.band_threshold {
                     connections.push(Target::new((child.x, child.y), child.weight));
