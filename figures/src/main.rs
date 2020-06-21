@@ -9,6 +9,8 @@ mod assembled_g;
 mod assembled_h;
 mod io_config;
 mod jumper_connections;
+mod layered_cppn;
+mod layered_cppn_b;
 mod layout;
 mod local_connections;
 mod module;
@@ -23,9 +25,11 @@ fn main() {
     assembled_f::create().save("outputs/assembled_f.tex");
     assembled_g::create().save("outputs/assembled_g.tex");
     assembled_h::create().save("outputs/assembled_h.tex");
-    layout::create().save("outputs/layout.tex");
     io_config::create().save("outputs/io_config.tex");
-    local_connections::create().save("outputs/local_connections.tex");
     jumper_connections::create().save("outputs/jumper_connections.tex");
+    layered_cppn::create().save("outputs/layered_cppn.tex");
+    layered_cppn_b::create().save("outputs/layered_cppn_b.tex");
+    layout::create().save("outputs/layout.tex");
+    local_connections::create().save("outputs/local_connections.tex");
     module::create().save("outputs/module.tex");
 }
