@@ -36,9 +36,11 @@ with open('data2.txt', 'w') as f:
             vals = ' & '.join(vals)
             line = f'& {method} & {vals} \\\\\n'
             f.write(line)
+    f.write('\n')
 
-    for dataset in ('iris', 'wine', 'retina'):
-        for method in ('', 'Si', 'Co'):
+    avgs = np.zeros((3, 3, 8))
+    for i, dataset in enumerate(('iris', 'wine', 'retina')):
+        for j, method in enumerate(('', 'Si', 'Co')):
             m = method + 'DES-HyperNEAT'
             method = method_name(method)
             d = 'datasets/generated/' + dataset
@@ -47,11 +49,25 @@ with open('data2.txt', 'w') as f:
                 *find_data('0', m, d, 'num_nodes'),
                 *find_data('600', m, d, 'num_edges'),
                 *find_data('0', m, d, 'num_edges')]
+            for k, val in enumerate(vals):
+                avgs[i, j, k] = val
             vals = [('%.' + str(min(int(4-math.log10(val)), 3)) + 'f') % val
                     for val in vals]
             vals = ' & '.join(vals)
             line = f'& {method} & {vals} \\\\\n'
             f.write(line)
+    f.write('\n')
+    
+    avgs = avgs.mean(axis=0)
+    for j, method in enumerate(('', 'Si', 'Co')):
+        method = method_name(method)
+        vals = avgs[j]
+        vals = [('%.' + str(min(int(4-math.log10(val)), 3)) + 'f') % val
+                for val in vals]
+        vals = ' & '.join(vals)
+        line = f'& {method} & {vals} \\\\\n'
+        f.write(line)
+    f.write('\n')
 
     avgs = np.zeros((3, 3, 4))
     for i, dataset in enumerate(('iris', 'wine', 'retina')):
@@ -69,6 +85,7 @@ with open('data2.txt', 'w') as f:
             vals = ' & '.join(vals)
             line = f'& {method} & {vals} \\\\\n'
             f.write(line)
+    f.write('\n')
 
     avgs = avgs.mean(axis=0)
     for j, method in enumerate(('', 'Si', 'Co')):
@@ -79,3 +96,4 @@ with open('data2.txt', 'w') as f:
         vals = ' & '.join(vals)
         line = f'& {method} & {vals} \\\\\n'
         f.write(line)
+    f.write('\n')
