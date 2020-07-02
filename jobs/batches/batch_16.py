@@ -13,9 +13,10 @@ def run():
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine',
                     'datasets/generated/retina'],
-        'VARIANCE_THRESHOLD': [0.15, 0.3, 0.45],
-        'DIVISION_THRESHOLD': [0.15, 0.3, 0.45],
-        'BAND_THRESHOLD': [0.15, 0.3, 0.45],
+        'VARIANCE_THRESHOLD': [0.6, 0.7, 0.8],
+        'DIVISION_THRESHOLD': [0.6, 0.7, 0.8],
+        'BAND_THRESHOLD': [0.0, 0.05],
+        'RELATIVE_VARIANCE': [False, True],
     }
 
     static_params = {
@@ -25,8 +26,11 @@ def run():
         'LOG_SEC_INTERVAL': 12,
         'VALIDATION_FRACTION': 0.2,
         'TEST_FRACTION': 0.0,
-        'MAX_DISCOVERIES': 128,
-        'MAX_OUTGOING': 16,
+        'MAX_DISCOVERIES': 256,
+        'MAX_OUTGOING': 32,
+        'MAX_VARIANCE': False,
+        'ONLY_LEAF_VARIANCE': True,
+        'MEDIAN_VARIANCE': False,
     }
 
     def run_grid(grid):

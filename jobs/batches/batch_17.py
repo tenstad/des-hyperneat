@@ -13,9 +13,9 @@ def run():
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine',
                     'datasets/generated/retina'],
-        'VARIANCE_THRESHOLD': [0.1, 0.3, 0.5],
-        'DIVISION_THRESHOLD': [0.1, 0.15, 0.2],
-        'BAND_THRESHOLD': [0.0, 0.1, 0.15],
+        'VARIANCE_THRESHOLD': [0.9, 1.0, 1.1],
+        'DIVISION_THRESHOLD': [0.9, 1.0, 1.1],
+        'RELATIVE_VARIANCE': [False, True],
     }
 
     static_params = {
@@ -25,8 +25,12 @@ def run():
         'LOG_SEC_INTERVAL': 12,
         'VALIDATION_FRACTION': 0.2,
         'TEST_FRACTION': 0.0,
-        'MAX_DISCOVERIES': 128,
-        'MAX_OUTGOING': 16,
+        'MAX_DISCOVERIES': 256,
+        'MAX_OUTGOING': 32,
+        'MAX_VARIANCE': False,
+        'ONLY_LEAF_VARIANCE': True,
+        'MEDIAN_VARIANCE': False,
+        'BAND_THRESHOLD': 0.0,
     }
 
     def run_grid(grid):
@@ -38,11 +42,6 @@ def run():
                     params['INPUT_CONFIG'] = "[[-1.0, -0.5], [-0.33, -0.5], [-1.0, -1.0], [-0.33, -1.0], [0.33, -0.5], [1.0, -0.5], [0.33, -1.0], [1.0, -1.0]]"
                 else:
                     params['INPUT_CONFIG'] = "[[[-1.0, 0.5], [-0.33, 0.5], [-1.0, -0.5], [-0.33, -0.5], [0.33, 0.5], [1.0, 0.5], [0.33, -0.5], [1.0, -0.5]]]"
-
-            params['MAX_VARIANCE'] = False
-            params['RELATIVE_VARIANCE'] = False
-            params['MEDIAN_VARIANCE'] = False
-            params['ONLY_LEAF_VARIANCE'] = True
 
             name = json.dumps(params)
             params.update(static_params)

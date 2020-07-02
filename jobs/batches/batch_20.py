@@ -5,7 +5,7 @@ import json
 
 def run():
     BATCH = 20
-    REPEATS = 50
+    REPEATS = 100
     sheduler = Scheduler()
 
     param_grid = {
@@ -13,20 +13,24 @@ def run():
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine',
                     'datasets/generated/retina'],
-        'VARIANCE_THRESHOLD': [0.6, 0.7, 0.8],
-        'DIVISION_THRESHOLD': [0.5],
-        'BAND_THRESHOLD': [0.0, 0.05, 0.1],
+        'VARIANCE_THRESHOLD': [1.25],
+        'DIVISION_THRESHOLD': [1.25],
+        'RELATIVE_VARIANCE': [False, True],
     }
 
     static_params = {
         'ITERATIONS': 0,
         'LOG_INTERVAL': 0,
-        'SECONDS_LIMIT': 120,
+        'SECONDS_LIMIT': 1200,
         'LOG_SEC_INTERVAL': 12,
         'VALIDATION_FRACTION': 0.2,
         'TEST_FRACTION': 0.0,
-        'MAX_DISCOVERIES': 128,
-        'MAX_OUTGOING': 16,
+        'MAX_DISCOVERIES': 256,
+        'MAX_OUTGOING': 32,
+        'MAX_VARIANCE': False,
+        'ONLY_LEAF_VARIANCE': True,
+        'MEDIAN_VARIANCE': False,
+        'BAND_THRESHOLD': 0.0,
     }
 
     def run_grid(grid):
