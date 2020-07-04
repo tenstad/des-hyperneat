@@ -1,4 +1,5 @@
 use crate::cppn::genome::Genome as CppnGenome;
+use crate::deshyperneat::conf::DESHYPERNEAT;
 use crate::deshyperneat::state::CustomState;
 use crate::eshyperneat::genome::identity_genome;
 use evolution::{
@@ -38,8 +39,15 @@ impl LinkExtension for Link {
         Self::new(neat, cppn, 1)
     }
 
-    fn identity(_: &Self::Config, neat: NeatLink, state: &mut Self::State) -> Self {
-        let (cppn, cppn_state) = identity_genome();
+    fn identity(config: &Self::Config, neat: NeatLink, state: &mut Self::State) -> Self {
+        let (cppn, cppn_state) = if DESHYPERNEAT.enable_identity_mapping {
+            identity_genome()
+        } else {
+            let init_conf = InitConfig::new(4, 2);
+            let mut cppn_state = NeatState::default();
+            let cppn = CppnGenome::new(config, &init_conf, &mut cppn_state);
+            (cppn, cppn_state)
+        };
 
         if !state.unique_cppn_states.contains_key(&(neat.from, neat.to)) {
             state

@@ -34,6 +34,9 @@ pub struct MethodConfig {
     #[serde(with = "bson::compat::u2f")]
     #[envconfig(from = "MAX_HIDDEN_SUBSTRATE_DEPTH", default = "5")]
     pub max_hidden_substrate_depth: u64,
+
+    #[envconfig(from = "ENABLE_IDENTITY_MAPPING", default = "true")]
+    pub enable_identity_mapping: bool,
 }
 
 impl Default for MethodConfig {

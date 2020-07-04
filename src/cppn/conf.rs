@@ -8,7 +8,7 @@ pub struct MethodConfig {
     #[envconfig(from = "MUTATE_HIDDEN_BIAS_PROBABILITY", default = "0.8")]
     pub mutate_hidden_bias_probability: f64,
 
-    #[envconfig(from = "MUTATE_HIDDEN_BIAS_SIZE", default = "0.1")]
+    #[envconfig(from = "MUTATE_HIDDEN_BIAS_SIZE", default = "0.03")]
     pub mutate_hidden_bias_size: f64,
 
     #[envconfig(from = "MUTATE_HIDDEN_ACTIVATION_PROBABILITY", default = "0.1")]
@@ -17,7 +17,7 @@ pub struct MethodConfig {
     #[envconfig(from = "MUTATE_OUTPUT_BIAS_PROBABILITY", default = "0.8")]
     pub mutate_output_bias_probability: f64,
 
-    #[envconfig(from = "MUTATE_OUTPUT_BIAS_SIZE", default = "0.1")]
+    #[envconfig(from = "MUTATE_OUTPUT_BIAS_SIZE", default = "0.03")]
     pub mutate_output_bias_size: f64,
 
     #[envconfig(from = "MUTATE_OUTPUT_ACTIVATION_PROBABILITY", default = "0.1")]
