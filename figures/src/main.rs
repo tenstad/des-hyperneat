@@ -14,6 +14,8 @@ mod jumper_connections;
 mod layered_cppn;
 mod layered_cppn_b;
 mod layout;
+mod layout_small;
+mod layout_small_b;
 mod local_connections;
 mod module;
 mod neat;
@@ -39,6 +41,8 @@ fn main() {
     layered_cppn::create().save("outputs/layered_cppn.tex");
     layered_cppn_b::create().save("outputs/layered_cppn_b.tex");
     layout::create().save("outputs/layout.tex");
+    layout_small::create().save("outputs/layout_small.tex");
+    layout_small_b::create().save("outputs/layout_small_b.tex");
     local_connections::create().save("outputs/local_connections.tex");
     module::create().save("outputs/module.tex");
     neat::create().save("outputs/neat.tex");
