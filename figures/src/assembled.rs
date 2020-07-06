@@ -18,7 +18,7 @@ pub fn create() -> figure::Figure {
     let mut label = fig.label_builder(&|l| l.x(2.85));
     label(&|l| l.y(6.75).text("Output"));
     label(&|l| l.y(6.3).text("Input"));
-    label(&|l| l.y(5.85).text("Evolved"));
+    label(&|l| l.y(5.85).text("Assembled"));
     drop(label);
 
     let mut node = fig.node_builder(&|n| n.x(2.7));
