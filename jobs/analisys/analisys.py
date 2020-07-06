@@ -9,6 +9,15 @@ from bson.objectid import ObjectId
 import time
 
 
+def get_attr(organism, attr):
+    if type(organism['phenotype']) == list:
+        return np.mean([p['network_stats'][attr] for p in organism['phenotype']])
+    if 'network_stats' in organism['phenotype']:
+        return organism['phenotype']['network_stats'][attr]
+    else:
+        return organism['phenotype'][attr]
+
+
 def analyse(batch):
     print(f'Analyzing batch {batch}')
     start_time = time.time()
@@ -44,10 +53,11 @@ def analyse(batch):
     scoreboard = []
     for i, (job_name, fitnesses, _) in enumerate(results):
         max_fitness = fitnesses.max(axis=2).mean(axis=0)
-        scoreboard.append((max_fitness[-1], i))
+        std = np.std(fitnesses.max(axis=2)[:-1])
+        scoreboard.append((max_fitness[-1], i, std))
     scoreboard = sorted(scoreboard)[::-1]
-    scoreboard_str = '\n'.join([f'{i}: {score}, {results[job_i][0]}' for (
-        i, (score, job_i)) in enumerate(scoreboard)])
+    scoreboard_str = '\n'.join([f'{i}: {score} {std} {results[job_i][0]}' for (
+        i, (score, job_i, std)) in enumerate(scoreboard)])
     with open(f'jobs/analisys/plots/batch_{batch}/scoreboard.txt', 'w') as f:
         f.write(scoreboard_str)
 
@@ -61,7 +71,7 @@ def analyse(batch):
     x = set_labels(ax, evo_cfg['iterations'], evo_cfg['seconds_limit'],
                    evo_cfg['log_interval'], evo_cfg['log_sec_interval'])
 
-    for i, (score, job_i) in enumerate(scoreboard):
+    for i, (score, job_i, std) in enumerate(scoreboard):
         job_name = results[job_i][0]
         job_details = results[job_i][2]
         key = job_details['METHOD'] + job_details['DATASET']
@@ -77,7 +87,7 @@ def analyse(batch):
             plt.plot(x, max_fitness, label=f'{line_style} {job_name}',
                      linestyle=line_style, linewidth=0.6, color=line_color)
 
-            scoreboard_str = f'{i}: {score}, {results[job_i][0]}\n'
+            scoreboard_str = f'{i}: {score} {std} {results[job_i][0]}\n'
             with open(f'jobs/analisys/plots/batch_{batch}/scoreboard_top.txt', 'a') as f:
                 f.write(scoreboard_str)
 
@@ -143,14 +153,13 @@ def analyse_job(args):
             for j, event in enumerate(log['events']):
                 fitnesses[i, j] = [organism['fitness']
                                    for organism in event['organisms']]
+                nodes[i, j] = [get_attr(organism, 'nodes')
+                               for organism in event['organisms']]
+                edges[i, j] = [get_attr(organism, 'edges')
+                               for organism in event['organisms']]
                 if 'validation_accuracy' in event['organisms'][0]['evaluation']:
-                    nodes[i, j] = [organism['phenotype']['network_stats']['nodes']
-                                   for organism in event['organisms']]
-                    edges[i, j] = [organism['phenotype']['network_stats']['edges']
-                                   for organism in event['organisms']]
-                    hidden_substrates[i, j] = [organism['phenotype']['hidden_substrates']
-                                               for organism in event['organisms']]
-
+                    # hidden_substrates[i, j] = [sum([1 if c > 0 else 0 for c in organism['phenotype']['hidden_substrate_node_counts']])
+                    #                           for organism in event['organisms']]
                     validation_accuracy[i, j] = [organism['evaluation']['validation_accuracy']
                                                  for organism in event['organisms']]
                     validation_fitness[i, j] = [organism['evaluation']['validation_fitness']
@@ -158,13 +167,8 @@ def analyse_job(args):
                     training_accuracy[i, j] = [organism['evaluation']['training_accuracy']
                                                for organism in event['organisms']]
                 elif 'validation_accuracy' in event['organisms'][0]['evaluation'][0]:
-                    nodes[i, j] = [np.mean([p['network_stats']['nodes'] for p in organism['phenotype']])
-                                   for organism in event['organisms']]
-                    edges[i, j] = [np.mean([p['network_stats']['edges'] for p in organism['phenotype']])
-                                   for organism in event['organisms']]
-                    hidden_substrates[i, j] = [np.mean([p['hidden_substrates'] for p in organism['phenotype']])
-                                               for organism in event['organisms']]
-
+                    # hidden_substrates[i, j] = [np.mean([sum([1 if c > 0 else 0 for c in p['hidden_substrate_node_counts']]) for p in organism['phenotype']])
+                    #                           for organism in event['organisms']]
                     validation_accuracy[i, j] = [np.mean([e['validation_accuracy'] for e in organism['evaluation']])
                                                  for organism in event['organisms']]
                     validation_fitness[i, j] = [np.mean([e['validation_fitness'] for e in organism['evaluation']])
@@ -187,14 +191,13 @@ def analyse_job(args):
                     if millis <= target_millis:
                         fitnesses[i][j] = [organism['fitness']
                                            for organism in log['events'][k]['organisms']]
+                        nodes[i, j] = [get_attr(organism, 'nodes')
+                                       for organism in log['events'][k]['organisms']]
+                        edges[i, j] = [get_attr(organism, 'edges')
+                                       for organism in log['events'][k]['organisms']]
                         if 'validation_accuracy' in log['events'][k]['organisms'][0]['evaluation']:
-                            nodes[i, j] = [organism['phenotype']['network_stats']['nodes']
-                                           for organism in log['events'][k]['organisms']]
-                            edges[i, j] = [organism['phenotype']['network_stats']['edges']
-                                           for organism in log['events'][k]['organisms']]
-                            hidden_substrates[i, j] = [organism['phenotype']['hidden_substrates']
-                                                       for organism in log['events'][k]['organisms']]
-
+                            # hidden_substrates[i, j] = [organism['phenotype']['hidden_substrates']
+                            #                           for organism in log['events'][k]['organisms']]
                             validation_accuracy[i][j] = [organism['evaluation']['validation_accuracy']
                                                          for organism in log['events'][k]['organisms']]
                             validation_fitness[i][j] = [organism['evaluation']['validation_fitness']
@@ -202,13 +205,8 @@ def analyse_job(args):
                             training_accuracy[i][j] = [organism['evaluation']['training_accuracy']
                                                        for organism in log['events'][k]['organisms']]
                         elif 'validation_accuracy' in log['events'][k]['organisms'][0]['evaluation'][0]:
-                            nodes[i, j] = [np.mean([p['network_stats']['nodes'] for p in organism['phenotype']])
-                                           for organism in log['events'][k]['organisms']]
-                            edges[i, j] = [np.mean([p['network_stats']['edges'] for p in organism['phenotype']])
-                                           for organism in log['events'][k]['organisms']]
-                            hidden_substrates[i, j] = [np.mean([p['hidden_substrates'] for p in organism['phenotype']])
-                                                       for organism in log['events'][k]['organisms']]
-
+                            # hidden_substrates[i, j] = [np.mean([p['hidden_substrates'] for p in organism['phenotype']])
+                            #                           for organism in log['events'][k]['organisms']]
                             validation_accuracy[i][j] = [np.mean([e['validation_accuracy'] for e in organism['evaluation']])
                                                          for organism in log['events'][k]['organisms']]
                             validation_fitness[i][j] = [np.mean([e['validation_fitness'] for e in organism['evaluation']])
@@ -217,7 +215,7 @@ def analyse_job(args):
                                                        for organism in log['events'][k]['organisms']]
                         break
 
-    q.put((job_name, fitnesses, job['parameters']))
+    q.put((job_name, validation_fitness, job['parameters']))
     print(q.qsize())
 
     job_params = job['parameters']
@@ -253,6 +251,8 @@ def analyse_job(args):
         nodes, max_i)])
     num_edges = np.array([[a[b] for a, b in zip(c, d)] for c, d in zip(
         edges, max_i)])
+    _hidden_substrates = np.array([[a[b] for a, b in zip(c, d)] for c, d in zip(
+        hidden_substrates, max_i)])
     max_validation_accuracy = np.array([[a[b] for a, b in zip(c, d)] for c, d in zip(
         validation_accuracy, max_i)])
 
@@ -289,6 +289,7 @@ def analyse_job(args):
         f.write(_log('max_validation_fitness', x, max_validation_fitness))
         f.write(_log('num_nodes', x, num_nodes))
         f.write(_log('num_edges', x, num_edges))
+        #f.write(_log('hidden_substrates', x, _hidden_substrates))
         st = np.std(num_iters)
         mi = np.min(num_iters)
         ma = np.max(num_iters)
