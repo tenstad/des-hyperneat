@@ -1,5 +1,5 @@
 use crate::cppn::genome::Genome as CppnGenome;
-use crate::deshyperneat::{genome::Genome, link::Link, node::Node};
+use crate::deshyperneat::{conf::DESHYPERNEAT, genome::Genome, link::Link, node::Node};
 use evolution::neat::{
     genome::NeatGenome,
     link::LinkExtension as NeatLink,
@@ -30,7 +30,14 @@ impl DesGenome for Genome {
     }
 
     fn get_depth(&self, node: &NodeRef) -> u64 {
-        self.neat.get_node(node).unwrap().depth
+        if DESHYPERNEAT.static_substrate_depth >= 0 {
+            match node {
+                NodeRef::Hidden(_) => DESHYPERNEAT.static_substrate_depth as u64,
+                _ => 0,
+            }
+        } else {
+            self.neat.get_node(node).unwrap().depth
+        }
     }
 
     fn get_neat(&self) -> &NeatGenome<Self::Node, Self::Link> {

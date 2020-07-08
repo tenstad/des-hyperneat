@@ -36,11 +36,11 @@ pub struct MethodConfig {
     #[envconfig(from = "RESOLUTION", default = "1048576.0")]
     pub resolution: f64,
 
-    #[envconfig(from = "MAX_DISCOVERIES", default = "0")]
+    #[envconfig(from = "MAX_DISCOVERIES", default = "256")]
     #[serde(with = "bson::compat::u2f")]
     pub max_discoveries: u64,
 
-    #[envconfig(from = "MAX_OUTGOING", default = "0")]
+    #[envconfig(from = "MAX_OUTGOING", default = "32")]
     #[serde(with = "bson::compat::u2f")]
     pub max_outgoing: u64,
 
