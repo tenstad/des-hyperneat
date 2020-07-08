@@ -38,7 +38,7 @@ pub struct MethodConfig {
     #[envconfig(from = "ENABLE_IDENTITY_MAPPING", default = "true")]
     pub enable_identity_mapping: bool,
 
-    #[envconfig(from = "STATIC_SUBSTRATE_DEPH", default = "-1")]
+    #[envconfig(from = "STATIC_SUBSTRATE_DEPTH", default = "-1")]
     pub static_substrate_depth: i64,
 }
 
