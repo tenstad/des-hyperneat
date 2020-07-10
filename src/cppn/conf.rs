@@ -25,13 +25,13 @@ pub struct MethodConfig {
 
     #[envconfig(
         from = "HIDDEN_ACTIVATIONS",
-        default = "Tanh OffsetGaussian Gaussian Sine Sigmoid"
+        default = "None Linear Step ReLU Sigmoid Tanh Gaussian OffsetGaussian Sine"
     )]
     pub hidden_activations: Activations,
 
     #[envconfig(
         from = "OUTPUT_ACTIVATIONS",
-        default = "Tanh OffsetGaussian Gaussian Sine Sigmoid"
+        default = "None Linear Step ReLU Sigmoid Tanh Gaussian OffsetGaussian Sine"
     )]
     pub output_activations: Activations,
 
