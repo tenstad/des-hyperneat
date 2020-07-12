@@ -44,34 +44,34 @@ pub struct MethodConfig {
 
 #[derive(Envconfig, Clone, Serialize)]
 pub struct TopologyConfig {
-    #[envconfig(from = "TOPOLOGY_ADD_NODE_PROBABILITY", default = "0.03")]
+    #[envconfig(from = "LAYOUT_ADD_NODE_PROBABILITY", default = "0.03")]
     pub add_node_probability: f64,
 
-    #[envconfig(from = "TOPOLOGY_ADD_LINK_PROBABILITY", default = "0.2")]
+    #[envconfig(from = "LAYOUT_ADD_LINK_PROBABILITY", default = "0.2")]
     pub add_link_probability: f64,
 
-    #[envconfig(from = "TOPOLOGY_INITIAL_LINK_WEIGHT_SIZE", default = "0.5")]
+    #[envconfig(from = "LAYOUT_INITIAL_LINK_WEIGHT_SIZE", default = "0.5")]
     pub initial_link_weight_size: f64,
 
-    #[envconfig(from = "TOPOLOGY_MUTATE_LINK_WEIGHT_PROBABILITY", default = "0.9")]
+    #[envconfig(from = "LAYOUT_MUTATE_LINK_WEIGHT_PROBABILITY", default = "0.9")]
     pub mutate_link_weight_probability: f64,
 
-    #[envconfig(from = "TOPOLOGY_MUTATE_LINK_WEIGHT_SIZE", default = "0.5")]
+    #[envconfig(from = "LAYOUT_MUTATE_LINK_WEIGHT_SIZE", default = "0.5")]
     pub mutate_link_weight_size: f64,
 
-    #[envconfig(from = "TOPOLOGY_REMOVE_NODE_PROBABILITY", default = "0.006")]
+    #[envconfig(from = "LAYOUT_REMOVE_NODE_PROBABILITY", default = "0.006")]
     pub remove_node_probability: f64,
 
-    #[envconfig(from = "TOPOLOGY_REMOVE_LINK_PROBABILITY", default = "0.08")]
+    #[envconfig(from = "LAYOUT_REMOVE_LINK_PROBABILITY", default = "0.08")]
     pub remove_link_probability: f64,
 
-    #[envconfig(from = "TOPOLOGY_ONLY_HIDDEN_NODE_DISTANCE", default = "true")]
+    #[envconfig(from = "LAYOUT_ONLY_HIDDEN_NODE_DISTANCE", default = "true")]
     pub only_hidden_node_distance: bool,
 
-    #[envconfig(from = "TOPOLOGY_LINK_DISTANCE_WEIGHT", default = "0.5")]
+    #[envconfig(from = "LAYOUT_LINK_DISTANCE_WEIGHT", default = "0.5")]
     pub link_distance_weight: f64,
 
-    #[envconfig(from = "TOPOLOGY_MUTATE_ONLY_ONE_LINK", default = "true")]
+    #[envconfig(from = "LAYOUT_MUTATE_ONLY_ONE_LINK", default = "true")]
     pub mutate_only_one_link: bool,
 }
 
