@@ -42,9 +42,48 @@ pub struct MethodConfig {
     pub static_substrate_depth: i64,
 }
 
+#[derive(Envconfig, Clone, Serialize)]
+pub struct TopologyConfig {
+    #[envconfig(from = "TOPOLOGY_ADD_NODE_PROBABILITY", default = "0.03")]
+    pub add_node_probability: f64,
+
+    #[envconfig(from = "TOPOLOGY_ADD_LINK_PROBABILITY", default = "0.2")]
+    pub add_link_probability: f64,
+
+    #[envconfig(from = "TOPOLOGY_INITIAL_LINK_WEIGHT_SIZE", default = "0.5")]
+    pub initial_link_weight_size: f64,
+
+    #[envconfig(from = "TOPOLOGY_MUTATE_LINK_WEIGHT_PROBABILITY", default = "0.9")]
+    pub mutate_link_weight_probability: f64,
+
+    #[envconfig(from = "TOPOLOGY_MUTATE_LINK_WEIGHT_SIZE", default = "0.5")]
+    pub mutate_link_weight_size: f64,
+
+    #[envconfig(from = "TOPOLOGY_REMOVE_NODE_PROBABILITY", default = "0.006")]
+    pub remove_node_probability: f64,
+
+    #[envconfig(from = "TOPOLOGY_REMOVE_LINK_PROBABILITY", default = "0.08")]
+    pub remove_link_probability: f64,
+
+    #[envconfig(from = "TOPOLOGY_ONLY_HIDDEN_NODE_DISTANCE", default = "true")]
+    pub only_hidden_node_distance: bool,
+
+    #[envconfig(from = "TOPOLOGY_LINK_DISTANCE_WEIGHT", default = "0.5")]
+    pub link_distance_weight: f64,
+
+    #[envconfig(from = "TOPOLOGY_MUTATE_ONLY_ONE_LINK", default = "true")]
+    pub mutate_only_one_link: bool,
+}
+
 impl Default for MethodConfig {
     fn default() -> Self {
         MethodConfig::init().unwrap()
+    }
+}
+
+impl Default for TopologyConfig {
+    fn default() -> Self {
+        TopologyConfig::init().unwrap()
     }
 }
 
@@ -52,10 +91,31 @@ lazy_static! {
     pub static ref DESHYPERNEAT: MethodConfig = MethodConfig::default();
 }
 
-#[derive(Default, Clone, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct GenomeConfig {
     pub cppn: NeatConfig,
     pub topology: NeatConfig,
+}
+
+impl Default for GenomeConfig {
+    fn default() -> GenomeConfig {
+        let cppn = NeatConfig::default();
+        let mut topology = NeatConfig::default();
+        let topology_conf = TopologyConfig::default();
+
+        topology.add_node_probability = topology_conf.add_node_probability;
+        topology.add_link_probability = topology_conf.add_link_probability;
+        topology.initial_link_weight_size = topology_conf.initial_link_weight_size;
+        topology.mutate_link_weight_probability = topology_conf.mutate_link_weight_probability;
+        topology.mutate_link_weight_size = topology_conf.mutate_link_weight_size;
+        topology.remove_node_probability = topology_conf.remove_node_probability;
+        topology.remove_link_probability = topology_conf.remove_link_probability;
+        topology.only_hidden_node_distance = topology_conf.only_hidden_node_distance;
+        topology.link_distance_weight = topology_conf.link_distance_weight;
+        topology.mutate_only_one_link = topology_conf.mutate_only_one_link;
+
+        GenomeConfig { cppn, topology }
+    }
 }
 
 impl ConfigProvider<NeatConfig, NeatConfig> for GenomeConfig {

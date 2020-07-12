@@ -53,13 +53,13 @@ pub struct MethodConfig {
     #[envconfig(from = "MAX_VARIANCE", default = "false")]
     pub max_variance: bool,
 
-    #[envconfig(from = "RELATIVE_VARIANCE", default = "true")]
+    #[envconfig(from = "RELATIVE_VARIANCE", default = "false")]
     pub relative_variance: bool,
 
     #[envconfig(from = "MEDIAN_VARIANCE", default = "false")]
     pub median_variance: bool,
 
-    #[envconfig(from = "ONLY_LEAF_VARIANCE", default = "false")]
+    #[envconfig(from = "ONLY_LEAF_VARIANCE", default = "true")]
     pub only_leaf_variance: bool,
 
     #[envconfig(from = "LOG_VISUALIZATIONS", default = "false")]
