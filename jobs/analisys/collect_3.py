@@ -2,7 +2,7 @@ import math
 import numpy as np
 import json
 
-with open('jobs/analisys/plots/batch_22/scoreboard.txt', 'r') as f:
+with open('jobs/analisys/plots/batch_25/scoreboard.txt', 'r') as f:
     lines = [l.split() for l in f.readlines()]
     lines = [(float(l[1][:-1]), json.loads(' '.join(l[2:]))) for l in lines]
     r = {}

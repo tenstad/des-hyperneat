@@ -4,8 +4,8 @@ import json
 
 
 def run():
-    BATCH = 28
-    REPEATS = 100
+    BATCH = 50
+    REPEATS = 50
     sheduler = Scheduler()
 
     param_grid = {
@@ -13,15 +13,17 @@ def run():
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine',
                     'datasets/generated/retina'],
-        'MAX_INPUT_SUBSTRATE_DEPTH': [0, 5],
-        'MAX_OUTPUT_SUBSTRATE_DEPTH': [0, 5],
+        'LAYOUT_ADD_NODE_PROBABILITY': [0.01],
+        'LAYOUT_ADD_LINK_PROBABILITY': [0.15, 0.25, 0.35],
+        'ADD_NODE_PROBABILITY': [0.01],
+        'ADD_LINK_PROBABILITY': [0.15, 0.25, 0.35],
     }
 
     static_params = {
         'ITERATIONS': 0,
         'LOG_INTERVAL': 0,
-        'SECONDS_LIMIT': 300,
-        'LOG_SEC_INTERVAL': 3,
+        'SECONDS_LIMIT': 60,
+        'LOG_SEC_INTERVAL': 20,
         'VALIDATION_FRACTION': 0.2,
         'TEST_FRACTION': 0.0,
         'MAX_DISCOVERIES': 256,
@@ -32,19 +34,23 @@ def run():
         'RELATIVE_VARIANCE': False,
         'ONLY_LEAF_VARIANCE': True,
         'VARIANCE_THRESHOLD': 0.03,
-        'DIVISION_THRESHOLD': 0.03,
+        'DIVISION_THRESHOLD': 0.5,
         'ENABLE_IDENTITY_MAPPING': False,
+        'STATIC_SUBSTRATE_DEPTH': 0,
     }
 
     def run_grid(grid):
         for params in ParameterGrid(grid):
             params['OUTPUT_ACTIVATION'] = 'Tanh' if params['DATASET'] == 'datasets/generated/retina' else 'Softmax'
 
-            if params['DATASET'].endswith('retina'):
-                if params['METHOD'].startswith('ES-HyperNEAT'):
-                    params['INPUT_CONFIG'] = "[[-1.0, -0.5], [-0.33, -0.5], [-1.0, -1.0], [-0.33, -1.0], [0.33, -0.5], [1.0, -0.5], [0.33, -1.0], [1.0, -1.0]]"
-                else:
-                    params['INPUT_CONFIG'] = "[[[-1.0, 0.5], [-0.33, 0.5], [-1.0, -0.5], [-0.33, -0.5], [0.33, 0.5], [1.0, 0.5], [0.33, -0.5], [1.0, -0.5]]]"
+            if params['METHOD'] == 'DES-HyperNEAT':
+                if params['DATASET'].endswith('iris'):
+                    params['INPUT_CONFIG'] = "[[[-1.0, 1.0], [-1.0, -1.0], [1.0, 1.0], [1.0, -1.0]]]"
+                if params['DATASET'].endswith('wine'):
+                    params['INPUT_CONFIG'] = "[[[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]], [[0.0, 0.0]]]"
+                if params['DATASET'].endswith('retina'):
+                    params['INPUT_CONFIG'] = "[[[-1.0, 0.0], [-0.33, 0.0], [0.33, 0.0], [1.0, 0.0]], [[-1.0, 0.0], [-0.33, 0.0], [0.33, 0.0], [1.0, 0.0]]]"
+                    params['OUTPUT_CONFIG'] = "[[[0.0, 0.0]], [[0.0, 0.0]]]"
 
             name = json.dumps(params)
             params.update(static_params)

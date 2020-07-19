@@ -4,7 +4,7 @@ import json
 
 
 def run():
-    BATCH = 28
+    BATCH = 43
     REPEATS = 100
     sheduler = Scheduler()
 
@@ -13,15 +13,14 @@ def run():
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine',
                     'datasets/generated/retina'],
-        'MAX_INPUT_SUBSTRATE_DEPTH': [0, 5],
-        'MAX_OUTPUT_SUBSTRATE_DEPTH': [0, 5],
+        'STATIC_SUBSTRATE_DEPTH': [-1, 0],
     }
 
     static_params = {
         'ITERATIONS': 0,
         'LOG_INTERVAL': 0,
-        'SECONDS_LIMIT': 300,
-        'LOG_SEC_INTERVAL': 3,
+        'SECONDS_LIMIT': 1600,
+        'LOG_SEC_INTERVAL': 16,
         'VALIDATION_FRACTION': 0.2,
         'TEST_FRACTION': 0.0,
         'MAX_DISCOVERIES': 256,
@@ -31,9 +30,11 @@ def run():
         'MAX_VARIANCE': False,
         'RELATIVE_VARIANCE': False,
         'ONLY_LEAF_VARIANCE': True,
-        'VARIANCE_THRESHOLD': 0.03,
+        'VARIANCE_THRESHOLD': 0.5,
         'DIVISION_THRESHOLD': 0.03,
         'ENABLE_IDENTITY_MAPPING': False,
+        'HIDDEN_ACTIVATIONS': 'None Linear Step ReLU Sigmoid Exp Sigmoid Tanh Gaussian OffsetGaussian Sine Square Abs',
+        'OUTPUT_ACTIVATIONS': 'None Linear Step ReLU Sigmoid Exp Sigmoid Tanh Gaussian OffsetGaussian Sine Square Abs',
     }
 
     def run_grid(grid):

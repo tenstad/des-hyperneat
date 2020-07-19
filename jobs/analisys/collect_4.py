@@ -3,20 +3,6 @@ import numpy as np
 import json
 
 
-param_grid = {
-    'METHOD': ['ES-HyperNEAT', 'DES-HyperNEAT'],
-    'DATASET': ['datasets/generated/iris',
-                'datasets/generated/wine',
-                'datasets/generated/retina'],
-    'VARIANCE_THRESHOLD': [0.05, 0.15, 0.3],
-    'DIVISION_THRESHOLD': [0.05, 0.15, 0.3],
-
-    'MAX_VARIANCE': [False, True],
-    'RELATIVE_VARIANCE': [False, True],
-    'ONLY_LEAF_VARIANCE': [False, True],
-}
-
-
 with open('jobs/analisys/plots/batch_25/scoreboard.txt', 'r') as f:
     lines = [l.split() for l in f.readlines()]
     lines = [(float(l[1]), float(l[2]), json.loads(' '.join(l[3:])))
@@ -44,6 +30,8 @@ def find_data(*params):
 
 r2 = {}
 for method in ('DES-HyperNEAT', 'ES-HyperNEAT'):
+    with open('data_tmp.txt', 'a') as f:
+        f.write(f'\n,')
     for m_v in (True, False):
         for l_v in (True, False):
             for r_v in (True, False):
@@ -75,6 +63,8 @@ for method in ('DES-HyperNEAT', 'ES-HyperNEAT'):
                             best_l = l
                 print(method, m_v, l_v, r_v, best_score,
                       best_l, best_std, best_v, best_d)
+                with open('data_tmp.txt', 'a') as f:
+                    f.write(f'({m_v}, {l_v}, {r_v}): ({best_v}, {best_d}),')
                 for dataset, s, std in zip(('iris', 'wine', 'retina'), best_l, best_std):
                     r2[(method, m_v, l_v, r_v, dataset)] = (s, std)
                 r2[(method, m_v, l_v, r_v, 'mean')] = (
@@ -85,10 +75,10 @@ with open('data2.txt', 'w') as f:
         for relative in (True, False):
             for d in ('iris', 'wine', 'retina', 'mean'):
                 vals = [
-                    *r2[(method, True, True, relative, d)],
                     *r2[(method, True, False, relative, d)],
-                    *r2[(method, False, True, relative, d)],
-                    *r2[(method, False, False, relative, d)]
+                    *r2[(method, True, True, relative, d)],
+                    *r2[(method, False, False, relative, d)],
+                    *r2[(method, False, True, relative, d)]
                 ]
 
                 vals = [('%.' + str(min(int(4-math.log10(val)), 3)) + 'f') % val

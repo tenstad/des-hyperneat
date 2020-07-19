@@ -143,18 +143,14 @@ def analyse_job(args):
     hidden_substrates = np.zeros((repeats, data_points, population_size),
                                  dtype=np.float64)
     num_iters = np.zeros(repeats, dtype=np.float64)
-    iters_continous = np.zeros((repeats, data_points))
 
     if evo_cfg['iterations'] != 0:
-        for i, log in enumerate(db.logs.find({'job_id': job['_id']}, {'_id': 0, 'events.organisms.fitness': 1, 'events.organisms.evaluation': 1, 'events.event_time': 1, 'events.organisms.phenotype': 1, })):
+        for i, log in enumerate(db.logs.find({'job_id': job['_id']})):
             start_time = log['events'][0]['event_time']
             delta_t = (log['events'][-1]['event_time'] - start_time)
             num_iters[i] = (delta_t.seconds + delta_t.microseconds /
-                            1000000) / max(1, evo_cfg['iterations'])
+                            1000000) / evo_cfg['iterations']
             for j, event in enumerate(log['events']):
-                delta_t = (event['event_time'] - start_time)
-                iters_continous[i, j] = 1 / max(1, (delta_t.seconds + delta_t.microseconds /
-                                                    1000000) / max(1, j*evo_cfg['log_interval']))
                 fitnesses[i, j] = [organism['fitness']
                                    for organism in event['organisms']]
                 nodes[i, j] = [get_attr(organism, 'nodes')
@@ -180,7 +176,7 @@ def analyse_job(args):
                     training_accuracy[i, j] = [np.mean([e['training_accuracy'] for e in organism['evaluation']])
                                                for organism in event['organisms']]
     else:
-        for i, log in enumerate(db.logs.find({'job_id': job['_id']}, {'_id': 0, 'events.organisms.fitness': 1, 'events.organisms.evaluation': 1, 'events.iteration': 1, 'events.event_time': 1, 'events.organisms.phenotype': 1, })):
+        for i, log in enumerate(db.logs.find({'job_id': job['_id']})):
             event_times = [event['event_time'] for event in log['events']]
             start_time = event_times[0]
             event_times = [e - start_time for e in event_times]
@@ -228,9 +224,9 @@ def analyse_job(args):
     job_dataset = job_params['DATASET']
     job_iterations = job_params['ITERATIONS']
 
-    m_a = job_params['MAX_VARIANCE']
-    m_b = job_params['ONLY_LEAF_VARIANCE']
-    m_c = job_params['RELATIVE_VARIANCE']
+    #job_i_conf = job_params['I_CONF']
+    #job_static_depth = job_params['I_CONF']
+    #job_method = job_params['STATIC_SUBSTRATE_DEPTH']
 
     def _log(name, x_labels, data):
         final_iter = data[:, -1]
@@ -244,7 +240,7 @@ def analyse_job(args):
 
         with open('data.txt', 'a') as f:
             f.write(
-                f'{job_method} {job_dataset} {m_a} {m_b} {m_c} {name} {final_mean} {st}\n')
+                f'{job_iterations} {job_method} {job_dataset} {name} {final_mean} {st}\n')
 
         return f'{name} final: {final_mean} std: {st} \nmi: {mi} ma: {ma} all: {li}\n\n'
 
@@ -297,16 +293,15 @@ def analyse_job(args):
         f.write(_log('max_validation_fitness', x, max_validation_fitness))
         f.write(_log('num_nodes', x, num_nodes))
         f.write(_log('num_edges', x, num_edges))
-        f.write(_log('iters_continous', x, iters_continous))
         #f.write(_log('hidden_substrates', x, _hidden_substrates))
         st = np.std(num_iters)
         mi = np.min(num_iters)
         ma = np.max(num_iters)
         iters = num_iters.mean()
         f.write(f'iterations: {iters}, st: {st}, mi: {mi}, ma: {ma}\n')
-        # with open('data.txt', 'a') as f:
-        #    f.write(
-        #        f'{job_iterations} {job_method} {job_dataset} iterations {iters} {st}\n')
+        with open('data.txt', 'a') as f:
+            f.write(
+                f'{job_iterations} {job_method} {job_dataset} iterations {iters} {st}\n')
 
 
 def set_labels(ax, iterations, seconds, iter_interval, sec_interval):

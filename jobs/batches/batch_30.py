@@ -4,7 +4,7 @@ import json
 
 
 def run():
-    BATCH = 28
+    BATCH = 30
     REPEATS = 100
     sheduler = Scheduler()
 
@@ -13,8 +13,7 @@ def run():
         'DATASET': ['datasets/generated/iris',
                     'datasets/generated/wine',
                     'datasets/generated/retina'],
-        'MAX_INPUT_SUBSTRATE_DEPTH': [0, 5],
-        'MAX_OUTPUT_SUBSTRATE_DEPTH': [0, 5],
+        'STATIC_SUBSTRATE_DEPTH': [-1, 0, 1, 2, 3, 4, 5],
     }
 
     static_params = {

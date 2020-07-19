@@ -31,7 +31,7 @@ def run():
         'MAX_DISCOVERIES': 256,
         'MAX_OUTGOING': 32,
         'MEDIAN_VARIANCE': False,
-        'BAND_THRESHOLD': 0.0,
+        'BAND_THRESHOLD': 0.3,
     }
 
     def run_grid(grid):
