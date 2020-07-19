@@ -38,10 +38,9 @@ pub fn create() -> figure::Figure {
 
     let mut node = fig.node_builder(&|n| {
         n.size(5.0)
-            .inner_sep(3.0)
+            .inner_sep(1.0)
             .edge_offset(2.0)
-            .text_size("normalsize")
-            .shape("rectangle")
+            .text_size("scriptsize")
     });
     let w_ = node(&|n| n.x(-1.2).y(2.5 + 0.3).text("$f$"));
     let e_ = node(&|n| n.x(1.2).y(2.5 + 0.3).text("$g$"));
