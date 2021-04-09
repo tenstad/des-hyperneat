@@ -17,5 +17,4 @@ serde_yaml = "0.8"
 bson = "0.14.1"
 num_cpus = "1.13.0"
 network = {path = "../network"}
-db = {path = "../db"}
 neat_macro = {path = "src/neat/neat_macro"}

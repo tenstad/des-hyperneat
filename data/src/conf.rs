@@ -5,7 +5,7 @@ use serde::Serialize;
 
 #[derive(Envconfig, Serialize)]
 pub struct DatasetConfig {
-    #[envconfig(from = "DATASET", default = "datasets/generated/wine")]
+    #[envconfig(from = "DATASET", default = "datasets/generated/iris")]
     pub dataset: String,
 
     #[envconfig(from = "SEED", default = "0")]

@@ -1,8 +1,0 @@
-[package]
-name = "figures"
-version = "0.1.0"
-authors = ["Amund Tenstad <github@amund.io>"]
-edition = "2018"
-
-[dependencies]
-figure = {path = "../figure"}

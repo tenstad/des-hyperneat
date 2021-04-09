@@ -25,12 +25,10 @@ figure = {path = "figure"}
 [workspace]
 members = [
   "figure",
-  "figures",
   "network",
   "evolution",
   "evolution/src/neat/neat_macro",
   "data",
-  "db",
 ]
 
 [profile.release]

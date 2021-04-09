@@ -3,7 +3,6 @@ use crate::environment::EnvironmentDescription;
 use crate::genome::Genome;
 use crate::population::Population;
 use crate::stats::GetPopulationStats;
-use db::{Entry, Mongo};
 use serde::Serialize;
 use serde_yaml;
 use std::time::{Duration, SystemTime};
@@ -18,22 +17,14 @@ pub struct Logger {
     pub log_interval: u64,
     pub log_seconds: u64,
     pub prev_log_time: SystemTime,
-    pub entry: Option<Entry>,
 }
 
 impl<G: Genome> Log<G> for Logger {
-    fn new<C: Serialize>(_: &EnvironmentDescription, config: &C) -> Self {
-        let entry = if EVOLUTION.db_log {
-            Some(Mongo::new().entry(config))
-        } else {
-            None
-        };
-
+    fn new<C: Serialize>(_: &EnvironmentDescription, _: &C) -> Self {
         Self {
             log_interval: EVOLUTION.log_interval,
             log_seconds: EVOLUTION.log_sec_interval,
             prev_log_time: SystemTime::now(),
-            entry,
         }
     }
 
@@ -64,17 +55,9 @@ impl<G: Genome> Log<G> for Logger {
                 println!("{}", serde_yaml::to_string(best).unwrap());
             }
 
-            if let Some(entry) = &mut self.entry {
-                entry.push(&population_stats, iteration);
-            }
-
             println!("{}", population);
         }
     }
 
-    fn close(&mut self) {
-        if let Some(entry) = &mut self.entry {
-            entry.complete();
-        }
-    }
+    fn close(&mut self) {}
 }
